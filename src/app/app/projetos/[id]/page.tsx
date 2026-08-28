@@ -7,6 +7,8 @@ import {
   ShieldCheck
 } from 'lucide-react'
 import ProjectHubClient from '@/components/projects/ProjectHubClient'
+import { formatDateBR } from '@/lib/date-utils'
+import { getWorkflowStagesAction } from '@/lib/actions/workflow-stages'
 
 export default async function ProjectDetailPage({
   params,
@@ -26,6 +28,9 @@ export default async function ProjectDetailPage({
     .select('*')
     .eq('project_id', id)
     .order('stage_order', { ascending: true })
+
+  // Busca etapas do fluxo configuradas para o escritório
+  const { stages: workflowStages } = await getWorkflowStagesAction(project.organization_id)
 
   // 1. Busca membros da organização para delegação/responsáveis
   const { data: orgMembers } = await supabase
@@ -121,14 +126,14 @@ export default async function ProjectDetailPage({
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 text-xs font-mono font-bold bg-slate-100 text-slate-700 rounded-lg">
-                {project.code}
-              </span>
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 {project.title}
               </h1>
+              <span className="px-2.5 py-0.5 text-xs font-mono font-bold bg-slate-100 text-slate-700 rounded-lg">
+                {project.code}
+              </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 mt-1.5">
               Cliente: <strong className="text-slate-700">{project.client_name}</strong> • {project.typology || 'Residencial'} • {project.area_sqm ? `${project.area_sqm} m²` : 'Área não definida'}
             </p>
           </div>
@@ -167,7 +172,7 @@ export default async function ProjectDetailPage({
           <div>
             <span className="text-xs text-slate-400 font-semibold block">Prazo Final</span>
             <span className="text-xs font-bold text-slate-700">
-              {project.deadline || 'Não informado'}
+              {formatDateBR(project.deadline) || 'Não informado'}
             </span>
           </div>
         </div>
@@ -189,9 +194,11 @@ export default async function ProjectDetailPage({
       {/* Interactive Project Hub (List / Kanban Drag & Drop / Gantt + Task Drawer) */}
       <ProjectHubClient
         projectId={id}
+        organizationId={project.organization_id}
         stages={projectStages}
         portalToken={portalToken}
         members={membersList}
+        initialWorkflowStages={workflowStages}
       />
     </div>
   )

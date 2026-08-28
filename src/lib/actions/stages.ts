@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { requireProjectAccess } from '@/lib/server/guard'
 import { sanitizeText } from '@/lib/server/sanitize'
+import { normalizeWorkflowStages, canMoveToFinalStage } from '@/lib/workflow-stages'
 
 export interface ChecklistItem {
   id: string
@@ -34,23 +35,79 @@ export interface StageAttachment {
 export async function updateStageStatusAction(
   projectId: string,
   stageId: string,
-  newStatus: 'a_iniciar' | 'em_producao' | 'em_aprovacao' | 'concluido'
+  newStatus: string
 ) {
   const { supabase } = await requireProjectAccess(projectId)
 
-  const progressPercent = newStatus === 'concluido' ? 100 : newStatus === 'a_iniciar' ? 0 : 50
+  // 1. Busca etapa atual e workflow_stages da organização para validação de integridade
+  const { data: stageRecord } = await supabase
+    .from('project_stages')
+    .select('id, checklist, is_client_approval_required, status, project_id, projects(organization_id, organizations(workflow_stages))')
+    .eq('id', stageId)
+    .eq('project_id', projectId)
+    .single()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawStages = (stageRecord?.projects as any)?.organizations?.workflow_stages
+  const normalizedStages = normalizeWorkflowStages(rawStages)
+  const targetStageCfg = normalizedStages.find((s) => s.id === newStatus)
+
+  // 2. Se a etapa de destino for conclusiva/final, valida checklists e aprovação do cliente
+  if (targetStageCfg?.is_final_stage) {
+    const check = canMoveToFinalStage(stageRecord || {}, normalizedStages)
+    if (!check.allowed) {
+      return { error: `Não é possível mover para a etapa finalizada: ${check.reasons.join(' ')}` }
+    }
+  }
+
+  const progressPercent = targetStageCfg?.is_final_stage || newStatus === 'concluido' ? 100 : newStatus === 'a_iniciar' ? 0 : 50
 
   const { error } = await supabase
     .from('project_stages')
     .update({
       status: newStatus,
       progress_percent: progressPercent,
-    })
+      is_locked_for_client: Boolean(targetStageCfg?.is_final_stage),
+    } as any)
     .eq('id', stageId)
     .eq('project_id', projectId)
 
   if (error) {
     return { error: error.message }
+  }
+
+  revalidatePath(`/app/projetos/${projectId}`)
+  return { success: true }
+}
+
+export async function reorderStagesAction(
+  projectId: string,
+  stageUpdates: {
+    id: string
+    stage_order: number
+    status?: string
+  }[]
+) {
+  const { supabase } = await requireProjectAccess(projectId)
+
+  const updates = stageUpdates.map((item) => {
+    const payload: Record<string, any> = { stage_order: item.stage_order }
+    if (item.status) {
+      payload.status = item.status
+      if (item.status === 'concluido') payload.progress_percent = 100
+      else if (item.status === 'a_iniciar') payload.progress_percent = 0
+    }
+    return supabase
+      .from('project_stages')
+      .update(payload as any)
+      .eq('id', item.id)
+      .eq('project_id', projectId)
+  })
+
+  const results = await Promise.all(updates)
+  const failed = results.find((r) => r.error)
+  if (failed?.error) {
+    return { error: failed.error.message }
   }
 
   revalidatePath(`/app/projetos/${projectId}`)
@@ -72,7 +129,7 @@ export async function updateStageProgressAction(
     .update({
       progress_percent: clamped,
       status: newStatus,
-    })
+    } as any)
     .eq('id', stageId)
     .eq('project_id', projectId)
 
@@ -93,7 +150,7 @@ export async function updateStageFullDetailsAction(
     assigned_to?: string | null
     start_date?: string | null
     due_date?: string | null
-    status?: 'a_iniciar' | 'em_producao' | 'em_aprovacao' | 'concluido'
+    status?: string
     is_client_approval_required?: boolean
   }
 ) {
@@ -108,9 +165,32 @@ export async function updateStageFullDetailsAction(
   if (data.due_date !== undefined) updatePayload.due_date = data.due_date || null
   if (data.is_client_approval_required !== undefined) updatePayload.is_client_approval_required = data.is_client_approval_required
   if (data.status !== undefined) {
+    // Busca workflow stages para validação de etapa final
+    const { data: stageRecord } = await supabase
+      .from('project_stages')
+      .select('id, checklist, is_client_approval_required, status, project_id, projects(organization_id, organizations(workflow_stages))')
+      .eq('id', stageId)
+      .eq('project_id', projectId)
+      .single()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rawStages = (stageRecord?.projects as any)?.organizations?.workflow_stages
+    const normalizedStages = normalizeWorkflowStages(rawStages)
+    const targetStageCfg = normalizedStages.find((s) => s.id === data.status)
+
+    if (targetStageCfg?.is_final_stage) {
+      const check = canMoveToFinalStage(stageRecord || {}, normalizedStages)
+      if (!check.allowed) {
+        return { error: `Não é possível mover para a etapa finalizada: ${check.reasons.join(' ')}` }
+      }
+      updatePayload.progress_percent = 100
+      updatePayload.is_locked_for_client = true
+    } else {
+      if (data.status === 'concluido') updatePayload.progress_percent = 100
+      if (data.status === 'a_iniciar') updatePayload.progress_percent = 0
+    }
+
     updatePayload.status = data.status
-    if (data.status === 'concluido') updatePayload.progress_percent = 100
-    if (data.status === 'a_iniciar') updatePayload.progress_percent = 0
   }
 
   const { error } = await supabase
@@ -127,6 +207,27 @@ export async function updateStageFullDetailsAction(
   return { success: true }
 }
 
+export async function toggleStageClientApprovalAction(
+  projectId: string,
+  stageId: string,
+  isRequired: boolean
+) {
+  const { supabase } = await requireProjectAccess(projectId)
+
+  const { error } = await (supabase
+    .from('project_stages') as any)
+    .update({ is_client_approval_required: isRequired })
+    .eq('id', stageId)
+    .eq('project_id', projectId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath(`/app/projetos/${projectId}`)
+  return { success: true, is_client_approval_required: isRequired }
+}
+
 export async function createStageAction(
   projectId: string,
   data: {
@@ -135,7 +236,7 @@ export async function createStageAction(
     assigned_to?: string | null
     start_date?: string | null
     due_date?: string | null
-    status?: 'a_iniciar' | 'em_producao' | 'em_aprovacao' | 'concluido'
+    status?: string
     is_client_approval_required?: boolean
   }
 ) {
@@ -171,7 +272,7 @@ export async function createStageAction(
       checklist: [],
       comments: [],
       attachments: [],
-    })
+    } as any)
     .select()
     .single()
 
@@ -664,6 +765,52 @@ export async function deleteStageAttachmentAction(
 
   revalidatePath(`/app/projetos/${projectId}`)
   return { success: true }
+}
+
+export async function editStageAttachmentAction(
+  projectId: string,
+  stageId: string,
+  attachmentId: string,
+  newName: string
+): Promise<{ success: boolean; attachment?: StageAttachment; error?: string }> {
+  const { supabase } = await requireProjectAccess(projectId)
+  const cleanName = sanitizeText(newName)
+  if (!cleanName) return { success: false, error: 'O nome do anexo não pode ser vazio.' }
+
+  const { data: stage } = await supabase
+    .from('project_stages')
+    .select('attachments')
+    .eq('id', stageId)
+    .eq('project_id', projectId)
+    .single()
+
+  const currentAttachments: StageAttachment[] = Array.isArray(stage?.attachments) ? stage.attachments : []
+  let updatedAttachment: StageAttachment | null = null
+
+  const updatedAttachments = currentAttachments.map((att) => {
+    if (att.id === attachmentId) {
+      updatedAttachment = { ...att, name: cleanName }
+      return updatedAttachment
+    }
+    return att
+  })
+
+  if (!updatedAttachment) {
+    return { success: false, error: 'Anexo não encontrado.' }
+  }
+
+  const { error } = await supabase
+    .from('project_stages')
+    .update({ attachments: updatedAttachments })
+    .eq('id', stageId)
+    .eq('project_id', projectId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath(`/app/projetos/${projectId}`)
+  return { success: true, attachment: updatedAttachment }
 }
 
 export async function requestClientApprovalAction(

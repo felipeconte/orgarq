@@ -31,6 +31,8 @@ import {
   reorderTemplateItemsAction
 } from '@/lib/actions/templates'
 
+import { useConfirm, useAlert } from '@/components/ui/ConfirmDialog'
+
 export interface TemplateItemData {
   id: string
   stage_template_id: string
@@ -57,6 +59,8 @@ export interface StageTemplatesManagerProps {
 export default function StageTemplatesManager({
   initialTemplates,
 }: StageTemplatesManagerProps) {
+  const confirm = useConfirm()
+  const showAlert = useAlert()
   const [templates, setTemplates] = useState<TemplateData[]>(initialTemplates)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(
     initialTemplates.find((t) => t.is_default)?.id || initialTemplates[0]?.id || ''
@@ -194,7 +198,16 @@ export default function StageTemplatesManager({
 
   // DELETE TEMPLATE
   const handleDeleteTemplate = async (templateId: string) => {
-    if (confirm('Tem certeza que deseja excluir este template?')) {
+    const confirmed = await confirm({
+      title: 'Excluir Template',
+      message: 'Tem certeza que deseja excluir permanentemente este template de etapas?',
+      description: 'Projetos já criados com este template não serão afetados.',
+      confirmText: 'Excluir Template',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       setLoading(true)
       const res = await deleteTemplateAction(templateId)
       setLoading(false)
@@ -205,7 +218,11 @@ export default function StageTemplatesManager({
         setSelectedTemplateId(remaining[0]?.id || '')
         showNotification('Template removido com sucesso!')
       } else {
-        alert(res.error)
+        await showAlert({
+          title: 'Erro ao excluir template',
+          message: res.error || 'Não foi possível excluir o template.',
+          variant: 'error',
+        })
       }
     }
   }
@@ -303,7 +320,15 @@ export default function StageTemplatesManager({
 
   // DELETE TASK ITEM
   const handleDeleteItem = async (itemId: string) => {
-    if (confirm('Deseja excluir esta tarefa do template?')) {
+    const confirmed = await confirm({
+      title: 'Excluir Tarefa do Template',
+      message: 'Deseja excluir esta tarefa do template?',
+      confirmText: 'Excluir Tarefa',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       setLoading(true)
       const res = await deleteTemplateItemAction(itemId)
       setLoading(false)

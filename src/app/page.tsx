@@ -47,7 +47,7 @@ export default function Home() {
       case 'em_producao':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Em Produção
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Em Andamento
           </span>
         )
       default:
@@ -142,8 +142,8 @@ export default function Home() {
                 <button
                   onClick={() => setActiveView('lista')}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${activeView === 'lista'
-                      ? 'bg-white text-blue-600 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-blue-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
                   <ListTodo className="w-4 h-4" />
@@ -152,8 +152,8 @@ export default function Home() {
                 <button
                   onClick={() => setActiveView('kanban')}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${activeView === 'kanban'
-                      ? 'bg-white text-blue-600 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-blue-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
                   <KanbanIcon className="w-4 h-4" />
@@ -162,8 +162,8 @@ export default function Home() {
                 <button
                   onClick={() => setActiveView('gantt')}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${activeView === 'gantt'
-                      ? 'bg-white text-blue-600 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-blue-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
                   <CalendarRange className="w-4 h-4" />
@@ -256,11 +256,11 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Coluna Em Produção */}
+              {/* Coluna Em Andamento */}
               <div className="bg-blue-50/40 p-4 rounded-2xl border border-blue-100 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-blue-200">
                   <span className="text-xs font-bold text-blue-800 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" /> Em Produção
+                    <span className="w-2 h-2 rounded-full bg-blue-500" /> Em Andamento
                   </span>
                   <span className="text-[11px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-full shadow-2xs">1</span>
                 </div>
@@ -303,7 +303,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Coluna Aprovado / Concluído */}
+              {/* Coluna Aprovado */}
               <div className="bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-emerald-200">
                   <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
@@ -350,12 +350,12 @@ export default function Home() {
                       <div className="col-span-8 relative h-7 bg-slate-50 rounded-lg p-1 flex items-center">
                         <div
                           className={`absolute h-5 rounded-md flex items-center px-2 text-[10px] font-bold text-white transition-all shadow-xs ${st.status === 'concluido'
-                              ? 'bg-emerald-500'
-                              : st.status === 'em_aprovacao'
-                                ? 'bg-amber-500'
-                                : st.status === 'em_producao'
-                                  ? 'bg-blue-600'
-                                  : 'bg-slate-300 text-slate-700'
+                            ? 'bg-emerald-500'
+                            : st.status === 'em_aprovacao'
+                              ? 'bg-amber-500'
+                              : st.status === 'em_producao'
+                                ? 'bg-blue-600'
+                                : 'bg-slate-300 text-slate-700'
                             }`}
                           style={{
                             left: `${leftOffset}%`,

@@ -10,7 +10,8 @@ import {
   LogOut,
   ExternalLink,
   User,
-  ChevronRight
+  ChevronRight,
+  KanbanSquare
 } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
 
@@ -109,6 +110,14 @@ export default async function AppLayout({
             </div>
 
             <Link
+              href="/app/configuracoes/etapas-fluxo"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100/80 hover:text-blue-600 transition-all"
+            >
+              <KanbanSquare className="w-4 h-4" />
+              Etapas do Projeto
+            </Link>
+
+            <Link
               href="/app/configuracoes/etapas"
               className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100/80 hover:text-blue-600 transition-all"
             >
@@ -192,7 +201,7 @@ export default async function AppLayout({
           </div>
         </header>
 
-        <main className="p-8 flex-1 max-w-7xl w-full mx-auto space-y-6">{children}</main>
+        <main className="p-8 lg:p-8 flex-1 max-w-[1600px] w-full mx-auto space-y-6">{children}</main>
       </div>
     </div>
   )

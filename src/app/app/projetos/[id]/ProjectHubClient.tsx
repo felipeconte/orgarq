@@ -126,11 +126,10 @@ export default function ProjectHubClient({
         <div className="inline-flex p-1 rounded-xl bg-slate-100/90 border border-slate-200/80">
           <button
             onClick={() => setActiveView('lista')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'lista'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeView === 'lista'
+              ? 'bg-white text-blue-600 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             <ListTodo className="w-4 h-4" />
             Lista
@@ -138,11 +137,10 @@ export default function ProjectHubClient({
 
           <button
             onClick={() => setActiveView('kanban')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'kanban'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeView === 'kanban'
+              ? 'bg-white text-blue-600 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             <KanbanIcon className="w-4 h-4" />
             Kanban
@@ -150,11 +148,10 @@ export default function ProjectHubClient({
 
           <button
             onClick={() => setActiveView('gantt')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeView === 'gantt'
-                ? 'bg-white text-blue-600 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeView === 'gantt'
+              ? 'bg-white text-blue-600 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             <CalendarRange className="w-4 h-4" />
             Gantt / Timeline
@@ -213,9 +210,8 @@ export default function ProjectHubClient({
                       <div className="flex items-center gap-2">
                         <div className="w-20 bg-slate-100 h-2 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${
-                              st.status === 'concluido' ? 'bg-emerald-500' : 'bg-blue-600'
-                            }`}
+                            className={`h-full rounded-full ${st.status === 'concluido' ? 'bg-emerald-500' : 'bg-blue-600'
+                              }`}
                             style={{ width: `${st.progress_percent}%` }}
                           />
                         </div>
@@ -236,7 +232,7 @@ export default function ProjectHubClient({
                       )}
                       {st.status === 'em_producao' && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                          <Clock className="w-3.5 h-3.5" /> Em Produção
+                          <Clock className="w-3.5 h-3.5" /> Em Andamento
                         </span>
                       )}
                       {st.status === 'a_iniciar' && (
@@ -314,18 +310,18 @@ export default function ProjectHubClient({
                     onClick={() => handleStatusChange(st.id, 'em_producao')}
                     className="w-full mt-2 py-1.5 px-3 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-all"
                   >
-                    Mover para Produção
+                    Mover para Andamento
                   </button>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Coluna 2: Em Produção */}
+          {/* Coluna 2: Em Andamento */}
           <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-blue-200">
               <span className="text-xs font-bold text-blue-800 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-500" /> Em Produção
+                <span className="w-2 h-2 rounded-full bg-blue-500" /> Em Andamento
               </span>
               <span className="text-[11px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-full shadow-2xs">
                 {stages.filter((s) => s.status === 'em_producao').length}
@@ -382,7 +378,7 @@ export default function ProjectHubClient({
             </div>
           </div>
 
-          {/* Coluna 4: Aprovado / Concluído */}
+          {/* Coluna 4: Aprovado */}
           <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-emerald-200">
               <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
@@ -438,15 +434,14 @@ export default function ProjectHubClient({
 
                   <div className="col-span-8 relative h-7 bg-slate-50 rounded-lg p-1 flex items-center">
                     <div
-                      className={`absolute h-5 rounded-md flex items-center px-2 text-[10px] font-bold text-white transition-all shadow-xs ${
-                        st.status === 'concluido'
-                          ? 'bg-emerald-500'
-                          : st.status === 'em_aprovacao'
+                      className={`absolute h-5 rounded-md flex items-center px-2 text-[10px] font-bold text-white transition-all shadow-xs ${st.status === 'concluido'
+                        ? 'bg-emerald-500'
+                        : st.status === 'em_aprovacao'
                           ? 'bg-amber-500'
                           : st.status === 'em_producao'
-                          ? 'bg-blue-600'
-                          : 'bg-slate-300 text-slate-700'
-                      }`}
+                            ? 'bg-blue-600'
+                            : 'bg-slate-300 text-slate-700'
+                        }`}
                       style={{
                         left: `${leftOffset}%`,
                         width: `${barWidth}%`,

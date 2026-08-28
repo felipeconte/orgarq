@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { updateUserProfileAction, updateUserPasswordAction } from '@/lib/actions/profile'
 import ImageCropperModal from '@/components/organization/ImageCropperModal'
+import { useAlert } from '@/components/ui/ConfirmDialog'
 
 export interface UserProfileData {
   id: string
@@ -40,6 +41,7 @@ export default function UserProfileSettingsClient({
   initialProfile,
   role,
 }: UserProfileSettingsClientProps) {
+  const showAlert = useAlert()
   const [profile, setProfile] = useState<UserProfileData>(initialProfile)
 
   // Form State
@@ -73,12 +75,16 @@ export default function UserProfileSettingsClient({
   }
 
   // Handle File Selection for Avatar
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecione um arquivo de imagem válido (PNG, JPG, WebP).')
+      await showAlert({
+        title: 'Formato inválido',
+        message: 'Por favor, selecione um arquivo de imagem válido (PNG, JPG, WebP).',
+        variant: 'warning',
+      })
       return
     }
 
@@ -119,7 +125,11 @@ export default function UserProfileSettingsClient({
       })
       showToast('Perfil atualizado com sucesso!')
     } else {
-      alert(res.error || 'Erro ao atualizar dados do perfil.')
+      await showAlert({
+        title: 'Erro ao salvar perfil',
+        message: res.error || 'Erro ao atualizar dados do perfil.',
+        variant: 'error',
+      })
     }
   }
 
@@ -129,12 +139,20 @@ export default function UserProfileSettingsClient({
     if (!passwordData.newPassword) return
 
     if (passwordData.newPassword.length < 6) {
-      alert('A nova senha deve ter no mínimo 6 caracteres.')
+      await showAlert({
+        title: 'Senha muito curta',
+        message: 'A nova senha deve ter no mínimo 6 caracteres.',
+        variant: 'warning',
+      })
       return
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('As senhas não coincidem.')
+      await showAlert({
+        title: 'Senhas não coincidem',
+        message: 'A confirmação de senha é diferente da nova senha digitada.',
+        variant: 'warning',
+      })
       return
     }
 
@@ -150,7 +168,11 @@ export default function UserProfileSettingsClient({
       setPasswordData({ newPassword: '', confirmPassword: '' })
       showToast('Senha de acesso atualizada com sucesso!')
     } else {
-      alert(res.error || 'Erro ao atualizar senha.')
+      await showAlert({
+        title: 'Erro ao atualizar senha',
+        message: res.error || 'Erro ao atualizar senha.',
+        variant: 'error',
+      })
     }
   }
 

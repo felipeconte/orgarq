@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import {
   FolderGit2,
   Plus,
@@ -26,9 +27,71 @@ import {
   MapPin,
   X,
   Loader2,
-  Check
+  Check,
+  Copy,
+  Lock
 } from 'lucide-react'
 import { updateProjectAction, deleteProjectAction } from '@/lib/actions/projects'
+import { useAlert } from '@/components/ui/ConfirmDialog'
+
+const ProjectLocationMap = dynamic(
+  () => import('./ProjectLocationMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-48 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-xs text-slate-400">
+        <Loader2 className="w-5 h-5 animate-spin mr-2 text-blue-600" /> Carregando mapa...
+      </div>
+    ),
+  }
+)
+
+interface NominatimPlace {
+  place_id: number
+  display_name: string
+  lat: string
+  lon: string
+  address?: {
+    road?: string
+    pedestrian?: string
+    street?: string
+    house_number?: string
+    house_name?: string
+    suburb?: string
+    neighbourhood?: string
+    city_district?: string
+    quarter?: string
+    residential?: string
+    city?: string
+    town?: string
+    municipality?: string
+    village?: string
+    state?: string
+    postcode?: string
+    country?: string
+  }
+}
+
+function formatPhone(value: string): string {
+  const numbers = value.replace(/\D/g, '').slice(0, 11)
+  if (numbers.length <= 2) return numbers ? `(${numbers}` : ''
+  if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+  if (numbers.length <= 10) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`
+  }
+  return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+}
+
+function formatCurrencyBRL(value: string | number): { formatted: string; raw: number } {
+  const cleanNumber = typeof value === 'number' ? Math.round(value * 100).toString() : value.replace(/\D/g, '')
+  if (!cleanNumber) return { formatted: '', raw: 0 }
+  const raw = parseFloat(cleanNumber) / 100
+  const formatted = new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(raw)
+  return { formatted, raw }
+}
 
 export interface ProjectItem {
   id: string
@@ -57,13 +120,14 @@ export interface ProjectsManagerClientProps {
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string; label: string }> = {
   ativo: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Ativo' },
-  em_producao: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Em Produção' },
+  em_producao: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Em Andamento' },
   pausado: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'Pausado' },
   concluido: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', label: 'Concluído' },
   cancelado: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', label: 'Cancelado' },
 }
 
 export default function ProjectsManagerClient({ initialProjects }: ProjectsManagerClientProps) {
+  const showAlert = useAlert()
   const [projects, setProjects] = useState<ProjectItem[]>(initialProjects)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
@@ -71,19 +135,38 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
 
   // Edit Modal State
   const [editingProject, setEditingProject] = useState<ProjectItem | null>(null)
-  const [editForm, setEditForm] = useState({
-    title: '',
-    client_name: '',
-    client_email: '',
-    client_phone: '',
-    typology: 'Residencial',
-    area_sqm: '',
-    estimated_budget: '',
-    deadline: '',
-    status: 'ativo',
-    description: '',
-    address: '',
-  })
+  const [editTitle, setEditTitle] = useState('')
+  const [editStatus, setEditStatus] = useState('ativo')
+  const [editTypology, setEditTypology] = useState('Residencial Unifamiliar')
+  const [editAreaInput, setEditAreaInput] = useState('')
+  const [editAreaRaw, setEditAreaRaw] = useState<number | null>(null)
+  const [editBudgetInput, setEditBudgetInput] = useState('')
+  const [editBudgetRaw, setEditBudgetRaw] = useState<number | null>(null)
+  const [editClientName, setEditClientName] = useState('')
+  const [editClientEmail, setEditClientEmail] = useState('')
+  const [editEmailValid, setEditEmailValid] = useState<boolean | null>(null)
+  const [editClientPhone, setEditClientPhone] = useState('')
+  const [editStartDate, setEditStartDate] = useState('')
+  const [editDeadline, setEditDeadline] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [copiedCode, setCopiedCode] = useState(false)
+
+  // Endereço e Localização
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false)
+  const [addressSuggestions, setAddressSuggestions] = useState<NominatimPlace[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [addressRoad, setAddressRoad] = useState('')
+  const [addressNumber, setAddressNumber] = useState('')
+  const [addressNeighborhood, setAddressNeighborhood] = useState('')
+  const [addressCity, setAddressCity] = useState('')
+  const [addressState, setAddressState] = useState('')
+  const [addressPostalCode, setAddressPostalCode] = useState('')
+  const [lat, setLat] = useState<number | null>(null)
+  const [lng, setLng] = useState<number | null>(null)
+
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
 
   // Delete Modal State
   const [deletingProject, setDeletingProject] = useState<ProjectItem | null>(null)
@@ -94,6 +177,129 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
   const showToast = (msg: string) => {
     setFeedback(msg)
     setTimeout(() => setFeedback(null), 3000)
+  }
+
+  // Fecha dropdown de busca ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Trava scroll de fundo quando modal de edição ou exclusão estiver aberto
+  useEffect(() => {
+    if (editingProject || deletingProject) {
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [editingProject, deletingProject])
+
+  const handleEmailChange = (val: string) => {
+    setEditClientEmail(val)
+    if (!val) {
+      setEditEmailValid(null)
+    } else {
+      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
+      setEditEmailValid(isValid)
+    }
+  }
+
+  const handlePhoneChange = (val: string) => {
+    setEditClientPhone(formatPhone(val))
+  }
+
+  const handleBudgetChange = (val: string) => {
+    const digits = val.replace(/\D/g, '')
+    if (!digits) {
+      setEditBudgetInput('')
+      setEditBudgetRaw(null)
+      return
+    }
+    const { formatted, raw } = formatCurrencyBRL(digits)
+    setEditBudgetInput(formatted)
+    setEditBudgetRaw(raw)
+  }
+
+  const handleAreaChange = (val: string) => {
+    const rawVal = val.replace(/\s*m²\s*/gi, '').trim()
+    if (!rawVal) {
+      setEditAreaInput('')
+      setEditAreaRaw(null)
+      return
+    }
+    const parsed = parseFloat(rawVal.replace(',', '.'))
+    if (!isNaN(parsed)) {
+      setEditAreaRaw(parsed)
+      setEditAreaInput(`${rawVal} m²`)
+    } else {
+      setEditAreaInput(rawVal)
+    }
+  }
+
+  const handleCopyCode = () => {
+    if (!editingProject?.code) return
+    navigator.clipboard.writeText(editingProject.code)
+    setCopiedCode(true)
+    setTimeout(() => setCopiedCode(false), 2000)
+  }
+
+  const handleLocationChange = (newLat: number, newLng: number) => {
+    setLat(newLat)
+    setLng(newLng)
+  }
+
+  const handleAddressSearchChange = (query: string) => {
+    setSearchQuery(query)
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+
+    if (!query || query.trim().length < 3) {
+      setAddressSuggestions([])
+      setShowSuggestions(false)
+      setIsSearchingAddress(false)
+      return
+    }
+
+    setIsSearchingAddress(true)
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/address/search?q=${encodeURIComponent(query.trim())}`)
+        if (res.ok) {
+          const data = await res.json()
+          setAddressSuggestions(data || [])
+          setShowSuggestions(data && data.length > 0)
+        }
+      } catch (err) {
+        console.error('Erro ao buscar endereço:', err)
+      } finally {
+        setIsSearchingAddress(false)
+      }
+    }, 400)
+  }
+
+  const handleSelectSuggestion = (place: NominatimPlace) => {
+    const road = place.address?.road || place.address?.pedestrian || place.address?.street || ''
+    const number = place.address?.house_number || ''
+    const neighborhood = place.address?.suburb || place.address?.neighbourhood || place.address?.quarter || ''
+    const cityVal = place.address?.city || place.address?.town || place.address?.municipality || place.address?.village || ''
+    const stateVal = place.address?.state || ''
+    const postalCodeVal = place.address?.postcode || ''
+
+    setAddressRoad(road || place.display_name.split(',')[0])
+    setAddressNumber(number)
+    setAddressNeighborhood(neighborhood)
+    setAddressCity(cityVal)
+    setAddressState(stateVal)
+    setAddressPostalCode(postalCodeVal)
+    setLat(parseFloat(place.lat))
+    setLng(parseFloat(place.lon))
+    setShowSuggestions(false)
   }
 
   // Filtered Projects
@@ -116,39 +322,112 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
   // Open Edit Modal
   const handleOpenEdit = (p: ProjectItem) => {
     setEditingProject(p)
-    setEditForm({
-      title: p.title || '',
-      client_name: p.client_name || '',
-      client_email: p.client_email || '',
-      client_phone: p.client_phone || '',
-      typology: p.typology || 'Residencial',
-      area_sqm: p.area_sqm ? p.area_sqm.toString() : '',
-      estimated_budget: p.estimated_budget ? p.estimated_budget.toString() : '',
-      deadline: p.deadline || '',
-      status: p.status || 'ativo',
-      description: p.description || '',
-      address: p.address || '',
-    })
+    setEditTitle(p.title || '')
+    setEditStatus(p.status || 'ativo')
+    setEditTypology(p.typology || 'Residencial Unifamiliar')
+    setEditAreaInput(p.area_sqm ? `${p.area_sqm} m²` : '')
+    setEditAreaRaw(p.area_sqm || null)
+    setEditBudgetInput(p.estimated_budget ? formatCurrencyBRL(p.estimated_budget).formatted : '')
+    setEditBudgetRaw(p.estimated_budget || null)
+    setEditClientName(p.client_name || '')
+    setEditClientEmail(p.client_email || '')
+    setEditEmailValid(p.client_email ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.client_email) : null)
+    setEditClientPhone(p.client_phone ? formatPhone(p.client_phone) : '')
+    setEditStartDate(p.start_date || '')
+    setEditDeadline(p.deadline || '')
+    setEditDescription(p.description || '')
+    setCopiedCode(false)
+    setSearchQuery('')
+    setAddressSuggestions([])
+    setShowSuggestions(false)
+
+    // Parse coordinates and address parts
+    let rawAddress = p.address || ''
+    const coordMatch = rawAddress.match(/\(Coordenadas:\s*([-\d.]+)[,\s]+([-\d.]+)\)/i)
+    if (coordMatch) {
+      setLat(parseFloat(coordMatch[1]))
+      setLng(parseFloat(coordMatch[2]))
+      rawAddress = rawAddress.replace(coordMatch[0], '').trim().replace(/-\s*$/, '').trim()
+    } else {
+      setLat(null)
+      setLng(null)
+    }
+
+    const cepMatch = rawAddress.match(/CEP:\s*([\d-]+)/i)
+    if (cepMatch) {
+      setAddressPostalCode(cepMatch[1])
+      rawAddress = rawAddress.replace(cepMatch[0], '').trim().replace(/-\s*$/, '').trim()
+    } else {
+      setAddressPostalCode('')
+    }
+
+    const bairroMatch = rawAddress.match(/Bairro:\s*([^ -]+)/i)
+    if (bairroMatch) {
+      setAddressNeighborhood(bairroMatch[1])
+      rawAddress = rawAddress.replace(bairroMatch[0], '').trim().replace(/-\s*$/, '').trim()
+    } else {
+      setAddressNeighborhood('')
+    }
+
+    const numMatch = rawAddress.match(/Nº\s*([^\s,]+)/i)
+    if (numMatch) {
+      setAddressNumber(numMatch[1])
+      rawAddress = rawAddress.replace(numMatch[0], '').trim()
+    } else {
+      setAddressNumber('')
+    }
+
+    const cleanRoad = rawAddress.replace(/^,\s*/, '').replace(/,\s*$/, '').replace(/\s*-\s*$/, '').trim()
+    setAddressRoad(cleanRoad)
+    setAddressCity(p.city || '')
+    setAddressState(p.state || '')
   }
 
   // Submit Edit Form
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingProject || !editForm.title.trim() || !editForm.client_name.trim()) return
+    if (!editingProject || !editTitle.trim() || !editClientName.trim()) return
 
     setLoading(true)
     const formData = new FormData()
-    formData.append('title', editForm.title.trim())
-    formData.append('clientName', editForm.client_name.trim())
-    formData.append('clientEmail', editForm.client_email.trim())
-    formData.append('clientPhone', editForm.client_phone.trim())
-    formData.append('typology', editForm.typology)
-    formData.append('areaSqm', editForm.area_sqm)
-    formData.append('estimatedBudget', editForm.estimated_budget)
-    formData.append('deadline', editForm.deadline)
-    formData.append('status', editForm.status)
-    formData.append('description', editForm.description.trim())
-    formData.append('address', editForm.address.trim())
+    formData.append('title', editTitle.trim())
+    formData.append('clientName', editClientName.trim())
+    formData.append('clientEmail', editClientEmail.trim())
+    formData.append('clientPhone', editClientPhone.trim())
+    formData.append('typology', editTypology)
+    if (editAreaRaw !== null) formData.append('areaSqm', editAreaRaw.toString())
+    if (editBudgetRaw !== null) formData.append('estimatedBudget', editBudgetRaw.toString())
+    formData.append('startDate', editStartDate)
+    formData.append('deadline', editDeadline)
+    formData.append('status', editStatus)
+    formData.append('description', editDescription.trim())
+
+    // Agrega detalhes completos de endereço e coordenadas
+    const addressMain = [
+      addressRoad.trim(),
+      addressNumber.trim() ? `Nº ${addressNumber.trim()}` : '',
+    ]
+      .filter(Boolean)
+      .join(', ')
+
+    const fullAddress = [
+      addressMain,
+      addressNeighborhood.trim() ? `Bairro: ${addressNeighborhood.trim()}` : '',
+      addressPostalCode.trim() ? `CEP: ${addressPostalCode.trim()}` : '',
+      lat && lng ? `(Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)})` : '',
+    ]
+      .filter(Boolean)
+      .join(' - ')
+
+    if (fullAddress) {
+      formData.append('address', fullAddress)
+    }
+    if (addressCity.trim()) {
+      formData.append('city', addressCity.trim())
+    }
+    if (addressState.trim()) {
+      formData.append('state', addressState.trim())
+    }
 
     const res = await updateProjectAction(editingProject.id, formData)
     setLoading(false)
@@ -159,17 +438,20 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
           p.id === editingProject.id
             ? {
                 ...p,
-                title: editForm.title.trim(),
-                client_name: editForm.client_name.trim(),
-                client_email: editForm.client_email.trim() || null,
-                client_phone: editForm.client_phone.trim() || null,
-                typology: editForm.typology,
-                area_sqm: editForm.area_sqm ? parseFloat(editForm.area_sqm) : null,
-                estimated_budget: editForm.estimated_budget ? parseFloat(editForm.estimated_budget) : null,
-                deadline: editForm.deadline || null,
-                status: editForm.status,
-                description: editForm.description.trim() || null,
-                address: editForm.address.trim() || null,
+                title: editTitle.trim(),
+                client_name: editClientName.trim(),
+                client_email: editClientEmail.trim() || null,
+                client_phone: editClientPhone.trim() || null,
+                typology: editTypology,
+                area_sqm: editAreaRaw,
+                estimated_budget: editBudgetRaw,
+                start_date: editStartDate || null,
+                deadline: editDeadline || null,
+                status: editStatus,
+                description: editDescription.trim() || null,
+                address: fullAddress || null,
+                city: addressCity.trim() || null,
+                state: addressState.trim() || null,
               }
             : p
         )
@@ -177,7 +459,11 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
       setEditingProject(null)
       showToast('Projeto atualizado com sucesso!')
     } else {
-      alert(res.error || 'Falha ao atualizar projeto.')
+      await showAlert({
+        title: 'Erro ao atualizar projeto',
+        message: res.error || 'Falha ao atualizar projeto.',
+        variant: 'error',
+      })
     }
   }
 
@@ -190,7 +476,11 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
     setLoading(false)
 
     if (res?.error) {
-      alert(res.error)
+      await showAlert({
+        title: 'Erro ao excluir projeto',
+        message: res.error || 'Não foi possível excluir o projeto.',
+        variant: 'error',
+      })
     } else {
       setProjects((prev) => prev.filter((p) => p.id !== deletingProject.id))
       setDeletingProject(null)
@@ -260,7 +550,7 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
             >
               <option value="todos">Todos os Status</option>
               <option value="ativo">Ativos</option>
-              <option value="em_producao">Em Produção</option>
+              <option value="em_producao">Em Andamento</option>
               <option value="pausado">Pausados</option>
               <option value="concluido">Concluídos</option>
               <option value="cancelado">Cancelados</option>
@@ -270,18 +560,16 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'grid' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
               title="Visualização em Cards"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'table' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
-              }`}
+              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
               title="Visualização em Lista / Tabela"
             >
               <List className="w-4 h-4" />
@@ -505,164 +793,437 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
 
       {/* MODAL: EDITAR PROJETO */}
       {editingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setEditingProject(null)} />
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl z-10 space-y-4 border border-slate-200 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div>
-                <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                  {editingProject.code}
-                </span>
-                <h3 className="text-base font-bold text-slate-900 mt-1">Editar Dados do Projeto</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto antialiased overscroll-contain">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" onClick={() => setEditingProject(null)} />
+
+          <div className="relative bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl z-10 space-y-6 border border-slate-200 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto overscroll-contain">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-blue-700 bg-blue-50 border border-blue-200/80 px-2.5 py-0.5 rounded-lg flex items-center gap-1.5">
+                    <Lock className="w-3 h-3 text-blue-500" />
+                    {editingProject.code}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    title="Copiar código do projeto"
+                    className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
+                  >
+                    {copiedCode ? (
+                      <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" /> Copiado!
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <Copy className="w-3.5 h-3.5" /> Copiar
+                      </span>
+                    )}
+                  </button>
+                </div>
+                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">Editar Dados do Projeto</h3>
+                <p className="text-xs text-slate-500">Atualize as informações cadastrais, contato do cliente e localização da obra.</p>
               </div>
+
               <button
+                type="button"
                 onClick={() => setEditingProject(null)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Título do Projeto *</label>
-                <input
-                  type="text"
-                  required
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
-                />
+            <form onSubmit={handleSaveEdit} className="space-y-6">
+              {/* Section 1: Identificação */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                  <FolderGit2 className="w-4 h-4 text-blue-600" /> Identificação do Projeto
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Título do Projeto *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder="Ex: Residência Alphaville ou Escritório Advocacia"
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Status do Projeto
+                    </label>
+                    <select
+                      value={editStatus}
+                      onChange={(e) => setEditStatus(e.target.value)}
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                    >
+                      <option value="ativo">🟢 Ativo</option>
+                      <option value="em_producao">⚡ Em Andamento</option>
+                      <option value="pausado">🟡 Pausado</option>
+                      <option value="concluido">✅ Concluído</option>
+                      <option value="cancelado">🔴 Cancelado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Tipologia
+                    </label>
+                    <select
+                      value={editTypology}
+                      onChange={(e) => setEditTypology(e.target.value)}
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                    >
+                      <option value="Residencial Unifamiliar">Residencial Unifamiliar</option>
+                      <option value="Residencial Multifamiliar">Residencial Multifamiliar</option>
+                      <option value="Interiores">Interiores / Reforma</option>
+                      <option value="Comercial">Comercial / Varejo</option>
+                      <option value="Corporativo">Corporativo / Escritórios</option>
+                      <option value="Institucional">Institucional</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Área do Projeto (m²)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <Compass className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={editAreaInput}
+                        onChange={(e) => handleAreaChange(e.target.value)}
+                        placeholder="Ex: 350 m²"
+                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Orçamento Estimado (R$)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <DollarSign className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={editBudgetInput}
+                        onChange={(e) => handleBudgetChange(e.target.value)}
+                        placeholder="R$ 850.000,00"
+                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Section 2: Dados do Cliente */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                  <User className="w-4 h-4 text-blue-600" /> Dados do Cliente (Portal de Aprovação)
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Nome do Cliente *
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <User className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={editClientName}
+                        onChange={(e) => setEditClientName(e.target.value)}
+                        placeholder="Carlos Eduardo Mendes"
+                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        E-mail do Cliente
+                      </label>
+                      {editEmailValid === true && (
+                        <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
+                          <Check className="w-3 h-3" /> Válido
+                        </span>
+                      )}
+                      {editEmailValid === false && (
+                        <span className="text-[10px] font-bold text-red-500">
+                          Formato inválido
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <Mail className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="email"
+                        value={editClientEmail}
+                        onChange={(e) => handleEmailChange(e.target.value)}
+                        placeholder="carlos@email.com"
+                        className={`block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 ${
+                          editEmailValid === false
+                            ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500'
+                            : 'border-slate-200 focus:ring-blue-500/20 focus:border-blue-600'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Telefone / WhatsApp
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <Phone className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        value={editClientPhone}
+                        onChange={(e) => handlePhoneChange(e.target.value)}
+                        placeholder="(11) 98765-4321"
+                        maxLength={15}
+                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Cronograma & Localização */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                  <Calendar className="w-4 h-4 text-blue-600" /> Cronograma & Localização
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Data de Início
+                    </label>
+                    <input
+                      type="date"
+                      value={editStartDate}
+                      onChange={(e) => setEditStartDate(e.target.value)}
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Prazo Final Estimado
+                    </label>
+                    <input
+                      type="date"
+                      value={editDeadline}
+                      onChange={(e) => setEditDeadline(e.target.value)}
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                {/* Busca Global de Endereço */}
+                <div className="space-y-3">
+                  <div ref={searchContainerRef} className="relative">
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Busca de Endereço Global (API Gratuita OpenStreetMap)
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        {isSearchingAddress ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                        ) : (
+                          <Search className="w-3.5 h-3.5" />
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => handleAddressSearchChange(e.target.value)}
+                        onFocus={() => {
+                          if (addressSuggestions.length > 0) setShowSuggestions(true)
+                        }}
+                        placeholder="Digite rua, avenida, condomínio ou cidade para autocompletar..."
+                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+
+                    {showSuggestions && addressSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-30 max-h-60 overflow-y-auto">
+                        {addressSuggestions.map((place) => (
+                          <button
+                            key={place.place_id}
+                            type="button"
+                            onClick={() => handleSelectSuggestion(place)}
+                            className="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-start gap-2.5 transition-colors cursor-pointer"
+                          >
+                            <MapPin className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                            <div className="truncate">
+                              <span className="text-xs font-semibold text-slate-800 block truncate">
+                                {place.display_name}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block">
+                                Lat: {parseFloat(place.lat).toFixed(4)}, Long: {parseFloat(place.lon).toFixed(4)}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Campos de Logradouro e Número separados */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="sm:col-span-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Endereço / Logradouro
+                      </label>
+                      <input
+                        type="text"
+                        value={addressRoad}
+                        onChange={(e) => setAddressRoad(e.target.value)}
+                        placeholder="Av. das Palmeiras, Rua Oscar Freire"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Número / Lote
+                      </label>
+                      <input
+                        type="text"
+                        value={addressNumber}
+                        onChange={(e) => setAddressNumber(e.target.value)}
+                        placeholder="1000 ou Lote 42"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Campos de Bairro, Cidade, Estado e CEP separados */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Bairro
+                      </label>
+                      <input
+                        type="text"
+                        value={addressNeighborhood}
+                        onChange={(e) => setAddressNeighborhood(e.target.value)}
+                        placeholder="Bela Vista ou Jardins"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Cidade
+                      </label>
+                      <input
+                        type="text"
+                        value={addressCity}
+                        onChange={(e) => setAddressCity(e.target.value)}
+                        placeholder="São Paulo"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Estado / UF
+                      </label>
+                      <input
+                        type="text"
+                        value={addressState}
+                        onChange={(e) => setAddressState(e.target.value)}
+                        placeholder="SP"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        CEP
+                      </label>
+                      <input
+                        type="text"
+                        value={addressPostalCode}
+                        onChange={(e) => setAddressPostalCode(e.target.value)}
+                        placeholder="01310-100"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mapa Interativo com Pin */}
+                  <div className="pt-2">
+                    <ProjectLocationMap
+                      lat={lat}
+                      lng={lng}
+                      addressTitle={
+                        [addressRoad, addressNumber ? `Nº ${addressNumber}` : '', addressNeighborhood]
+                          .filter(Boolean)
+                          .join(', ') || 'Local da Obra'
+                      }
+                      onLocationChange={handleLocationChange}
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Nome do Cliente *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editForm.client_name}
-                    onChange={(e) => setEditForm({ ...editForm, client_name: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Descrição ou Observações do Projeto
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    placeholder="Detalhes adicionais sobre o terreno, expectativas de programa ou condicionantes..."
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 resize-none"
                   />
                 </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Status do Projeto</label>
-                  <select
-                    value={editForm.status}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500 bg-white"
-                  >
-                    <option value="ativo">Ativo</option>
-                    <option value="em_producao">Em Produção</option>
-                    <option value="pausado">Pausado</option>
-                    <option value="concluido">Concluído</option>
-                    <option value="cancelado">Cancelado</option>
-                  </select>
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">E-mail do Cliente</label>
-                  <input
-                    type="email"
-                    value={editForm.client_email}
-                    onChange={(e) => setEditForm({ ...editForm, client_email: e.target.value })}
-                    placeholder="cliente@exemplo.com"
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Telefone / WhatsApp</label>
-                  <input
-                    type="text"
-                    value={editForm.client_phone}
-                    onChange={(e) => setEditForm({ ...editForm, client_phone: e.target.value })}
-                    placeholder="(11) 99999-9999"
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Tipologia</label>
-                  <select
-                    value={editForm.typology}
-                    onChange={(e) => setEditForm({ ...editForm, typology: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500 bg-white"
-                  >
-                    <option value="Residencial">Residencial</option>
-                    <option value="Comercial">Comercial</option>
-                    <option value="Interiores">Interiores</option>
-                    <option value="Corporativo">Corporativo</option>
-                    <option value="Institucional">Institucional</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Área (m²)</label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={editForm.area_sqm}
-                    onChange={(e) => setEditForm({ ...editForm, area_sqm: e.target.value })}
-                    placeholder="Ex: 250"
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Prazo Final</label>
-                  <input
-                    type="date"
-                    value={editForm.deadline}
-                    onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })}
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Endereço da Obra</label>
-                <input
-                  type="text"
-                  value={editForm.address}
-                  onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                  placeholder="Rua, número, bairro, cidade..."
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Observações / Escopo</label>
-                <textarea
-                  rows={2}
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  placeholder="Anotações gerais..."
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500 resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setEditingProject(null)}
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !editForm.title.trim() || !editForm.client_name.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                  disabled={loading || !editTitle.trim() || !editClientName.trim()}
+                  className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-50 inline-flex items-center gap-2 shadow-xs hover:shadow-md transition-all cursor-pointer"
                 >
-                  {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {loading ? 'Salvando...' : 'Salvar Alterações'}
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {loading ? 'Salvando Alterações...' : 'Salvar Alterações'}
                 </button>
               </div>
             </form>

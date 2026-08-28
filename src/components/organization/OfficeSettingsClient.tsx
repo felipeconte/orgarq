@@ -68,12 +68,16 @@ const ROLE_LABELS: Record<string, { label: string; bg: string; text: string; bor
   intern: { label: 'Estagiário / Assistente', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
 }
 
+import { useConfirm, useAlert } from '@/components/ui/ConfirmDialog'
+
 export default function OfficeSettingsClient({
   organization: initialOrg,
   members: initialMembers,
   currentUserId,
   currentUserEmail,
 }: OfficeSettingsClientProps) {
+  const confirm = useConfirm()
+  const showAlert = useAlert()
   const [org, setOrg] = useState<OrganizationData>(initialOrg)
   const [members, setMembers] = useState<MemberData[]>(initialMembers)
 
@@ -110,12 +114,16 @@ export default function OfficeSettingsClient({
   }
 
   // Handle Image File Select
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecione um arquivo de imagem válido (PNG, JPG, SVG, WebP).')
+      await showAlert({
+        title: 'Formato inválido',
+        message: 'Por favor, selecione um arquivo de imagem válido (PNG, JPG, SVG, WebP).',
+        variant: 'warning',
+      })
       return
     }
 
@@ -159,7 +167,11 @@ export default function OfficeSettingsClient({
       setIsEditing(false)
       showToast('Dados do escritório atualizados com sucesso!')
     } else {
-      alert(res.error || 'Erro ao atualizar dados do escritório.')
+      await showAlert({
+        title: 'Erro ao atualizar dados',
+        message: res.error || 'Erro ao atualizar dados do escritório.',
+        variant: 'error',
+      })
     }
   }
 
@@ -209,25 +221,45 @@ export default function OfficeSettingsClient({
       )
       showToast('Função do membro atualizada!')
     } else {
-      alert(res.error || 'Erro ao atualizar função.')
+      await showAlert({
+        title: 'Erro ao atualizar função',
+        message: res.error || 'Erro ao atualizar função.',
+        variant: 'error',
+      })
     }
   }
 
   // REMOVE MEMBER
   const handleRemoveMember = async (memberId: string, userId: string, memberEmail?: string) => {
     if (userId === org.owner_id) {
-      alert('Não é possível remover o proprietário principal do escritório.')
+      await showAlert({
+        title: 'Ação não permitida',
+        message: 'Não é possível remover o proprietário principal do escritório.',
+        variant: 'warning',
+      })
       return
     }
 
     const displayName = memberEmail || 'este membro'
-    if (confirm(`Tem certeza que deseja remover ${displayName} da equipe do escritório?`)) {
+    const confirmed = await confirm({
+      title: 'Remover Membro',
+      message: `Tem certeza que deseja remover ${displayName} da equipe do escritório?`,
+      confirmText: 'Remover Membro',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       const res = await removeMemberAction(org.id, memberId)
       if (res.success) {
         setMembers((prev) => prev.filter((m) => m.id !== memberId))
         showToast('Membro removido do escritório.')
       } else {
-        alert(res.error || 'Erro ao remover membro.')
+        await showAlert({
+          title: 'Erro ao remover membro',
+          message: res.error || 'Erro ao remover membro.',
+          variant: 'error',
+        })
       }
     }
   }

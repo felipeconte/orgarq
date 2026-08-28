@@ -176,9 +176,12 @@ export async function updateProjectAction(projectId: string, formData: FormData)
   const areaSqmStr = formData.get('areaSqm') as string
   const estimatedBudgetStr = formData.get('estimatedBudget') as string
   const address = sanitizeText(formData.get('address') as string)
+  const city = sanitizeText(formData.get('city') as string)
+  const state = sanitizeText(formData.get('state') as string)
+  const startDate = formData.get('startDate') as string
   const deadline = formData.get('deadline') as string
   const description = sanitizeText(formData.get('description') as string)
-  const status = formData.get('status') as 'ativo' | 'pausado' | 'concluido' | 'cancelado'
+  const status = formData.get('status') as 'ativo' | 'em_producao' | 'pausado' | 'concluido' | 'cancelado'
 
   const updatePayload: ProjectUpdate = {}
   if (title) updatePayload.title = title
@@ -186,12 +189,15 @@ export async function updateProjectAction(projectId: string, formData: FormData)
   if (clientEmail !== undefined) updatePayload.client_email = clientEmail || null
   if (clientPhone !== undefined) updatePayload.client_phone = clientPhone || null
   if (typology) updatePayload.typology = typology
-  if (areaSqmStr !== undefined) updatePayload.area_sqm = areaSqmStr ? parseFloat(areaSqmStr) : null
-  if (estimatedBudgetStr !== undefined) updatePayload.estimated_budget = estimatedBudgetStr ? parseFloat(estimatedBudgetStr) : null
+  if (areaSqmStr !== undefined) updatePayload.area_sqm = parseCleanNumber(areaSqmStr)
+  if (estimatedBudgetStr !== undefined) updatePayload.estimated_budget = parseCleanNumber(estimatedBudgetStr)
   if (address !== undefined) updatePayload.address = address || null
+  if (city !== undefined) updatePayload.city = city || null
+  if (state !== undefined) updatePayload.state = state || null
+  if (startDate !== undefined) updatePayload.start_date = startDate || null
   if (deadline !== undefined) updatePayload.deadline = deadline || null
   if (description !== undefined) updatePayload.description = description || null
-  if (status) updatePayload.status = status
+  if (status) updatePayload.status = status as any
 
   const { error } = await supabase
     .from('projects')
@@ -204,6 +210,7 @@ export async function updateProjectAction(projectId: string, formData: FormData)
 
   revalidatePath(`/app/projetos/${projectId}`)
   revalidatePath('/app/projetos')
+  revalidatePath('/app')
   return { success: true }
 }
 

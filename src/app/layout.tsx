@@ -57,6 +57,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className="h-full antialiased">
@@ -68,7 +70,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col bg-[#F8FAFC] text-slate-800 selection:bg-blue-100 selection:text-blue-700">
-        {children}
+        <ConfirmProvider>
+          {children}
+        </ConfirmProvider>
       </body>
     </html>
   );

@@ -167,11 +167,10 @@ export default function PortalClient({
                   <button
                     key={st.id}
                     onClick={() => setSelectedStage(st)}
-                    className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between border ${
-                      isSelected
+                    className={`w-full text-left p-3 rounded-xl transition-all flex items-center justify-between border ${isSelected
                         ? 'bg-blue-50/70 border-blue-300 shadow-2xs'
                         : 'bg-white hover:bg-slate-50 border-slate-100'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="font-mono text-xs font-bold text-slate-400 w-5">
@@ -253,7 +252,7 @@ export default function PortalClient({
                       Sua Aprovação é Necessária
                     </div>
                     <p className="text-xs text-amber-800 leading-relaxed">
-                      O arquiteto finalizou a produção desta fase e enviou para sua validação. Você pode aprovar ou solicitar ajustes pontuais.
+                      Etapa concluída. Aguardando sua aprovação para prosseguir.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -377,11 +376,10 @@ export default function PortalClient({
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`py-2 px-5 rounded-xl text-xs font-bold text-white transition-all shadow-xs flex items-center gap-1.5 ${
-                    modalAction === 'approved'
+                  className={`py-2 px-5 rounded-xl text-xs font-bold text-white transition-all shadow-xs flex items-center gap-1.5 ${modalAction === 'approved'
                       ? 'bg-emerald-600 hover:bg-emerald-700'
                       : 'bg-amber-600 hover:bg-amber-700'
-                  }`}
+                    }`}
                 >
                   {loading ? (
                     <>

@@ -47,7 +47,7 @@ O **Orgarq** é uma plataforma SaaS B2B desenvolvida especialmente para escritó
 ### 3.3. Cronograma Multivisualização (Lista, Kanban & Gantt) — [MVP]
 - **Seletor de Visualização Dinâmico (Tabs Interativas)**:
   - 📋 **Visão em Lista**: Tabela minimalista com status de aprovação, prazos, metragens e ações rápidas.
-  - 🗂️ **Visão em Kanban**: Cards arredondados divididos por status (`A Iniciar`, `Em Produção`, `Aguardando Aprovação do Cliente`, `Aprovado`).
+  - 🗂️ **Visão em Kanban**: Cards arredondados divididos por status (`A Iniciar`, `Em Andamento`, `Aguardando Aprovação do Cliente`, `Aprovado`).
   - 📊 **Visão em Gantt / Timeline**: Barra de tempo horizontal com marcos de entrega, dependências entre etapas e datas limite.
 
 ### 3.4. Portal do Cliente com Auditoria de Aprovação — [MVP]
@@ -99,7 +99,7 @@ Abaixo está o mapeamento detalhado de todas as telas planejadas para o Orgarq, 
 | **`/app`** | **Dashboard Executivo** | Painel geral com indicadores-chave: total de projetos ativos, prazos críticos da semana, etapas aguardando validação de clientes e atalhos rápidos de criação. |
 | **`/app/projetos`** | **Listagem de Projetos** | Lista e grid de projetos com filtros dinâmicos por etapa atual (Contrato até Finalizado), busca por cliente, ordenação por prazo e badges visuais de status. |
 | **`/app/projetos/novo`** | **Wizard de Novo Projeto** | Formulário rápido em etapas (Nome, Código ARQ, Cliente, Metragem m², Endereço, Prazo e seleção do template de fases). |
-| **`/app/projetos/[id]`** | **Hub do Projeto (Fases & Produção)** | **Tela central do sistema.** Contém os dados do projeto, barra de progresso, botão para copiar/gerar Link do Cliente e o **Seletor de 3 Visualizações**: <br>• 📋 **Lista**: Visão detalhada de cada uma das 10 etapas.<br>• 🗂️ **Kanban**: Cards ágeis divididos por status operacional.<br>• 📊 **Gantt**: Linha do tempo com barras proporcionais de início e fim. |
+| **`/app/projetos/[id]`** | **Hub do Projeto (Fases)** | **Tela central do sistema.** Contém os dados do projeto, barra de progresso, botão para copiar/gerar Link do Cliente e o **Seletor de 3 Visualizações**: <br>• 📋 **Lista**: Visão detalhada de cada uma das 10 etapas.<br>• 🗂️ **Kanban**: Cards ágeis divididos por status operacional.<br>• 📊 **Gantt**: Linha do tempo com barras proporcionais de início e fim. |
 | **`/app/projetos/[id]/briefing`** | **Ficha de Briefing** | Programa de necessidades do cliente, estilo arquitetônico desejado, orçamento previsto e notas de reunião. |
 | **`/app/projetos/[id]/auditoria`** | **Histórico de Aprovações** | Linha do tempo de auditoria com todas as interações do cliente (aprovações com IP, data/hora UTC, feedback e reaberturas feitas pelo arquiteto). |
 | **`/app/configuracoes/etapas`** | **Gestor de Templates de Etapas** | Interface drag & drop para customizar as 10 etapas padrão do escritório (adicionar novas fases, renomear, reordenar e definir prazos médios sugeridos). |

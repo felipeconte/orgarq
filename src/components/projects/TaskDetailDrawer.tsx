@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   X,
   CheckCircle2,
@@ -28,7 +28,8 @@ import {
   Link2,
   Download,
   AlertTriangle,
-  Pencil
+  Pencil,
+  Flag
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -42,14 +43,22 @@ import {
   deleteStageCommentAction,
   addStageAttachmentAction,
   uploadStageAttachmentFileAction,
+  editStageAttachmentAction,
   deleteStageAttachmentAction,
   deleteStageAction,
-  requestClientApprovalAction,
-  unlockStageForEditAction,
   ChecklistItem,
   StageComment,
   StageAttachment
 } from '@/lib/actions/stages'
+import { formatDateBR, formatDateTimeBR } from '@/lib/date-utils'
+import { useConfirm, useAlert, usePromptSaveOrDiscard } from '@/components/ui/ConfirmDialog'
+import {
+  WorkflowStage,
+  DEFAULT_WORKFLOW_STAGES,
+  getStageConfig,
+  canMoveToFinalStage,
+  getFinalStage
+} from '@/lib/workflow-stages'
 
 export interface MemberOption {
   id: string
@@ -65,7 +74,7 @@ export interface TaskDetailData {
   name: string
   description: string | null
   stage_order: number
-  status: 'a_iniciar' | 'em_producao' | 'em_aprovacao' | 'concluido'
+  status: string
   progress_percent: number
   assigned_to: string | null
   start_date: string | null
@@ -80,22 +89,49 @@ export interface TaskDetailData {
 export interface TaskDetailDrawerProps {
   stage: TaskDetailData | null
   projectId: string
-  members: MemberOption[]
+  portalToken?: string
+  members?: MemberOption[]
+  workflowStages?: WorkflowStage[]
   onClose: () => void
-  onUpdateStage: (updatedStage: TaskDetailData) => void
+  onUpdateStage: (updated: TaskDetailData) => void
   onDeleteStage?: (stageId: string) => void
 }
 
 export default function TaskDetailDrawer({
   stage,
   projectId,
-  members,
+  portalToken,
+  members = [],
+  workflowStages = [],
   onClose,
   onUpdateStage,
   onDeleteStage,
 }: TaskDetailDrawerProps) {
+  const confirm = useConfirm()
+  const showAlert = useAlert()
+  const promptSaveOrDiscard = usePromptSaveOrDiscard()
+
   const [deletingStage, setDeletingStage] = useState(false)
   const [formData, setFormData] = useState<{
+    name: string
+    description: string
+    assigned_to: string
+    start_date: string
+    due_date: string
+    status: TaskDetailData['status']
+    is_client_approval_required: boolean
+  }>({
+    name: '',
+    description: '',
+    assigned_to: '',
+    start_date: '',
+    due_date: '',
+    status: 'a_iniciar',
+    is_client_approval_required: true,
+  })
+
+  // Baseline to track unsaved changes in general fields
+  const [initialFormData, setInitialFormData] = useState<{
     name: string
     description: string
     assigned_to: string
@@ -141,6 +177,11 @@ export default function TaskDetailDrawer({
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
+  // Edit Attachment Name State
+  const [editingAttachmentId, setEditingAttachmentId] = useState<string | null>(null)
+  const [editingAttachmentName, setEditingAttachmentName] = useState('')
+  const [savingAttachmentId, setSavingAttachmentId] = useState<string | null>(null)
+
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
@@ -148,7 +189,7 @@ export default function TaskDetailDrawer({
   // Sincroniza estado quando o stage selecionado mudar
   useEffect(() => {
     if (stage) {
-      setFormData({
+      const initial = {
         name: stage.name || '',
         description: stage.description || '',
         assigned_to: stage.assigned_to || '',
@@ -156,7 +197,9 @@ export default function TaskDetailDrawer({
         due_date: stage.due_date || '',
         status: stage.status,
         is_client_approval_required: stage.is_client_approval_required ?? true,
-      })
+      }
+      setFormData(initial)
+      setInitialFormData(initial)
       setChecklist(Array.isArray(stage.checklist) ? stage.checklist : [])
       setComments(Array.isArray(stage.comments) ? stage.comments : [])
       setAttachments(Array.isArray(stage.attachments) ? stage.attachments : [])
@@ -167,13 +210,47 @@ export default function TaskDetailDrawer({
       setAttachmentError(null)
       setEditingChecklistItemId(null)
       setEditingCommentId(null)
+      setEditingAttachmentId(null)
+      setEditingAttachmentName('')
     }
   }, [stage])
 
-  if (!stage) return null
+  // Trava a rolagem da página de fundo (background) enquanto a gaveta de tarefa estiver aberta
+  useEffect(() => {
+    if (stage) {
+      const originalOverflow = document.body.style.overflow
+      const originalPaddingRight = document.body.style.paddingRight
 
-  // Save Full Details
-  const handleSaveDetails = async () => {
+      // Previne shift de layout se houver scrollbar visível
+      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth
+      if (scrollBarWidth > 0) {
+        document.body.style.paddingRight = `${scrollBarWidth}px`
+      }
+      document.body.style.overflow = 'hidden'
+
+      return () => {
+        document.body.style.overflow = originalOverflow
+        document.body.style.paddingRight = originalPaddingRight
+      }
+    }
+  }, [stage])
+
+  // Identifica se há alterações não salvas nos campos principais da tarefa
+  const isDirty = useMemo(() => {
+    return (
+      (formData.name ?? '') !== (initialFormData.name ?? '') ||
+      (formData.description ?? '') !== (initialFormData.description ?? '') ||
+      (formData.assigned_to ?? '') !== (initialFormData.assigned_to ?? '') ||
+      (formData.start_date ?? '') !== (initialFormData.start_date ?? '') ||
+      (formData.due_date ?? '') !== (initialFormData.due_date ?? '') ||
+      formData.status !== initialFormData.status ||
+      Boolean(formData.is_client_approval_required) !== Boolean(initialFormData.is_client_approval_required)
+    )
+  }, [formData, initialFormData])
+
+  // Save Full Details (Campos Principais)
+  const handleSaveDetails = useCallback(async (): Promise<boolean> => {
+    if (!stage) return false
     setSaving(true)
     const res = await updateStageFullDetailsAction(projectId, stage.id, {
       name: formData.name,
@@ -189,6 +266,7 @@ export default function TaskDetailDrawer({
     if (res.success) {
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 2000)
+      setInitialFormData({ ...formData })
       onUpdateStage({
         ...stage,
         ...formData,
@@ -196,15 +274,89 @@ export default function TaskDetailDrawer({
         comments,
         attachments,
       })
+      return true
     } else {
-      alert(res.error || 'Erro ao salvar alterações da tarefa')
+      await showAlert({
+        title: 'Erro ao salvar',
+        message: res.error || 'Erro ao salvar alterações da tarefa.',
+        variant: 'error',
+      })
+      return false
     }
+  }, [projectId, stage, formData, checklist, comments, attachments, onUpdateStage, showAlert])
+
+  // Intercepta o fechamento se houver alterações não salvas
+  const handleAttemptClose = useCallback(async () => {
+    if (isDirty) {
+      const choice = await promptSaveOrDiscard({
+        title: 'Salvar alterações da tarefa?',
+        message: 'Você realizou alterações nos campos desta tarefa que ainda não foram salvas.',
+        description: 'Deseja salvar as alterações antes de fechar?',
+        saveText: 'Salvar e Sair',
+        discardText: 'Sair sem Salvar',
+        cancelText: 'Continuar Editando',
+      })
+
+      if (choice === 'save') {
+        const saved = await handleSaveDetails()
+        if (saved) {
+          onClose()
+        }
+      } else if (choice === 'discard') {
+        onClose()
+      }
+      // Se 'cancel', não faz nada e permanece na edição da tarefa
+    } else {
+      onClose()
+    }
+  }, [isDirty, promptSaveOrDiscard, handleSaveDetails, onClose])
+
+  // Listener para fechar com tecla Escape respeitando alterações não salvas
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleAttemptClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleAttemptClose])
+
+  if (!stage) return null
+
+  const currentStageConfig = (workflowStages || DEFAULT_WORKFLOW_STAGES).find((s) => s.id === formData.status)
+  const isTaskFinalized = Boolean(currentStageConfig?.is_final_stage)
+
+  const handleStatusSelectChange = async (newStatus: string) => {
+    const targetCfg = (workflowStages || DEFAULT_WORKFLOW_STAGES).find((s) => s.id === newStatus)
+    if (targetCfg?.is_final_stage && newStatus !== stage.status) {
+      const check = canMoveToFinalStage({ ...stage, ...formData, checklist }, workflowStages)
+      if (!check.allowed) {
+        await showAlert({
+          title: 'Etapa Conclusiva Bloqueada',
+          message: 'Esta tarefa não pode ser colocada na etapa finalizada:',
+          description: check.reasons.join('\n'),
+          variant: 'warning',
+        })
+        return
+      }
+    }
+    setFormData({ ...formData, status: newStatus })
   }
 
   // Delete Stage Action
   const handleDeleteCurrentStage = async () => {
     if (!stage) return
-    if (confirm(`Tem certeza que deseja excluir permanentemente a tarefa "${stage.name}"?`)) {
+    const confirmed = await confirm({
+      title: 'Excluir Tarefa',
+      message: `Tem certeza que deseja excluir permanentemente a tarefa "${stage.name}"?`,
+      description: 'Esta ação não poderá ser desfeita e removerá todos os checklists, comentários e anexos vinculados.',
+      confirmText: 'Excluir Tarefa',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
       setDeletingStage(true)
       const res = await deleteStageAction(projectId, stage.id)
       setDeletingStage(false)
@@ -214,7 +366,11 @@ export default function TaskDetailDrawer({
         }
         onClose()
       } else {
-        alert(res.error || 'Erro ao excluir tarefa.')
+        await showAlert({
+          title: 'Erro ao excluir',
+          message: res.error || 'Erro ao excluir tarefa.',
+          variant: 'error',
+        })
       }
     }
   }
@@ -225,6 +381,13 @@ export default function TaskDetailDrawer({
       item.id === itemId ? { ...item, completed: !currentCompleted } : item
     )
     setChecklist(updated)
+    onUpdateStage({
+      ...stage,
+      ...formData,
+      checklist: updated,
+      comments,
+      attachments,
+    })
     await toggleStageChecklistItemAction(projectId, stage.id, itemId, !currentCompleted)
   }
 
@@ -240,7 +403,15 @@ export default function TaskDetailDrawer({
       newChecklistAssignedTo || null
     )
     if (res.success && res.item) {
-      setChecklist([...checklist, res.item])
+      const updated = [...checklist, res.item]
+      setChecklist(updated)
+      onUpdateStage({
+        ...stage,
+        ...formData,
+        checklist: updated,
+        comments,
+        attachments,
+      })
       setNewChecklistText('')
       setNewChecklistDueDate('')
       setNewChecklistAssignedTo('')
@@ -276,18 +447,38 @@ export default function TaskDetailDrawer({
     setSavingChecklistItemId(null)
 
     if (res.success && res.item) {
-      setChecklist(checklist.map((item) => (item.id === itemId ? res.item! : item)))
+      const updated = checklist.map((item) => (item.id === itemId ? res.item! : item))
+      setChecklist(updated)
+      onUpdateStage({
+        ...stage,
+        ...formData,
+        checklist: updated,
+        comments,
+        attachments,
+      })
       setEditingChecklistItemId(null)
       setEditingChecklistText('')
       setEditingChecklistDueDate('')
       setEditingChecklistAssignedTo('')
     } else {
-      alert(res.error || 'Erro ao salvar alterações no item do checklist.')
+      await showAlert({
+        title: 'Erro ao editar checklist',
+        message: res.error || 'Erro ao salvar alterações no item do checklist.',
+        variant: 'error',
+      })
     }
   }
 
   const handleDeleteChecklistItem = async (itemId: string) => {
-    setChecklist(checklist.filter((item) => item.id !== itemId))
+    const updated = checklist.filter((item) => item.id !== itemId)
+    setChecklist(updated)
+    onUpdateStage({
+      ...stage,
+      ...formData,
+      checklist: updated,
+      comments,
+      attachments,
+    })
     await deleteStageChecklistItemAction(projectId, stage.id, itemId)
   }
 
@@ -300,24 +491,25 @@ export default function TaskDetailDrawer({
 
   // Formata data prevista (YYYY-MM-DD -> DD/MM/AAAA)
   const formatDueDate = (dateStr?: string | null) => {
-    if (!dateStr) return null
-    try {
-      const [year, month, day] = dateStr.split('-')
-      if (year && month && day) return `${day}/${month}/${year}`
-      return new Date(dateStr).toLocaleDateString('pt-BR')
-    } catch {
-      return dateStr
-    }
+    return formatDateBR(dateStr) || null
   }
 
-  // Comments Actions
+  // Comments Actions (Persistência Imediata)
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCommentText.trim()) return
 
     const res = await addStageCommentAction(projectId, stage.id, newCommentText)
     if (res.success && res.comment) {
-      setComments([res.comment, ...comments])
+      const updated = [res.comment, ...comments]
+      setComments(updated)
+      onUpdateStage({
+        ...stage,
+        ...formData,
+        comments: updated,
+        attachments,
+        checklist,
+      })
       setNewCommentText('')
     }
   }
@@ -340,22 +532,50 @@ export default function TaskDetailDrawer({
     setSavingCommentId(null)
 
     if (res.success && res.comment) {
-      setComments(comments.map((c) => (c.id === commentId ? res.comment! : c)))
+      const updated = comments.map((c) => (c.id === commentId ? res.comment! : c))
+      setComments(updated)
+      onUpdateStage({
+        ...stage,
+        ...formData,
+        comments: updated,
+        attachments,
+        checklist,
+      })
       setEditingCommentId(null)
       setEditingCommentText('')
     } else {
-      alert(res.error || 'Erro ao editar comentário.')
+      await showAlert({
+        title: 'Erro ao editar comentário',
+        message: res.error || 'Erro ao editar comentário.',
+        variant: 'error',
+      })
     }
   }
 
   const handleDeleteComment = async (commentId: string) => {
-    if (confirm('Tem certeza que deseja excluir este comentário?')) {
-      setComments(comments.filter((c) => c.id !== commentId))
+    const confirmed = await confirm({
+      title: 'Excluir Comentário',
+      message: 'Tem certeza que deseja excluir este comentário permanentemente?',
+      confirmText: 'Excluir',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
+      const updated = comments.filter((c) => c.id !== commentId)
+      setComments(updated)
+      onUpdateStage({
+        ...stage,
+        ...formData,
+        comments: updated,
+        attachments,
+        checklist,
+      })
       await deleteStageCommentAction(projectId, stage.id, commentId)
     }
   }
 
-  // Upload File to Supabase Storage (Direct Client Streaming + Action Fallback)
+  // Upload File to Supabase Storage (Persistência Imediata)
   const handleUploadFileSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setAttachmentError(null)
@@ -408,7 +628,15 @@ export default function TaskDetailDrawer({
         })
 
         if (res.success && res.attachment) {
-          setAttachments([...attachments, res.attachment])
+          const updated = [...attachments, res.attachment]
+          setAttachments(updated)
+          onUpdateStage({
+            ...stage,
+            ...formData,
+            attachments: updated,
+            comments,
+            checklist,
+          })
           setSelectedFile(null)
           setNewAttachmentName('')
           setShowAddAttachment(false)
@@ -430,7 +658,15 @@ export default function TaskDetailDrawer({
 
       const res = await uploadStageAttachmentFileAction(projectId, stage.id, uploadData)
       if (res.success && res.attachment) {
-        setAttachments([...attachments, res.attachment])
+        const updated = [...attachments, res.attachment]
+        setAttachments(updated)
+        onUpdateStage({
+          ...stage,
+          ...formData,
+          attachments: updated,
+          comments,
+          checklist,
+        })
         setSelectedFile(null)
         setNewAttachmentName('')
         setShowAddAttachment(false)
@@ -447,7 +683,7 @@ export default function TaskDetailDrawer({
   }
 
 
-  // Attach External Link
+  // Attach External Link (Persistência Imediata)
   const handleAddLinkSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setAttachmentError(null)
@@ -464,7 +700,15 @@ export default function TaskDetailDrawer({
     })
 
     if (res.success && res.attachment) {
-      setAttachments([...attachments, res.attachment])
+      const updated = [...attachments, res.attachment]
+      setAttachments(updated)
+      onUpdateStage({
+        ...stage,
+        ...formData,
+        attachments: updated,
+        comments,
+        checklist,
+      })
       setNewAttachmentName('')
       setNewAttachmentUrl('')
       setShowAddAttachment(false)
@@ -474,9 +718,64 @@ export default function TaskDetailDrawer({
   }
 
   const handleDeleteAttachment = async (attachmentId: string) => {
-    if (confirm('Tem certeza que deseja remover este anexo?')) {
-      setAttachments(attachments.filter((att) => att.id !== attachmentId))
+    const confirmed = await confirm({
+      title: 'Remover Anexo',
+      message: 'Tem certeza que deseja remover este anexo?',
+      confirmText: 'Remover',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    })
+
+    if (confirmed) {
+      const updated = attachments.filter((att) => att.id !== attachmentId)
+      setAttachments(updated)
+      onUpdateStage({
+        ...stage,
+        ...formData,
+        attachments: updated,
+        comments,
+        checklist,
+      })
       await deleteStageAttachmentAction(projectId, stage.id, attachmentId)
+    }
+  }
+
+  const handleStartEditAttachment = (attachment: StageAttachment) => {
+    setEditingAttachmentId(attachment.id)
+    setEditingAttachmentName(attachment.name)
+  }
+
+  const handleCancelEditAttachment = () => {
+    setEditingAttachmentId(null)
+    setEditingAttachmentName('')
+  }
+
+  const handleSaveEditAttachment = async (attachmentId: string) => {
+    const trimmed = editingAttachmentName.trim()
+    if (!trimmed) return
+    setSavingAttachmentId(attachmentId)
+
+    const res = await editStageAttachmentAction(projectId, stage.id, attachmentId, trimmed)
+    setSavingAttachmentId(null)
+
+    if (res.success && res.attachment) {
+      const updated = attachments.map((att) => (att.id === attachmentId ? res.attachment! : att))
+      setAttachments(updated)
+      onUpdateStage({
+        ...stage,
+        ...formData,
+        attachments: updated,
+        comments,
+        checklist,
+      })
+      setEditingAttachmentId(null)
+      setEditingAttachmentName('')
+    } else {
+      await showAlert({
+        title: 'Erro ao editar anexo',
+        message: res.error || 'Erro ao atualizar o nome do anexo.',
+        variant: 'error',
+      })
     }
   }
 
@@ -493,32 +792,15 @@ export default function TaskDetailDrawer({
     return <Paperclip className="w-4 h-4 text-slate-500 shrink-0" />
   }
 
-  // Quick Status Changes
-  const handleRequestApproval = async () => {
-    setActionLoading(true)
-    await requestClientApprovalAction(projectId, stage.id)
-    setFormData((prev) => ({ ...prev, status: 'em_aprovacao' }))
-    onUpdateStage({ ...stage, status: 'em_aprovacao' })
-    setActionLoading(false)
-  }
-
-  const handleUnlockStage = async () => {
-    setActionLoading(true)
-    await unlockStageForEditAction(projectId, stage.id)
-    setFormData((prev) => ({ ...prev, status: 'em_producao' }))
-    onUpdateStage({ ...stage, status: 'em_producao' })
-    setActionLoading(false)
-  }
-
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden antialiased">
+    <div className="fixed inset-0 z-50 overflow-hidden antialiased overscroll-contain">
       {/* Backdrop */}
       <div
-        onClick={onClose}
+        onClick={handleAttemptClose}
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex">
+      <div className="fixed inset-y-0 right-0 max-w-full flex overscroll-contain">
         {/* Slide-over Container (60% da tela) */}
         <div className="w-full md:w-[70vw] max-w-[70vw] bg-white shadow-2xl border-l border-slate-200 flex flex-col animate-in slide-in-from-right duration-300">
           {/* Header */}
@@ -527,23 +809,6 @@ export default function TaskDetailDrawer({
               <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 border border-blue-200">
                 Tarefa #{stage.stage_order}
               </span>
-
-              {/* Status Indicator */}
-              <select
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    status: e.target.value as TaskDetailData['status'],
-                  })
-                }
-                className="text-xs font-bold rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-slate-700 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
-              >
-                <option value="a_iniciar">⏳ A Iniciar</option>
-                <option value="em_producao">⚡ Em Produção</option>
-                <option value="em_aprovacao">🟡 Em Aprovação do Cliente</option>
-                <option value="concluido">✅ Concluído / Aprovado</option>
-              </select>
             </div>
 
             <div className="flex items-center gap-2">
@@ -565,7 +830,8 @@ export default function TaskDetailDrawer({
                 type="button"
                 onClick={handleSaveDetails}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer ${isDirty ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-500/20' : 'bg-slate-700 hover:bg-slate-800'
+                  }`}
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -574,13 +840,14 @@ export default function TaskDetailDrawer({
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                {saveSuccess ? 'Salvo!' : 'Salvar'}
+                {saveSuccess ? 'Salvo!' : isDirty ? 'Salvar' : 'Salvar'}
               </button>
 
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleAttemptClose}
                 className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                title="Fechar"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -588,7 +855,16 @@ export default function TaskDetailDrawer({
           </div>
 
           {/* Drawer Body Scrollable */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain">
+
+            {/* Finalized / Concluded Banner */}
+            {isTaskFinalized && (
+              <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 text-indigo-900 flex items-center gap-2.5 text-xs font-semibold shadow-2xs">
+                <Flag className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>Esta tarefa está na <strong>Etapa Finalizada (Serviço Concluído)</strong> com todos os requisitos atendidos.</span>
+              </div>
+            )}
+
             {/* Title & Description Form */}
             <div className="space-y-4">
               <div>
@@ -619,7 +895,25 @@ export default function TaskDetailDrawer({
             </div>
 
             {/* Quick Metadata Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
+              {/* Status / Etapa */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" /> Status da Tarefa
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => handleStatusSelectChange(e.target.value)}
+                  className="w-full text-xs font-bold bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-hidden focus:border-blue-500 cursor-pointer"
+                >
+                  {(workflowStages && workflowStages.length > 0 ? workflowStages : DEFAULT_WORKFLOW_STAGES).map((ws) => (
+                    <option key={ws.id} value={ws.id}>
+                      {ws.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Assignee */}
               <div>
                 <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
@@ -786,9 +1080,8 @@ export default function TaskDetailDrawer({
                               className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer shrink-0"
                             />
                             <span
-                              className={`text-xs truncate ${
-                                item.completed ? 'line-through text-slate-400' : 'text-slate-700 font-medium'
-                              }`}
+                              className={`text-xs truncate ${item.completed ? 'line-through text-slate-400' : 'text-slate-700 font-medium'
+                                }`}
                             >
                               {item.text}
                             </span>
@@ -798,11 +1091,10 @@ export default function TaskDetailDrawer({
                             {/* Responsável Badge */}
                             {assignedName && (
                               <span
-                                className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${
-                                  item.completed
-                                    ? 'bg-slate-100 text-slate-400 border-slate-200'
-                                    : 'bg-indigo-50 text-indigo-700 border-indigo-200/70'
-                                }`}
+                                className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${item.completed
+                                  ? 'bg-slate-100 text-slate-400 border-slate-200'
+                                  : 'bg-indigo-50 text-indigo-700 border-indigo-200/70'
+                                  }`}
                                 title={`Responsável: ${assignedName}`}
                               >
                                 <User className="w-3 h-3 text-indigo-500" />
@@ -813,11 +1105,10 @@ export default function TaskDetailDrawer({
                             {/* Data Prevista Badge */}
                             {item.due_date && (
                               <span
-                                className={`inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md border ${
-                                  item.completed
-                                    ? 'bg-slate-100 text-slate-400 border-slate-200'
-                                    : 'bg-blue-50 text-blue-700 border-blue-200/70'
-                                }`}
+                                className={`inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md border ${item.completed
+                                  ? 'bg-slate-100 text-slate-400 border-slate-200'
+                                  : 'bg-blue-50 text-blue-700 border-blue-200/70'
+                                  }`}
                                 title="Data prevista de conclusão"
                               >
                                 <Calendar className="w-3 h-3 text-blue-500" />
@@ -1094,51 +1385,128 @@ export default function TaskDetailDrawer({
                 <p className="text-xs text-slate-400 italic">Nenhum anexo ou prancha adicionada nesta tarefa.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {attachments.map((att) => (
-                    <div
-                      key={att.id}
-                      className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80 hover:border-blue-300 transition-all group"
-                    >
-                      <a
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2.5 flex-1 min-w-0"
-                        title={att.name}
-                      >
-                        <div className="p-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0">
-                          {getFileIcon(att.name, att.url)}
-                        </div>
-                        <div className="truncate">
-                          <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 transition-colors block truncate">
-                            {att.name}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono block">
-                            {att.size || 'Arquivo'}
-                          </span>
-                        </div>
-                      </a>
+                  {attachments.map((att) => {
+                    const isEditingAtt = editingAttachmentId === att.id
 
-                      <div className="flex items-center gap-1 shrink-0">
+                    if (isEditingAtt) {
+                      return (
+                        <div
+                          key={att.id}
+                          className="col-span-1 sm:col-span-2 p-3 bg-white rounded-xl border-2 border-blue-400 shadow-xs space-y-2 animate-in fade-in"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="p-1 rounded-md bg-blue-50 border border-blue-200 shrink-0">
+                              {getFileIcon(att.name, att.url)}
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                              Editar Nome do Arquivo / Prancha
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editingAttachmentName}
+                              onChange={(e) => setEditingAttachmentName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault()
+                                  handleSaveEditAttachment(att.id)
+                                } else if (e.key === 'Escape') {
+                                  e.preventDefault()
+                                  handleCancelEditAttachment()
+                                }
+                              }}
+                              autoFocus
+                              className="flex-1 text-xs font-semibold text-slate-900 border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                              placeholder="Nome do arquivo ou prancha..."
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEditAttachment(att.id)}
+                              disabled={savingAttachmentId === att.id || !editingAttachmentName.trim()}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer shrink-0"
+                              title="Salvar novo nome (Enter)"
+                            >
+                              {savingAttachmentId === att.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5" />
+                              )}
+                              Salvar
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={handleCancelEditAttachment}
+                              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
+                              title="Cancelar (Esc)"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div
+                        key={att.id}
+                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80 hover:border-blue-300 transition-all group"
+                      >
                         <a
                           href={att.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                          title="Abrir / Baixar"
+                          className="flex items-center gap-2.5 flex-1 min-w-0"
+                          title={att.name}
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <div className="p-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0">
+                            {getFileIcon(att.name, att.url)}
+                          </div>
+                          <div className="truncate">
+                            <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 transition-colors block truncate">
+                              {att.name}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono block">
+                              {att.size || 'Arquivo'}
+                            </span>
+                          </div>
                         </a>
-                        <button
-                          onClick={() => handleDeleteAttachment(att.id)}
-                          className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                          title="Remover anexo"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditAttachment(att)}
+                            className="p-1 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+                            title="Editar nome do anexo"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+
+                          <a
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                            title="Abrir / Baixar"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAttachment(att.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Remover anexo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -1188,10 +1556,10 @@ export default function TaskDetailDrawer({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-slate-700">{cmt.user_name}</span>
                           <span>•</span>
-                          <span>{new Date(cmt.created_at).toLocaleString('pt-BR')}</span>
+                          <span>{formatDateTimeBR(cmt.created_at)}</span>
                           {cmt.updated_at && (
                             <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md font-medium">
-                              Editado em {new Date(cmt.updated_at).toLocaleString('pt-BR')}
+                              Editado em {formatDateTimeBR(cmt.updated_at)}
                             </span>
                           )}
                         </div>
