@@ -10,6 +10,7 @@ import {
   LogOut,
   ExternalLink,
   User,
+  Users,
   ChevronRight,
   KanbanSquare
 } from 'lucide-react'
@@ -51,6 +52,17 @@ export default async function AppLayout({
     const parts = name.trim().split(' ')
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+
+  // Busca se há solicitações de atualização cadastral de clientes pendentes
+  let pendingClientUpdatesCount = 0
+  if (org?.id) {
+    const { count } = await supabase
+      .from('client_update_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', org.id)
+      .eq('status', 'pending')
+    pendingClientUpdatesCount = count || 0
   }
 
   return (
@@ -95,6 +107,22 @@ export default async function AppLayout({
             >
               <LayoutDashboard className="w-4 h-4" />
               Visão Geral
+            </Link>
+
+            <Link
+              href="/app/clientes"
+              className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100/80 hover:text-blue-600 transition-all group"
+            >
+              <div className="flex items-center gap-2.5">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span>Clientes</span>
+              </div>
+              {pendingClientUpdatesCount > 0 && (
+                <span className="flex h-2 w-2 relative" title={`${pendingClientUpdatesCount} solicitação(ões) de atualização cadastral pendente(s)`}>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                </span>
+              )}
             </Link>
 
             <Link

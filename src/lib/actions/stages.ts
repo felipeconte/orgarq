@@ -29,6 +29,7 @@ export interface StageAttachment {
   name: string
   url: string
   size?: string
+  is_visible_to_client?: boolean
   created_at: string
 }
 
@@ -37,12 +38,12 @@ export async function updateStageStatusAction(
   stageId: string,
   newStatus: string
 ) {
-  const { supabase } = await requireProjectAccess(projectId)
+  const { supabase, user } = await requireProjectAccess(projectId)
 
   // 1. Busca etapa atual e workflow_stages da organização para validação de integridade
   const { data: stageRecord } = await supabase
     .from('project_stages')
-    .select('id, checklist, is_client_approval_required, status, project_id, projects(organization_id, organizations(workflow_stages))')
+    .select('id, checklist, comments, is_client_approval_required, status, project_id, projects(organization_id, organizations(workflow_stages))')
     .eq('id', stageId)
     .eq('project_id', projectId)
     .single()
@@ -62,13 +63,61 @@ export async function updateStageStatusAction(
 
   const progressPercent = targetStageCfg?.is_final_stage || newStatus === 'concluido' ? 100 : newStatus === 'a_iniciar' ? 0 : 50
 
+  const updatePayload: Record<string, any> = {
+    status: newStatus,
+    progress_percent: progressPercent,
+    is_locked_for_client: Boolean(targetStageCfg?.is_final_stage),
+  }
+
+  // 3. Se a etapa for de aprovação, registra auditoria com o usuário responsável
+  const isTargetApproved = Boolean(
+    targetStageCfg?.is_approved_stage ||
+    targetStageCfg?.name?.toLowerCase().includes('aprovad') ||
+    newStatus === 'concluido'
+  )
+
+  if (isTargetApproved && stageRecord?.status !== newStatus) {
+    const { data: profile } = await (supabase
+      .from('user_profiles') as any)
+      .select('display_name, full_name')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    const approverName =
+      profile?.display_name ||
+      profile?.full_name ||
+      (user.user_metadata as any)?.full_name ||
+      (user.email ? user.email.split('@')[0] : 'Membro da Equipe')
+    const approverEmail = user.email || null
+
+    try {
+      await (supabase.from('stage_approvals') as any).insert({
+        project_id: projectId,
+        stage_id: stageId,
+        action: 'approved',
+        approver_name: approverName,
+        approver_email: approverEmail,
+        feedback_message: 'Aprovação manual realizada pela equipe interna.',
+      })
+    } catch {
+      // safe fallback
+    }
+
+    const currentComments = Array.isArray(stageRecord?.comments) ? (stageRecord.comments as any[]) : []
+    const auditComment = {
+      id: `cmt-appr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      user_id: user.id,
+      user_name: approverName,
+      user_email: approverEmail,
+      text: `✅ [Aprovação Manual] Tarefa aprovada manualmente por ${approverName}.`,
+      created_at: new Date().toISOString(),
+    }
+    updatePayload.comments = [...currentComments, auditComment]
+  }
+
   const { error } = await supabase
     .from('project_stages')
-    .update({
-      status: newStatus,
-      progress_percent: progressPercent,
-      is_locked_for_client: Boolean(targetStageCfg?.is_final_stage),
-    } as any)
+    .update(updatePayload as any)
     .eq('id', stageId)
     .eq('project_id', projectId)
 
@@ -77,7 +126,10 @@ export async function updateStageStatusAction(
   }
 
   revalidatePath(`/app/projetos/${projectId}`)
-  return { success: true }
+  return {
+    success: true,
+    comments: updatePayload.comments as StageComment[] | undefined
+  }
 }
 
 export async function reorderStagesAction(
@@ -154,7 +206,7 @@ export async function updateStageFullDetailsAction(
     is_client_approval_required?: boolean
   }
 ) {
-  const { supabase } = await requireProjectAccess(projectId)
+  const { supabase, user } = await requireProjectAccess(projectId)
 
   const updatePayload: Record<string, any> = {}
 
@@ -168,7 +220,7 @@ export async function updateStageFullDetailsAction(
     // Busca workflow stages para validação de etapa final
     const { data: stageRecord } = await supabase
       .from('project_stages')
-      .select('id, checklist, is_client_approval_required, status, project_id, projects(organization_id, organizations(workflow_stages))')
+      .select('id, checklist, comments, is_client_approval_required, status, project_id, projects(organization_id, organizations(workflow_stages))')
       .eq('id', stageId)
       .eq('project_id', projectId)
       .single()
@@ -190,6 +242,51 @@ export async function updateStageFullDetailsAction(
       if (data.status === 'a_iniciar') updatePayload.progress_percent = 0
     }
 
+    const isTargetApproved = Boolean(
+      targetStageCfg?.is_approved_stage ||
+      targetStageCfg?.name?.toLowerCase().includes('aprovad') ||
+      data.status === 'concluido'
+    )
+
+    if (isTargetApproved && stageRecord?.status !== data.status) {
+      const { data: profile } = await (supabase
+        .from('user_profiles') as any)
+        .select('display_name, full_name')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const approverName =
+        profile?.display_name ||
+        profile?.full_name ||
+        (user.user_metadata as any)?.full_name ||
+        (user.email ? user.email.split('@')[0] : 'Membro da Equipe')
+      const approverEmail = user.email || null
+
+      try {
+        await (supabase.from('stage_approvals') as any).insert({
+          project_id: projectId,
+          stage_id: stageId,
+          action: 'approved',
+          approver_name: approverName,
+          approver_email: approverEmail,
+          feedback_message: 'Aprovação manual realizada pela equipe interna.',
+        })
+      } catch {
+        // safe fallback
+      }
+
+      const currentComments = Array.isArray(stageRecord?.comments) ? (stageRecord.comments as any[]) : []
+      const auditComment = {
+        id: `cmt-appr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        user_id: user.id,
+        user_name: approverName,
+        user_email: approverEmail,
+        text: `✅ [Aprovação Manual] Tarefa aprovada manualmente por ${approverName}.`,
+        created_at: new Date().toISOString(),
+      }
+      updatePayload.comments = [...currentComments, auditComment]
+    }
+
     updatePayload.status = data.status
   }
 
@@ -204,7 +301,10 @@ export async function updateStageFullDetailsAction(
   }
 
   revalidatePath(`/app/projetos/${projectId}`)
-  return { success: true }
+  return {
+    success: true,
+    comments: updatePayload.comments as StageComment[] | undefined
+  }
 }
 
 export async function toggleStageClientApprovalAction(
@@ -603,7 +703,7 @@ export async function deleteStageCommentAction(
 export async function addStageAttachmentAction(
   projectId: string,
   stageId: string,
-  attachment: { name: string; url: string; size?: string }
+  attachment: { name: string; url: string; size?: string; is_visible_to_client?: boolean }
 ) {
   const { supabase } = await requireProjectAccess(projectId)
   const cleanName = sanitizeText(attachment.name)
@@ -623,6 +723,7 @@ export async function addStageAttachmentAction(
     name: cleanName,
     url: cleanUrl,
     size: attachment.size || undefined,
+    is_visible_to_client: Boolean(attachment.is_visible_to_client),
     created_at: new Date().toISOString(),
   }
 
@@ -702,11 +803,15 @@ export async function uploadStageAttachmentFileAction(
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
+  const isVisibleToClientStr = formData.get('isVisibleToClient') as string | null
+  const isVisibleToClient = isVisibleToClientStr === 'true' || isVisibleToClientStr === '1'
+
   const newAttachment: StageAttachment = {
     id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     name: cleanName,
     url: fileUrl,
     size: formatSize(file.size),
+    is_visible_to_client: isVisibleToClient,
     created_at: new Date().toISOString(),
   }
 
@@ -771,7 +876,8 @@ export async function editStageAttachmentAction(
   projectId: string,
   stageId: string,
   attachmentId: string,
-  newName: string
+  newName: string,
+  isVisibleToClient?: boolean
 ): Promise<{ success: boolean; attachment?: StageAttachment; error?: string }> {
   const { supabase } = await requireProjectAccess(projectId)
   const cleanName = sanitizeText(newName)
@@ -789,7 +895,55 @@ export async function editStageAttachmentAction(
 
   const updatedAttachments = currentAttachments.map((att) => {
     if (att.id === attachmentId) {
-      updatedAttachment = { ...att, name: cleanName }
+      updatedAttachment = {
+        ...att,
+        name: cleanName,
+        is_visible_to_client: isVisibleToClient !== undefined ? isVisibleToClient : (att.is_visible_to_client !== false),
+      }
+      return updatedAttachment
+    }
+    return att
+  })
+
+  if (!updatedAttachment) {
+    return { success: false, error: 'Anexo não encontrado.' }
+  }
+
+  const { error } = await supabase
+    .from('project_stages')
+    .update({ attachments: updatedAttachments })
+    .eq('id', stageId)
+    .eq('project_id', projectId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath(`/app/projetos/${projectId}`)
+  return { success: true, attachment: updatedAttachment }
+}
+
+export async function toggleStageAttachmentVisibilityAction(
+  projectId: string,
+  stageId: string,
+  attachmentId: string,
+  isVisibleToClient: boolean
+): Promise<{ success: boolean; attachment?: StageAttachment; error?: string }> {
+  const { supabase } = await requireProjectAccess(projectId)
+
+  const { data: stage } = await supabase
+    .from('project_stages')
+    .select('attachments')
+    .eq('id', stageId)
+    .eq('project_id', projectId)
+    .single()
+
+  const currentAttachments: StageAttachment[] = Array.isArray(stage?.attachments) ? stage.attachments : []
+  let updatedAttachment: StageAttachment | null = null
+
+  const updatedAttachments = currentAttachments.map((att) => {
+    if (att.id === attachmentId) {
+      updatedAttachment = { ...att, is_visible_to_client: isVisibleToClient }
       return updatedAttachment
     }
     return att

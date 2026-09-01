@@ -1,6 +1,7 @@
 import { requireProjectAccess } from '@/lib/server/guard'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import {
   ArrowLeft,
   FileText,
@@ -12,14 +13,33 @@ import { getWorkflowStagesAction } from '@/lib/actions/workflow-stages'
 
 export default async function ProjectDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams?: Promise<{ view?: string }>
 }) {
   const { id } = await params
+  const { view } = (await searchParams) || {}
   const { supabase, project, user } = await requireProjectAccess(id)
 
   if (!project) {
     notFound()
+  }
+
+  // Identifica a visão inicial (URL searchParams > Cookie > 'lista')
+  const validViews = ['lista', 'kanban', 'gantt'] as const
+  type ViewType = typeof validViews[number]
+
+  const cookieStore = await cookies()
+  const cookieView =
+    cookieStore.get(`orgarq_project_view_${id}`)?.value ||
+    cookieStore.get('orgarq_last_view')?.value
+
+  let initialView: ViewType = 'lista'
+  if (view && (validViews as readonly string[]).includes(view)) {
+    initialView = view as ViewType
+  } else if (cookieView && (validViews as readonly string[]).includes(cookieView)) {
+    initialView = cookieView as ViewType
   }
 
   // Busca as etapas do projeto
@@ -108,10 +128,33 @@ export default async function ProjectDetailPage({
     portalToken = newToken?.token || ''
   }
 
-  const projectStages = stages || []
-  const completedStages = projectStages.filter((s) => s.status === 'concluido').length
+  const projectStages = (stages || []) as any[]
   const totalStages = projectStages.length
-  const progressPercent = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : 0
+  const completedStages = projectStages.filter((s) => {
+    return (
+      s.status === 'concluido' ||
+      workflowStages?.find((ws) => ws.id === s.status)?.is_final_stage
+    )
+  }).length
+
+  let progressSum = 0
+  projectStages.forEach((st) => {
+    const isFinal = Boolean(
+      st.status === 'concluido' ||
+      workflowStages?.find((ws) => ws.id === st.status)?.is_final_stage
+    )
+    if (isFinal) {
+      progressSum += 100
+    } else if (Array.isArray(st.checklist) && st.checklist.length > 0) {
+      const done = st.checklist.filter((c: any) => c.completed).length
+      progressSum += Math.round((done / st.checklist.length) * 100)
+    } else if (st.status === 'em_producao' || st.status === 'em_andamento') {
+      progressSum += Math.max(st.progress_percent || 0, 50)
+    } else {
+      progressSum += st.progress_percent || 0
+    }
+  })
+  const progressPercent = totalStages > 0 ? Math.round(progressSum / totalStages) : 0
 
   return (
     <div className="space-y-6 antialiased">
@@ -199,6 +242,7 @@ export default async function ProjectDetailPage({
         portalToken={portalToken}
         members={membersList}
         initialWorkflowStages={workflowStages}
+        initialView={initialView}
       />
     </div>
   )

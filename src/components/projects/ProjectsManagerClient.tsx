@@ -32,6 +32,8 @@ import {
   Lock
 } from 'lucide-react'
 import { updateProjectAction, deleteProjectAction } from '@/lib/actions/projects'
+import { ClientData } from '@/lib/actions/clients'
+import ClientMultiSelect from '@/components/projects/ClientMultiSelect'
 import { useAlert } from '@/components/ui/ConfirmDialog'
 
 const ProjectLocationMap = dynamic(
@@ -99,9 +101,11 @@ export interface ProjectItem {
   code: string
   title: string
   description: string | null
+  client_id?: string | null
   client_name: string
   client_email: string | null
   client_phone: string | null
+  client_ids?: string[]
   typology: string | null
   area_sqm: number | null
   estimated_budget: number | null
@@ -116,6 +120,8 @@ export interface ProjectItem {
 
 export interface ProjectsManagerClientProps {
   initialProjects: ProjectItem[]
+  initialClients?: ClientData[]
+  organizationId?: string
 }
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string; label: string }> = {
@@ -126,7 +132,11 @@ const STATUS_COLORS: Record<string, { bg: string; text: string; border: string; 
   cancelado: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', label: 'Cancelado' },
 }
 
-export default function ProjectsManagerClient({ initialProjects }: ProjectsManagerClientProps) {
+export default function ProjectsManagerClient({
+  initialProjects,
+  initialClients = [],
+  organizationId,
+}: ProjectsManagerClientProps) {
   const showAlert = useAlert()
   const [projects, setProjects] = useState<ProjectItem[]>(initialProjects)
   const [search, setSearch] = useState('')
@@ -142,10 +152,8 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
   const [editAreaRaw, setEditAreaRaw] = useState<number | null>(null)
   const [editBudgetInput, setEditBudgetInput] = useState('')
   const [editBudgetRaw, setEditBudgetRaw] = useState<number | null>(null)
-  const [editClientName, setEditClientName] = useState('')
-  const [editClientEmail, setEditClientEmail] = useState('')
-  const [editEmailValid, setEditEmailValid] = useState<boolean | null>(null)
-  const [editClientPhone, setEditClientPhone] = useState('')
+  const [editClientIds, setEditClientIds] = useState<string[]>([])
+  const [editClientError, setEditClientError] = useState<string | null>(null)
   const [editStartDate, setEditStartDate] = useState('')
   const [editDeadline, setEditDeadline] = useState('')
   const [editDescription, setEditDescription] = useState('')
@@ -158,6 +166,7 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [addressRoad, setAddressRoad] = useState('')
   const [addressNumber, setAddressNumber] = useState('')
+  const [addressComplement, setAddressComplement] = useState('')
   const [addressNeighborhood, setAddressNeighborhood] = useState('')
   const [addressCity, setAddressCity] = useState('')
   const [addressState, setAddressState] = useState('')
@@ -200,20 +209,6 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
       }
     }
   }, [editingProject, deletingProject])
-
-  const handleEmailChange = (val: string) => {
-    setEditClientEmail(val)
-    if (!val) {
-      setEditEmailValid(null)
-    } else {
-      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)
-      setEditEmailValid(isValid)
-    }
-  }
-
-  const handlePhoneChange = (val: string) => {
-    setEditClientPhone(formatPhone(val))
-  }
 
   const handleBudgetChange = (val: string) => {
     const digits = val.replace(/\D/g, '')
@@ -329,10 +324,8 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
     setEditAreaRaw(p.area_sqm || null)
     setEditBudgetInput(p.estimated_budget ? formatCurrencyBRL(p.estimated_budget).formatted : '')
     setEditBudgetRaw(p.estimated_budget || null)
-    setEditClientName(p.client_name || '')
-    setEditClientEmail(p.client_email || '')
-    setEditEmailValid(p.client_email ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.client_email) : null)
-    setEditClientPhone(p.client_phone ? formatPhone(p.client_phone) : '')
+    setEditClientIds(p.client_ids || (p.client_id ? [p.client_id] : []))
+    setEditClientError(null)
     setEditStartDate(p.start_date || '')
     setEditDeadline(p.deadline || '')
     setEditDescription(p.description || '')
@@ -379,6 +372,7 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
 
     const cleanRoad = rawAddress.replace(/^,\s*/, '').replace(/,\s*$/, '').replace(/\s*-\s*$/, '').trim()
     setAddressRoad(cleanRoad)
+    setAddressComplement('')
     setAddressCity(p.city || '')
     setAddressState(p.state || '')
   }
@@ -386,14 +380,18 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
   // Submit Edit Form
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingProject || !editTitle.trim() || !editClientName.trim()) return
+    if (!editingProject || !editTitle.trim()) return
 
+    if (editClientIds.length === 0) {
+      setEditClientError('Selecione ao menos um cliente cadastrado para o projeto.')
+      return
+    }
+
+    setEditClientError(null)
     setLoading(true)
     const formData = new FormData()
     formData.append('title', editTitle.trim())
-    formData.append('clientName', editClientName.trim())
-    formData.append('clientEmail', editClientEmail.trim())
-    formData.append('clientPhone', editClientPhone.trim())
+    editClientIds.forEach((cid) => formData.append('clientIds', cid))
     formData.append('typology', editTypology)
     if (editAreaRaw !== null) formData.append('areaSqm', editAreaRaw.toString())
     if (editBudgetRaw !== null) formData.append('estimatedBudget', editBudgetRaw.toString())
@@ -406,6 +404,7 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
     const addressMain = [
       addressRoad.trim(),
       addressNumber.trim() ? `Nº ${addressNumber.trim()}` : '',
+      addressComplement.trim() ? addressComplement.trim() : '',
     ]
       .filter(Boolean)
       .join(', ')
@@ -433,26 +432,34 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
     setLoading(false)
 
     if (res.success) {
+      const linkedClients = (initialClients || []).filter((c) => editClientIds.includes(c.id))
+      const updatedClientName = linkedClients.length > 0
+        ? linkedClients.map((c) => c.name).join(' & ')
+        : editingProject.client_name
+      const updatedClientEmail = linkedClients[0]?.email || null
+      const updatedClientPhone = linkedClients[0]?.phone || null
+
       setProjects((prev) =>
         prev.map((p) =>
           p.id === editingProject.id
             ? {
-                ...p,
-                title: editTitle.trim(),
-                client_name: editClientName.trim(),
-                client_email: editClientEmail.trim() || null,
-                client_phone: editClientPhone.trim() || null,
-                typology: editTypology,
-                area_sqm: editAreaRaw,
-                estimated_budget: editBudgetRaw,
-                start_date: editStartDate || null,
-                deadline: editDeadline || null,
-                status: editStatus,
-                description: editDescription.trim() || null,
-                address: fullAddress || null,
-                city: addressCity.trim() || null,
-                state: addressState.trim() || null,
-              }
+              ...p,
+              title: editTitle.trim(),
+              client_name: updatedClientName,
+              client_email: updatedClientEmail,
+              client_phone: updatedClientPhone,
+              client_ids: editClientIds,
+              typology: editTypology,
+              area_sqm: editAreaRaw,
+              estimated_budget: editBudgetRaw,
+              start_date: editStartDate || null,
+              deadline: editDeadline || null,
+              status: editStatus,
+              description: editDescription.trim() || null,
+              address: fullAddress || null,
+              city: addressCity.trim() || null,
+              state: addressState.trim() || null,
+            }
             : p
         )
       )
@@ -932,91 +939,25 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
                 </div>
               </div>
 
-              {/* Section 2: Dados do Cliente */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <User className="w-4 h-4 text-blue-600" /> Dados do Cliente (Portal de Aprovação)
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      Nome do Cliente *
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <User className="w-3.5 h-3.5" />
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        value={editClientName}
-                        onChange={(e) => setEditClientName(e.target.value)}
-                        placeholder="Carlos Eduardo Mendes"
-                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700">
-                        E-mail do Cliente
-                      </label>
-                      {editEmailValid === true && (
-                        <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
-                          <Check className="w-3 h-3" /> Válido
-                        </span>
-                      )}
-                      {editEmailValid === false && (
-                        <span className="text-[10px] font-bold text-red-500">
-                          Formato inválido
-                        </span>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <Mail className="w-3.5 h-3.5" />
-                      </div>
-                      <input
-                        type="email"
-                        value={editClientEmail}
-                        onChange={(e) => handleEmailChange(e.target.value)}
-                        placeholder="carlos@email.com"
-                        className={`block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 ${
-                          editEmailValid === false
-                            ? 'border-red-300 focus:ring-red-500/20 focus:border-red-500'
-                            : 'border-slate-200 focus:ring-blue-500/20 focus:border-blue-600'
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      Telefone / WhatsApp
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <Phone className="w-3.5 h-3.5" />
-                      </div>
-                      <input
-                        type="text"
-                        value={editClientPhone}
-                        onChange={(e) => handlePhoneChange(e.target.value)}
-                        placeholder="(11) 98765-4321"
-                        maxLength={15}
-                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                      />
-                    </div>
-                  </div>
-                </div>
+              {/* Section 2: Vínculo de Clientes (Multi-Clientes) */}
+              <div className="pt-4 border-t border-slate-100">
+                <ClientMultiSelect
+                  clients={initialClients}
+                  selectedClientIds={editClientIds}
+                  onChange={(ids) => {
+                    setEditClientIds(ids)
+                    if (ids.length > 0) setEditClientError(null)
+                  }}
+                  organizationId={organizationId}
+                  error={editClientError}
+                  required
+                />
               </div>
 
               {/* Section 3: Cronograma & Localização */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <Calendar className="w-4 h-4 text-blue-600" /> Cronograma & Localização
+                  <Calendar className="w-4 h-4 text-blue-600" /> Cronograma & Localização do Projeto
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1049,7 +990,7 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
                 <div className="space-y-3">
                   <div ref={searchContainerRef} className="relative">
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                      Busca de Endereço Global (API Gratuita OpenStreetMap)
+                      Buscar Endereço
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -1095,30 +1036,43 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
                     )}
                   </div>
 
-                  {/* Campos de Logradouro e Número separados */}
+                  {/* Campos de Logradouro, Número e Complemento separados */}
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                    <div className="sm:col-span-3">
+                    <div className="sm:col-span-2">
                       <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Endereço / Logradouro
+                        Logradouro
                       </label>
                       <input
                         type="text"
                         value={addressRoad}
                         onChange={(e) => setAddressRoad(e.target.value)}
-                        placeholder="Av. das Palmeiras, Rua Oscar Freire"
+                        placeholder="Rua Oscar Freire"
                         className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        Número / Lote
+                        Número
                       </label>
                       <input
                         type="text"
                         value={addressNumber}
                         onChange={(e) => setAddressNumber(e.target.value)}
-                        placeholder="1000 ou Lote 42"
+                        placeholder="1000"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                        Complemento <span className="text-slate-400 font-normal lowercase">(opcional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={addressComplement}
+                        onChange={(e) => setAddressComplement(e.target.value)}
+                        placeholder="Apto 52, Bloco B"
                         className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
@@ -1219,7 +1173,7 @@ export default function ProjectsManagerClient({ initialProjects }: ProjectsManag
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || !editTitle.trim() || !editClientName.trim()}
+                  disabled={loading || !editTitle.trim() || editClientIds.length === 0}
                   className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-50 inline-flex items-center gap-2 shadow-xs hover:shadow-md transition-all cursor-pointer"
                 >
                   {loading && <Loader2 className="w-4 h-4 animate-spin" />}

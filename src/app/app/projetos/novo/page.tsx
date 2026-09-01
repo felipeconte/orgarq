@@ -2,9 +2,15 @@ import { requireAuth } from '@/lib/server/guard'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import NewProjectForm from '@/components/projects/NewProjectForm'
+import { getClientsAction } from '@/lib/actions/clients'
 
-export default async function NewProjectPage() {
+export default async function NewProjectPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ clientId?: string }>
+}) {
   const { supabase, user } = await requireAuth()
+  const { clientId } = await searchParams
 
   // Busca a organização do usuário
   let { data: member } = await supabase
@@ -50,6 +56,10 @@ export default async function NewProjectPage() {
     }
   }
 
+  // Busca clientes já cadastrados
+  const clientsRes = await getClientsAction(orgId)
+  const clientsList = clientsRes.clients || []
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 antialiased">
       {/* Top Breadcrumb & Title */}
@@ -65,13 +75,19 @@ export default async function NewProjectPage() {
             Cadastrar Novo Projeto
           </h1>
           <p className="text-sm text-slate-500">
-            Nem todos os campos são obrigatórios.
+            Selecione um cliente cadastrado ou preencha as informações do projeto.
           </p>
         </div>
       </div>
 
       {/* Interactive New Project Form */}
-      <NewProjectForm organizationId={orgId} userEmail={user.email} templates={templates} />
+      <NewProjectForm
+        organizationId={orgId}
+        userEmail={user.email}
+        templates={templates}
+        initialClients={clientsList}
+        initialClientId={clientId}
+      />
     </div>
   )
 }

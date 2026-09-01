@@ -29,7 +29,10 @@ import {
   Download,
   AlertTriangle,
   Pencil,
-  Flag
+  Flag,
+  Eye,
+  EyeOff,
+  Globe
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -44,13 +47,20 @@ import {
   addStageAttachmentAction,
   uploadStageAttachmentFileAction,
   editStageAttachmentAction,
+  toggleStageAttachmentVisibilityAction,
   deleteStageAttachmentAction,
   deleteStageAction,
   ChecklistItem,
   StageComment,
   StageAttachment
 } from '@/lib/actions/stages'
-import { formatDateBR, formatDateTimeBR } from '@/lib/date-utils'
+import {
+  formatDateBR,
+  formatDateTimeBR,
+  calculateDueDateFromDuration,
+  calculateDurationDays,
+  getTaskTimelineStatus
+} from '@/lib/date-utils'
 import { useConfirm, useAlert, usePromptSaveOrDiscard } from '@/components/ui/ConfirmDialog'
 import {
   WorkflowStage,
@@ -79,6 +89,7 @@ export interface TaskDetailData {
   assigned_to: string | null
   start_date: string | null
   due_date: string | null
+  duration_days?: number | null
   is_client_approval_required: boolean
   is_locked_for_client: boolean
   checklist?: ChecklistItem[]
@@ -118,6 +129,7 @@ export default function TaskDetailDrawer({
     assigned_to: string
     start_date: string
     due_date: string
+    duration_days: number | ''
     status: TaskDetailData['status']
     is_client_approval_required: boolean
   }>({
@@ -126,6 +138,7 @@ export default function TaskDetailDrawer({
     assigned_to: '',
     start_date: '',
     due_date: '',
+    duration_days: '',
     status: 'a_iniciar',
     is_client_approval_required: true,
   })
@@ -137,6 +150,7 @@ export default function TaskDetailDrawer({
     assigned_to: string
     start_date: string
     due_date: string
+    duration_days: number | ''
     status: TaskDetailData['status']
     is_client_approval_required: boolean
   }>({
@@ -145,6 +159,7 @@ export default function TaskDetailDrawer({
     assigned_to: '',
     start_date: '',
     due_date: '',
+    duration_days: '',
     status: 'a_iniciar',
     is_client_approval_required: true,
   })
@@ -173,7 +188,9 @@ export default function TaskDetailDrawer({
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [newAttachmentName, setNewAttachmentName] = useState('')
   const [newAttachmentUrl, setNewAttachmentUrl] = useState('')
+  const [newAttachmentVisibleToClient, setNewAttachmentVisibleToClient] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [togglingVisibilityId, setTogglingVisibilityId] = useState<string | null>(null)
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -189,12 +206,27 @@ export default function TaskDetailDrawer({
   // Sincroniza estado quando o stage selecionado mudar
   useEffect(() => {
     if (stage) {
-      const initial = {
+      const initialDur: number | '' =
+        stage.duration_days != null
+          ? Number(stage.duration_days)
+          : (calculateDurationDays(stage.start_date, stage.due_date) ?? '')
+
+      const initial: {
+        name: string
+        description: string
+        assigned_to: string
+        start_date: string
+        due_date: string
+        duration_days: number | ''
+        status: string
+        is_client_approval_required: boolean
+      } = {
         name: stage.name || '',
         description: stage.description || '',
         assigned_to: stage.assigned_to || '',
         start_date: stage.start_date || '',
         due_date: stage.due_date || '',
+        duration_days: initialDur,
         status: stage.status,
         is_client_approval_required: stage.is_client_approval_required ?? true,
       }
@@ -214,6 +246,46 @@ export default function TaskDetailDrawer({
       setEditingAttachmentName('')
     }
   }, [stage])
+
+  // Handlers para cálculo bidirecional de Datas e Duração
+  const handleStartDateChange = (newStart: string) => {
+    let newDue = formData.due_date
+    if (newStart && formData.duration_days !== '' && Number(formData.duration_days) > 0) {
+      newDue = calculateDueDateFromDuration(newStart, Number(formData.duration_days))
+    } else if (newStart && newDue) {
+      const calculatedDays = calculateDurationDays(newStart, newDue)
+      if (calculatedDays) {
+        setFormData((prev) => ({
+          ...prev,
+          start_date: newStart,
+          due_date: newDue,
+          duration_days: calculatedDays,
+        }))
+        return
+      }
+    }
+    setFormData((prev) => ({ ...prev, start_date: newStart, due_date: newDue }))
+  }
+
+  const handleDurationChange = (val: string) => {
+    const parsed = val === '' ? '' : Math.max(1, parseInt(val) || 1)
+    let newDue = formData.due_date
+    if (formData.start_date && parsed !== '') {
+      newDue = calculateDueDateFromDuration(formData.start_date, Number(parsed))
+    }
+    setFormData((prev) => ({ ...prev, duration_days: parsed, due_date: newDue }))
+  }
+
+  const handleDueDateChange = (newDue: string) => {
+    let newDuration: number | '' = formData.duration_days
+    if (formData.start_date && newDue) {
+      const calculatedDays = calculateDurationDays(formData.start_date, newDue)
+      if (calculatedDays) {
+        newDuration = calculatedDays
+      }
+    }
+    setFormData((prev) => ({ ...prev, due_date: newDue, duration_days: newDuration }))
+  }
 
   // Trava a rolagem da página de fundo (background) enquanto a gaveta de tarefa estiver aberta
   useEffect(() => {
@@ -248,6 +320,26 @@ export default function TaskDetailDrawer({
     )
   }, [formData, initialFormData])
 
+  // Helper para montar objeto TaskDetailData tipado
+  const getUpdatedTaskData = useCallback(
+    (overrides?: Partial<TaskDetailData>): TaskDetailData => ({
+      ...stage!,
+      name: formData.name,
+      description: formData.description,
+      assigned_to: formData.assigned_to || null,
+      start_date: formData.start_date || null,
+      due_date: formData.due_date || null,
+      duration_days: typeof formData.duration_days === 'number' ? formData.duration_days : null,
+      status: formData.status,
+      is_client_approval_required: formData.is_client_approval_required,
+      checklist,
+      comments,
+      attachments,
+      ...overrides,
+    }),
+    [stage, formData, checklist, comments, attachments]
+  )
+
   // Save Full Details (Campos Principais)
   const handleSaveDetails = useCallback(async (): Promise<boolean> => {
     if (!stage) return false
@@ -267,13 +359,15 @@ export default function TaskDetailDrawer({
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 2000)
       setInitialFormData({ ...formData })
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        checklist,
-        comments,
-        attachments,
-      })
+      const nextComments = res.comments || comments
+      if (res.comments) {
+        setComments(res.comments)
+      }
+      onUpdateStage(
+        getUpdatedTaskData({
+          comments: nextComments,
+        })
+      )
       return true
     } else {
       await showAlert({
@@ -283,7 +377,7 @@ export default function TaskDetailDrawer({
       })
       return false
     }
-  }, [projectId, stage, formData, checklist, comments, attachments, onUpdateStage, showAlert])
+  }, [projectId, stage, formData, comments, onUpdateStage, showAlert, getUpdatedTaskData])
 
   // Intercepta o fechamento se houver alterações não salvas
   const handleAttemptClose = useCallback(async () => {
@@ -325,12 +419,13 @@ export default function TaskDetailDrawer({
   if (!stage) return null
 
   const currentStageConfig = (workflowStages || DEFAULT_WORKFLOW_STAGES).find((s) => s.id === formData.status)
-  const isTaskFinalized = Boolean(currentStageConfig?.is_final_stage)
+  const isTaskFinalized = Boolean(currentStageConfig?.is_final_stage || formData.status === 'concluido')
+  const timelineStatus = getTaskTimelineStatus(formData.start_date, formData.due_date, isTaskFinalized)
 
   const handleStatusSelectChange = async (newStatus: string) => {
     const targetCfg = (workflowStages || DEFAULT_WORKFLOW_STAGES).find((s) => s.id === newStatus)
     if (targetCfg?.is_final_stage && newStatus !== stage.status) {
-      const check = canMoveToFinalStage({ ...stage, ...formData, checklist }, workflowStages)
+      const check = canMoveToFinalStage(getUpdatedTaskData({ status: newStatus }), workflowStages)
       if (!check.allowed) {
         await showAlert({
           title: 'Etapa Conclusiva Bloqueada',
@@ -341,6 +436,32 @@ export default function TaskDetailDrawer({
         return
       }
     }
+
+    const isApprovedStage = Boolean(
+      targetCfg?.is_approved_stage ||
+      targetCfg?.name?.toLowerCase().includes('aprovad') ||
+      newStatus === 'concluido'
+    )
+
+    if (isApprovedStage && newStatus !== stage.status) {
+      const stageName = stage.name || 'esta tarefa'
+      const targetStageName = targetCfg?.name || 'Aprovado'
+
+      const confirmed = await confirm({
+        title: 'Confirmar Aprovação da Tarefa',
+        message: `Deseja marcar a tarefa "${stageName}" como "${targetStageName}"?`,
+        description:
+          'Atenção: Ao realizar esta ação manualmente, seu usuário será registrado como o responsável pela aprovação no histórico de auditoria do projeto.',
+        confirmText: 'Confirmar e Aprovar',
+        cancelText: 'Cancelar',
+        variant: 'primary',
+      })
+
+      if (!confirmed) {
+        return
+      }
+    }
+
     setFormData({ ...formData, status: newStatus })
   }
 
@@ -381,13 +502,7 @@ export default function TaskDetailDrawer({
       item.id === itemId ? { ...item, completed: !currentCompleted } : item
     )
     setChecklist(updated)
-    onUpdateStage({
-      ...stage,
-      ...formData,
-      checklist: updated,
-      comments,
-      attachments,
-    })
+    onUpdateStage(getUpdatedTaskData({ checklist: updated }))
     await toggleStageChecklistItemAction(projectId, stage.id, itemId, !currentCompleted)
   }
 
@@ -405,13 +520,7 @@ export default function TaskDetailDrawer({
     if (res.success && res.item) {
       const updated = [...checklist, res.item]
       setChecklist(updated)
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        checklist: updated,
-        comments,
-        attachments,
-      })
+      onUpdateStage(getUpdatedTaskData({ checklist: updated }))
       setNewChecklistText('')
       setNewChecklistDueDate('')
       setNewChecklistAssignedTo('')
@@ -449,13 +558,7 @@ export default function TaskDetailDrawer({
     if (res.success && res.item) {
       const updated = checklist.map((item) => (item.id === itemId ? res.item! : item))
       setChecklist(updated)
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        checklist: updated,
-        comments,
-        attachments,
-      })
+      onUpdateStage(getUpdatedTaskData({ checklist: updated }))
       setEditingChecklistItemId(null)
       setEditingChecklistText('')
       setEditingChecklistDueDate('')
@@ -472,13 +575,7 @@ export default function TaskDetailDrawer({
   const handleDeleteChecklistItem = async (itemId: string) => {
     const updated = checklist.filter((item) => item.id !== itemId)
     setChecklist(updated)
-    onUpdateStage({
-      ...stage,
-      ...formData,
-      checklist: updated,
-      comments,
-      attachments,
-    })
+    onUpdateStage(getUpdatedTaskData({ checklist: updated }))
     await deleteStageChecklistItemAction(projectId, stage.id, itemId)
   }
 
@@ -503,13 +600,7 @@ export default function TaskDetailDrawer({
     if (res.success && res.comment) {
       const updated = [res.comment, ...comments]
       setComments(updated)
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        comments: updated,
-        attachments,
-        checklist,
-      })
+      onUpdateStage(getUpdatedTaskData({ comments: updated }))
       setNewCommentText('')
     }
   }
@@ -534,13 +625,7 @@ export default function TaskDetailDrawer({
     if (res.success && res.comment) {
       const updated = comments.map((c) => (c.id === commentId ? res.comment! : c))
       setComments(updated)
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        comments: updated,
-        attachments,
-        checklist,
-      })
+      onUpdateStage(getUpdatedTaskData({ comments: updated }))
       setEditingCommentId(null)
       setEditingCommentText('')
     } else {
@@ -564,13 +649,7 @@ export default function TaskDetailDrawer({
     if (confirmed) {
       const updated = comments.filter((c) => c.id !== commentId)
       setComments(updated)
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        comments: updated,
-        attachments,
-        checklist,
-      })
+      onUpdateStage(getUpdatedTaskData({ comments: updated }))
       await deleteStageCommentAction(projectId, stage.id, commentId)
     }
   }
@@ -625,20 +704,16 @@ export default function TaskDetailDrawer({
           name: displayName,
           url: fileUrl,
           size: formatSize(selectedFile.size),
+          is_visible_to_client: newAttachmentVisibleToClient,
         })
 
         if (res.success && res.attachment) {
           const updated = [...attachments, res.attachment]
           setAttachments(updated)
-          onUpdateStage({
-            ...stage,
-            ...formData,
-            attachments: updated,
-            comments,
-            checklist,
-          })
+          onUpdateStage(getUpdatedTaskData({ attachments: updated }))
           setSelectedFile(null)
           setNewAttachmentName('')
+          setNewAttachmentVisibleToClient(false)
           setShowAddAttachment(false)
           setUploadingFile(false)
           return
@@ -655,20 +730,16 @@ export default function TaskDetailDrawer({
       if (newAttachmentName.trim()) {
         uploadData.append('name', newAttachmentName.trim())
       }
+      uploadData.append('isVisibleToClient', String(newAttachmentVisibleToClient))
 
       const res = await uploadStageAttachmentFileAction(projectId, stage.id, uploadData)
       if (res.success && res.attachment) {
         const updated = [...attachments, res.attachment]
         setAttachments(updated)
-        onUpdateStage({
-          ...stage,
-          ...formData,
-          attachments: updated,
-          comments,
-          checklist,
-        })
+        onUpdateStage(getUpdatedTaskData({ attachments: updated }))
         setSelectedFile(null)
         setNewAttachmentName('')
+        setNewAttachmentVisibleToClient(false)
         setShowAddAttachment(false)
       } else {
         setAttachmentError(
@@ -697,20 +768,16 @@ export default function TaskDetailDrawer({
       name: newAttachmentName.trim(),
       url: newAttachmentUrl.trim(),
       size: 'Link Externo',
+      is_visible_to_client: newAttachmentVisibleToClient,
     })
 
     if (res.success && res.attachment) {
       const updated = [...attachments, res.attachment]
       setAttachments(updated)
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        attachments: updated,
-        comments,
-        checklist,
-      })
+      onUpdateStage(getUpdatedTaskData({ attachments: updated }))
       setNewAttachmentName('')
       setNewAttachmentUrl('')
+      setNewAttachmentVisibleToClient(false)
       setShowAddAttachment(false)
     } else {
       setAttachmentError(res.error || 'Erro ao anexar link.')
@@ -729,13 +796,7 @@ export default function TaskDetailDrawer({
     if (confirmed) {
       const updated = attachments.filter((att) => att.id !== attachmentId)
       setAttachments(updated)
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        attachments: updated,
-        comments,
-        checklist,
-      })
+      onUpdateStage(getUpdatedTaskData({ attachments: updated }))
       await deleteStageAttachmentAction(projectId, stage.id, attachmentId)
     }
   }
@@ -761,19 +822,50 @@ export default function TaskDetailDrawer({
     if (res.success && res.attachment) {
       const updated = attachments.map((att) => (att.id === attachmentId ? res.attachment! : att))
       setAttachments(updated)
-      onUpdateStage({
-        ...stage,
-        ...formData,
-        attachments: updated,
-        comments,
-        checklist,
-      })
+      onUpdateStage(getUpdatedTaskData({ attachments: updated }))
       setEditingAttachmentId(null)
       setEditingAttachmentName('')
     } else {
       await showAlert({
         title: 'Erro ao editar anexo',
         message: res.error || 'Erro ao atualizar o nome do anexo.',
+        variant: 'error',
+      })
+    }
+  }
+
+  const handleToggleAttachmentVisibility = async (attachment: StageAttachment) => {
+    const current = attachment.is_visible_to_client !== false
+    const nextVal = !current
+
+    const confirmed = await confirm({
+      title: nextVal ? 'Exibir Anexo no Portal' : 'Ocultar Anexo do Portal',
+      message: nextVal
+        ? `Deseja liberar o anexo "${attachment.name}" para visualização no portal do cliente?`
+        : `Deseja ocultar o anexo "${attachment.name}" do portal do cliente?`,
+      description: nextVal
+        ? 'O cliente poderá visualizar e baixar este arquivo durante a etapa de aprovação.'
+        : 'Este arquivo passará a ser de uso interno e não ficará visível para o cliente no portal.',
+      confirmText: nextVal ? 'Liberar no Portal' : 'Ocultar Anexo',
+      cancelText: 'Cancelar',
+      variant: nextVal ? 'primary' : 'warning',
+    })
+
+    if (!confirmed) return
+
+    setTogglingVisibilityId(attachment.id)
+
+    const res = await toggleStageAttachmentVisibilityAction(projectId, stage.id, attachment.id, nextVal)
+    setTogglingVisibilityId(null)
+
+    if (res.success && res.attachment) {
+      const updated = attachments.map((att) => (att.id === attachment.id ? res.attachment! : att))
+      setAttachments(updated)
+      onUpdateStage(getUpdatedTaskData({ attachments: updated }))
+    } else {
+      await showAlert({
+        title: 'Erro ao alterar visibilidade',
+        message: res.error || 'Não foi possível alterar a visibilidade do anexo no portal.',
         variant: 'error',
       })
     }
@@ -960,7 +1052,7 @@ export default function TaskDetailDrawer({
                 </button>
               </div>
 
-              {/* Dates */}
+              {/* Data de Início */}
               <div>
                 <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
                   <Calendar className="w-3.5 h-3.5 text-blue-600" /> Data de Início
@@ -968,21 +1060,65 @@ export default function TaskDetailDrawer({
                 <input
                   type="date"
                   value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-slate-700 outline-hidden focus:border-blue-500"
+                  onChange={(e) => handleStartDateChange(e.target.value)}
+                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-hidden focus:border-blue-500 font-medium"
                 />
               </div>
 
+              {/* Prazo de Entrega */}
               <div>
                 <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
-                  <Clock className="w-3.5 h-3.5 text-indigo-600" /> Prazo de Entrega
+                  <Calendar className="w-3.5 h-3.5 text-amber-600" /> Prazo de Entrega
                 </label>
                 <input
                   type="date"
                   value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-slate-700 outline-hidden focus:border-blue-500"
+                  onChange={(e) => handleDueDateChange(e.target.value)}
+                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-hidden focus:border-blue-500 font-medium"
                 />
+              </div>
+
+              {/* Duração Sugerida (dias) */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
+                  <Clock className="w-3.5 h-3.5 text-indigo-600" /> Duração Sugerida (dias)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min={1}
+                    value={formData.duration_days}
+                    onChange={(e) => handleDurationChange(e.target.value)}
+                    placeholder="Ex: 5"
+                    className="w-full text-xs bg-white border border-slate-200 rounded-xl pl-3 pr-11 py-2 text-slate-700 outline-hidden focus:border-blue-500 font-mono font-bold"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-medium pointer-events-none">
+                    dias
+                  </span>
+                </div>
+              </div>
+
+              {/* Status do Cronograma Banner */}
+              <div className="sm:col-span-2 lg:col-span-3 pt-2.5 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-slate-500">Status do Prazo:</span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${timelineStatus.badgeBg} ${timelineStatus.badgeColor} ${timelineStatus.badgeBorder}`}
+                  >
+                    {timelineStatus.type === 'extrapolou' && <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />}
+                    {timelineStatus.type === 'hoje' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                    {timelineStatus.type === 'amanha' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                    {timelineStatus.type === 'curto' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                    {timelineStatus.type === 'longo' && <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+                    {timelineStatus.type === 'concluido' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    {timelineStatus.label}
+                  </span>
+                </div>
+                {formData.duration_days && Number(formData.duration_days) > 0 && (
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Intervalo total: <strong className="text-slate-700 font-mono">{formData.duration_days} dias corridos</strong>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1310,6 +1446,34 @@ export default function TaskDetailDrawer({
                         />
                       </div>
 
+                      {/* Configuração de Visibilidade no Portal do Cliente */}
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/90 flex items-center justify-between gap-3">
+                        <div className="space-y-0.5">
+                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <Globe className="w-3.5 h-3.5 text-blue-600" />
+                            Exibir no portal de aprovação do cliente
+                          </span>
+                          <span className="text-[11px] text-slate-500 block">
+                            {newAttachmentVisibleToClient
+                              ? 'O cliente poderá visualizar e baixar este arquivo na etapa de aprovação.'
+                              : 'Arquivo interno. Ficará visível apenas para a equipe do escritório.'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNewAttachmentVisibleToClient(!newAttachmentVisibleToClient)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                            newAttachmentVisibleToClient ? 'bg-blue-600' : 'bg-slate-300'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                              newAttachmentVisibleToClient ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
                       <div className="flex justify-end gap-2 pt-1">
                         <button
                           type="button"
@@ -1360,6 +1524,34 @@ export default function TaskDetailDrawer({
                         />
                       </div>
 
+                      {/* Configuração de Visibilidade no Portal do Cliente */}
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/90 flex items-center justify-between gap-3">
+                        <div className="space-y-0.5">
+                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                            <Globe className="w-3.5 h-3.5 text-blue-600" />
+                            Exibir no portal de aprovação do cliente
+                          </span>
+                          <span className="text-[11px] text-slate-500 block">
+                            {newAttachmentVisibleToClient
+                              ? 'O cliente poderá visualizar e acessar este link na etapa de aprovação.'
+                              : 'Link interno. Ficará visível apenas para a equipe do escritório.'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNewAttachmentVisibleToClient(!newAttachmentVisibleToClient)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                            newAttachmentVisibleToClient ? 'bg-blue-600' : 'bg-slate-300'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
+                              newAttachmentVisibleToClient ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
                       <div className="flex justify-end gap-2 pt-1">
                         <button
                           type="button"
@@ -1387,6 +1579,7 @@ export default function TaskDetailDrawer({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {attachments.map((att) => {
                     const isEditingAtt = editingAttachmentId === att.id
+                    const isVisibleToClient = att.is_visible_to_client !== false
 
                     if (isEditingAtt) {
                       return (
@@ -1465,17 +1658,54 @@ export default function TaskDetailDrawer({
                           <div className="p-1.5 rounded-lg bg-white border border-slate-200 shadow-2xs shrink-0">
                             {getFileIcon(att.name, att.url)}
                           </div>
-                          <div className="truncate">
+                          <div className="truncate space-y-0.5">
                             <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 transition-colors block truncate">
                               {att.name}
                             </span>
-                            <span className="text-[10px] text-slate-400 font-mono block">
-                              {att.size || 'Arquivo'}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {att.size || 'Arquivo'}
+                              </span>
+                              <span className="text-slate-300">•</span>
+                              {isVisibleToClient ? (
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-0.5">
+                                  <Eye className="w-2.5 h-2.5" /> Portal
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-slate-200/70 text-slate-600 border border-slate-300 inline-flex items-center gap-0.5">
+                                  <EyeOff className="w-2.5 h-2.5" /> Oculto
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </a>
 
                         <div className="flex items-center gap-1 shrink-0">
+                          {/* Botão de Toggle Rápido de Visibilidade para o Cliente */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAttachmentVisibility(att)}
+                            disabled={togglingVisibilityId === att.id}
+                            className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                              isVisibleToClient
+                                ? 'text-emerald-600 hover:bg-emerald-50'
+                                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200'
+                            }`}
+                            title={
+                              isVisibleToClient
+                                ? 'Visível no Portal do Cliente (clique para ocultar)'
+                                : 'Oculto no Portal do Cliente (clique para exibir)'
+                            }
+                          >
+                            {togglingVisibilityId === att.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : isVisibleToClient ? (
+                              <Eye className="w-3.5 h-3.5" />
+                            ) : (
+                              <EyeOff className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => handleStartEditAttachment(att)}
@@ -1547,14 +1777,33 @@ export default function TaskDetailDrawer({
 
                 {comments.map((cmt) => {
                   const isEditing = editingCommentId === cmt.id
+                  const isAudit =
+                    cmt.text.includes('[Aprovação Manual]') ||
+                    cmt.text.includes('[Validação do Cliente]') ||
+                    cmt.user_id === 'portal-client'
+
                   return (
                     <div
                       key={cmt.id}
-                      className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2 hover:border-slate-200 transition-all group"
+                      className={`p-3 rounded-xl border space-y-2 transition-all group ${isAudit
+                          ? 'bg-emerald-50/70 border-emerald-200/90 shadow-2xs'
+                          : 'bg-slate-50 border-slate-100 hover:border-slate-200'
+                        }`}
                     >
                       <div className="flex items-center justify-between text-[11px] text-slate-400">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-slate-700">{cmt.user_name}</span>
+                          <span
+                            className={`font-bold ${isAudit ? 'text-emerald-950 flex items-center gap-1.5' : 'text-slate-700'
+                              }`}
+                          >
+                            {isAudit && <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                            {cmt.user_name}
+                          </span>
+                          {isAudit && (
+                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md">
+                              Auditoria & Aprovação
+                            </span>
+                          )}
                           <span>•</span>
                           <span>{formatDateTimeBR(cmt.created_at)}</span>
                           {cmt.updated_at && (
@@ -1564,7 +1813,7 @@ export default function TaskDetailDrawer({
                           )}
                         </div>
 
-                        {!isEditing && (
+                        {!isEditing && !isAudit && (
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               type="button"
@@ -1615,7 +1864,12 @@ export default function TaskDetailDrawer({
                           </div>
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">{cmt.text}</p>
+                        <p
+                          className={`text-xs whitespace-pre-wrap leading-relaxed ${isAudit ? 'text-emerald-950 font-medium' : 'text-slate-700'
+                            }`}
+                        >
+                          {cmt.text}
+                        </p>
                       )}
                     </div>
                   )

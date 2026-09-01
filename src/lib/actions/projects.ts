@@ -27,15 +27,46 @@ function parseCleanNumber(val: string | null | undefined): number | null {
   return isNaN(num) ? null : num
 }
 
+function extractClientIdsFromFormData(formData: FormData): string[] {
+  const result: string[] = []
+
+  const allEntries = formData.getAll('clientIds')
+  for (const entry of allEntries) {
+    const val = entry ? entry.toString().trim() : ''
+    if (!val) continue
+    if (val.startsWith('[') && val.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(val)
+        if (Array.isArray(parsed)) {
+          for (const item of parsed) {
+            const clean = typeof item === 'string' ? item.trim() : ''
+            if (clean && !result.includes(clean) && !clean.startsWith('[') && !clean.startsWith('{')) {
+              result.push(clean)
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    } else if (!result.includes(val) && !val.startsWith('[') && !val.startsWith('{')) {
+      result.push(val)
+    }
+  }
+
+  const single = (formData.get('clientId') as string)?.trim()
+  if (single && !result.includes(single) && !single.startsWith('[') && !single.startsWith('{')) {
+    result.push(single)
+  }
+
+  return result
+}
+
 export async function createProjectAction(formData: FormData): Promise<{ success: boolean; projectId?: string; error?: string }> {
   const { supabase, user } = await requireAuth()
 
   let organizationId = (formData.get('organizationId') as string) || ''
   const code = sanitizeText(formData.get('code') as string)
   const title = sanitizeText(formData.get('title') as string)
-  const clientName = sanitizeText(formData.get('clientName') as string)
-  const clientEmail = sanitizeText(formData.get('clientEmail') as string)
-  const clientPhone = sanitizeText(formData.get('clientPhone') as string)
   const typology = sanitizeText(formData.get('typology') as string)
   const areaSqmStr = formData.get('areaSqm') as string
   const estimatedBudgetStr = formData.get('estimatedBudget') as string
@@ -45,9 +76,39 @@ export async function createProjectAction(formData: FormData): Promise<{ success
   const startDate = formData.get('startDate') as string
   const deadline = formData.get('deadline') as string
   const description = sanitizeText(formData.get('description') as string)
+  const clientName = sanitizeText(formData.get('clientName') as string)
+  const clientEmail = sanitizeText(formData.get('clientEmail') as string)
+  const clientPhone = sanitizeText(formData.get('clientPhone') as string)
 
-  if (!code || !title || !clientName) {
-    return { success: false, error: 'Código, título e nome do cliente são obrigatórios.' }
+  const clientIds = extractClientIdsFromFormData(formData)
+
+  let linkedClients: { id: string; name: string; email: string | null; phone: string | null }[] = []
+  if (clientIds.length > 0) {
+    const { data: dbClients, error: clientsErr } = await supabase
+      .from('clients')
+      .select('id, name, email, phone')
+      .in('id', clientIds)
+
+    if (dbClients && dbClients.length > 0) {
+      linkedClients = dbClients
+    } else if (clientsErr) {
+      console.warn('Erro ao consultar clients vinculados:', clientsErr)
+    }
+  }
+
+  let finalClientName = clientName
+  if (linkedClients.length > 0) {
+    finalClientName = linkedClients.map((c) => c.name).join(' & ')
+  } else if (!finalClientName && clientIds.length > 0) {
+    finalClientName = 'Cliente do Projeto'
+  }
+
+  const primaryClientId = linkedClients[0]?.id || clientIds[0] || null
+  const primaryClientEmail = linkedClients[0]?.email || clientEmail || null
+  const primaryClientPhone = linkedClients[0]?.phone || clientPhone || null
+
+  if (!code || !title || (!finalClientName && clientIds.length === 0)) {
+    return { success: false, error: 'Código, título e ao menos um cliente são obrigatórios.' }
   }
 
   // Se organizationId não foi informada ou está vazia, busca ou auto-provisiona para o usuário
@@ -134,9 +195,10 @@ export async function createProjectAction(formData: FormData): Promise<{ success
       organization_id: organizationId,
       code,
       title,
-      client_name: clientName,
-      client_email: clientEmail || null,
-      client_phone: clientPhone || null,
+      client_id: primaryClientId,
+      client_name: finalClientName,
+      client_email: primaryClientEmail,
+      client_phone: primaryClientPhone,
       typology: typology || 'Residencial',
       area_sqm: areaSqm,
       estimated_budget: estimatedBudget,
@@ -159,7 +221,20 @@ export async function createProjectAction(formData: FormData): Promise<{ success
     return { success: false, error: error?.message || 'Falha ao cadastrar projeto no banco de dados.' }
   }
 
+  // Vincula todos os clientes selecionados na tabela project_clients
+  if (clientIds.length > 0) {
+    const projectClientRows = clientIds.map((cid) => ({
+      project_id: project.id,
+      client_id: cid,
+    }))
+    await supabase.from('project_clients').upsert(projectClientRows, { onConflict: 'project_id,client_id' })
+  }
+
   revalidatePath('/app/projetos')
+  revalidatePath('/app/clientes')
+  clientIds.forEach((cid) => {
+    revalidatePath(`/app/clientes/${cid}`)
+  })
   revalidatePath('/app')
 
   return { success: true, projectId: project.id }
@@ -170,8 +245,6 @@ export async function updateProjectAction(projectId: string, formData: FormData)
 
   const title = sanitizeText(formData.get('title') as string)
   const clientName = sanitizeText(formData.get('clientName') as string)
-  const clientEmail = sanitizeText(formData.get('clientEmail') as string)
-  const clientPhone = sanitizeText(formData.get('clientPhone') as string)
   const typology = sanitizeText(formData.get('typology') as string)
   const areaSqmStr = formData.get('areaSqm') as string
   const estimatedBudgetStr = formData.get('estimatedBudget') as string
@@ -183,11 +256,12 @@ export async function updateProjectAction(projectId: string, formData: FormData)
   const description = sanitizeText(formData.get('description') as string)
   const status = formData.get('status') as 'ativo' | 'em_producao' | 'pausado' | 'concluido' | 'cancelado'
 
+  // Support multi-client update
+  const hasClientIds = formData.has('clientIds') || formData.has('clientId')
+  const clientIds = hasClientIds ? extractClientIdsFromFormData(formData) : null
+
   const updatePayload: ProjectUpdate = {}
   if (title) updatePayload.title = title
-  if (clientName) updatePayload.client_name = clientName
-  if (clientEmail !== undefined) updatePayload.client_email = clientEmail || null
-  if (clientPhone !== undefined) updatePayload.client_phone = clientPhone || null
   if (typology) updatePayload.typology = typology
   if (areaSqmStr !== undefined) updatePayload.area_sqm = parseCleanNumber(areaSqmStr)
   if (estimatedBudgetStr !== undefined) updatePayload.estimated_budget = parseCleanNumber(estimatedBudgetStr)
@@ -198,6 +272,43 @@ export async function updateProjectAction(projectId: string, formData: FormData)
   if (deadline !== undefined) updatePayload.deadline = deadline || null
   if (description !== undefined) updatePayload.description = description || null
   if (status) updatePayload.status = status as any
+
+  if (clientIds !== null) {
+    let linkedClients: { id: string; name: string; email: string | null; phone: string | null }[] = []
+    if (clientIds.length > 0) {
+      const { data: dbClients } = await supabase
+        .from('clients')
+        .select('id, name, email, phone')
+        .in('id', clientIds)
+
+      if (dbClients) linkedClients = dbClients
+    }
+
+    if (linkedClients.length > 0) {
+      updatePayload.client_name = linkedClients.map((c) => c.name).join(' & ')
+      ;(updatePayload as any).client_id = linkedClients[0].id
+      updatePayload.client_email = linkedClients[0].email
+      updatePayload.client_phone = linkedClients[0].phone
+    } else if (clientName) {
+      updatePayload.client_name = clientName
+    }
+
+    // Sincroniza tabela project_clients
+    try {
+      await supabase.from('project_clients').delete().eq('project_id', projectId)
+      if (clientIds.length > 0) {
+        const rows = clientIds.map((cid) => ({
+          project_id: projectId,
+          client_id: cid,
+        }))
+        await supabase.from('project_clients').insert(rows)
+      }
+    } catch (syncErr) {
+      console.warn('project_clients sync error:', syncErr)
+    }
+  } else if (clientName) {
+    updatePayload.client_name = clientName
+  }
 
   const { error } = await supabase
     .from('projects')
@@ -210,6 +321,10 @@ export async function updateProjectAction(projectId: string, formData: FormData)
 
   revalidatePath(`/app/projetos/${projectId}`)
   revalidatePath('/app/projetos')
+  revalidatePath('/app/clientes')
+  if (clientIds) {
+    clientIds.forEach((cid) => revalidatePath(`/app/clientes/${cid}`))
+  }
   revalidatePath('/app')
   return { success: true }
 }

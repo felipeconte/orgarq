@@ -212,6 +212,7 @@ export type Database = {
           title: string
           description: string | null
           typology: string | null
+          client_id: string | null
           client_name: string
           client_email: string | null
           client_phone: string | null
@@ -234,6 +235,7 @@ export type Database = {
           title: string
           description?: string | null
           typology?: string | null
+          client_id?: string | null
           client_name: string
           client_email?: string | null
           client_phone?: string | null
@@ -256,6 +258,7 @@ export type Database = {
           title?: string
           description?: string | null
           typology?: string | null
+          client_id?: string | null
           client_name?: string
           client_email?: string | null
           client_phone?: string | null
@@ -277,6 +280,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           }
         ]
@@ -489,6 +499,7 @@ export type Database = {
           id: string
           project_id: string
           stage_id: string
+          client_id: string | null
           action: 'approved' | 'changes_requested'
           approver_name: string
           approver_email: string | null
@@ -502,6 +513,7 @@ export type Database = {
           id?: string
           project_id: string
           stage_id: string
+          client_id?: string | null
           action: 'approved' | 'changes_requested'
           approver_name: string
           approver_email?: string | null
@@ -515,6 +527,7 @@ export type Database = {
           id?: string
           project_id?: string
           stage_id?: string
+          client_id?: string | null
           action?: 'approved' | 'changes_requested'
           approver_name?: string
           approver_email?: string | null
@@ -537,6 +550,222 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "project_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_approvals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      clients: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          person_type: 'PF' | 'PJ'
+          document_number: string | null
+          email: string | null
+          phone: string | null
+          address: string | null
+          city: string | null
+          state: string | null
+          zip_code: string | null
+          notes: string | null
+          status: 'ativo' | 'inativo'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          person_type?: 'PF' | 'PJ'
+          document_number?: string | null
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip_code?: string | null
+          notes?: string | null
+          status?: 'ativo' | 'inativo'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          person_type?: 'PF' | 'PJ'
+          document_number?: string | null
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip_code?: string | null
+          notes?: string | null
+          status?: 'ativo' | 'inativo'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      project_clients: {
+        Row: {
+          id: string
+          project_id: string
+          client_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          client_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          client_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_clients_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_clients_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      client_portal_accounts: {
+        Row: {
+          id: string
+          cpf: string
+          name: string
+          email: string | null
+          phone: string | null
+          address: string | null
+          city: string | null
+          state: string | null
+          zip_code: string | null
+          password_hash: string
+          created_at: string
+          updated_at: string
+          last_login_at: string | null
+        }
+        Insert: {
+          id?: string
+          cpf: string
+          name: string
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip_code?: string | null
+          password_hash: string
+          created_at?: string
+          updated_at?: string
+          last_login_at?: string | null
+        }
+        Update: {
+          id?: string
+          cpf?: string
+          name?: string
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip_code?: string | null
+          password_hash?: string
+          created_at?: string
+          updated_at?: string
+          last_login_at?: string | null
+        }
+        Relationships: []
+      }
+      client_update_requests: {
+        Row: {
+          id: string
+          organization_id: string
+          client_id: string | null
+          portal_account_id: string | null
+          cpf: string
+          requested_data: Json
+          current_data: Json | null
+          status: 'pending' | 'approved' | 'rejected'
+          reviewed_by: string | null
+          reviewed_at: string | null
+          rejection_reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          client_id?: string | null
+          portal_account_id?: string | null
+          cpf: string
+          requested_data: Json
+          current_data?: Json | null
+          status?: 'pending' | 'approved' | 'rejected'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          client_id?: string | null
+          portal_account_id?: string | null
+          cpf?: string
+          requested_data?: Json
+          current_data?: Json | null
+          status?: 'pending' | 'approved' | 'rejected'
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+          rejection_reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_update_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_update_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           }
         ]

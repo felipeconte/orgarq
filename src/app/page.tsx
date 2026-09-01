@@ -79,12 +79,19 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/portal/login"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/90 transition-all shadow-2xs"
+            >
+              <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+              Acompanhar meu projeto
+            </Link>
             <Link
               href="/login"
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-slate-100 transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 hover:bg-slate-100 transition-all"
             >
-              Entrar
+              Área do Escritório
             </Link>
             <Link
               href="/cadastro"

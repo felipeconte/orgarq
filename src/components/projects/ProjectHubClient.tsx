@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import {
   ListTodo,
   Kanban as KanbanIcon,
@@ -30,7 +30,8 @@ import {
   ShieldCheck,
   Eye,
   EyeOff,
-  Flag
+  Flag,
+  AlertTriangle
 } from 'lucide-react'
 import {
   updateStageStatusAction,
@@ -54,7 +55,11 @@ import {
   startOfMonthBR,
   endOfMonthBR,
   startOfYearBR,
-  endOfYearBR
+  endOfYearBR,
+  calculateDueDateFromDuration,
+  calculateDurationDays,
+  getTaskTimelineStatus,
+  TaskTimelineStatusInfo
 } from '@/lib/date-utils'
 import TaskDetailDrawer, {
   TaskDetailData,
@@ -97,6 +102,7 @@ export interface ProjectHubClientProps {
   portalToken: string
   members?: MemberOption[]
   initialWorkflowStages?: WorkflowStage[]
+  initialView?: 'lista' | 'kanban' | 'gantt'
 }
 
 export default function ProjectHubClient({
@@ -106,6 +112,7 @@ export default function ProjectHubClient({
   portalToken,
   members = [],
   initialWorkflowStages,
+  initialView = 'lista',
 }: ProjectHubClientProps) {
   const confirm = useConfirm()
   const showAlert = useAlert()
@@ -128,7 +135,131 @@ export default function ProjectHubClient({
   const [colToDelete, setColToDelete] = useState<WorkflowStage | null>(null)
   const [isDeletingCol, setIsDeletingCol] = useState(false)
 
-  const [activeView, setActiveView] = useState<'lista' | 'kanban' | 'gantt'>('lista')
+  // Inicializa diretamente na visão escolhida sem piscar ou transicionar por 'lista'
+  const [activeView, setActiveView] = useState<'lista' | 'kanban' | 'gantt'>(initialView)
+
+  // Panorama Geral de Cronograma e Progresso Global do Projeto
+  const timelinePanorama = useMemo(() => {
+    const total = stages.length
+    if (total === 0) {
+      return {
+        totalStages: 0,
+        completedStages: 0,
+        progressPercent: 0,
+        overdueCount: 0,
+        urgentCount: 0,
+        onTimeCount: 0,
+        healthStatus: 'em_dia' as 'em_dia' | 'atencao' | 'atrasado' | 'concluido',
+      }
+    }
+
+    let progressSum = 0
+    let completed = 0
+    let overdue = 0
+    let urgent = 0
+    let onTime = 0
+
+    stages.forEach((st) => {
+      const isFinal = Boolean(
+        st.status === 'concluido' ||
+        workflowStages.find((ws) => ws.id === st.status)?.is_final_stage
+      )
+
+      // Cálculo do progresso individual da tarefa
+      let taskProg = st.progress_percent || 0
+      if (isFinal) {
+        taskProg = 100
+        completed++
+      } else if (Array.isArray(st.checklist) && st.checklist.length > 0) {
+        const doneCount = st.checklist.filter((c) => c.completed).length
+        taskProg = Math.round((doneCount / st.checklist.length) * 100)
+      } else if (st.status === 'em_producao' || st.status === 'em_andamento') {
+        taskProg = Math.max(taskProg, 50)
+      }
+      progressSum += taskProg
+
+      // Status do cronograma
+      const statusInfo = getTaskTimelineStatus(st.start_date, st.due_date, isFinal)
+      if (statusInfo.type === 'extrapolou') {
+        overdue++
+      } else if (
+        statusInfo.type === 'hoje' ||
+        statusInfo.type === 'amanha' ||
+        statusInfo.type === 'curto'
+      ) {
+        urgent++
+      } else if (statusInfo.type === 'longo') {
+        onTime++
+      }
+    })
+
+    const overallProgress = Math.round(progressSum / total)
+
+    let healthStatus: 'em_dia' | 'atencao' | 'atrasado' | 'concluido' = 'em_dia'
+    if (completed === total) {
+      healthStatus = 'concluido'
+    } else if (overdue > 0) {
+      healthStatus = 'atrasado'
+    } else if (urgent > 0) {
+      healthStatus = 'atencao'
+    }
+
+    return {
+      totalStages: total,
+      completedStages: completed,
+      progressPercent: overallProgress,
+      overdueCount: overdue,
+      urgentCount: urgent,
+      onTimeCount: onTime,
+      healthStatus,
+    }
+  }, [stages, workflowStages])
+
+  const handleSelectView = (view: 'lista' | 'kanban' | 'gantt') => {
+    setActiveView(view)
+    try {
+      localStorage.setItem(`orgarq_project_view_${projectId}`, view)
+      document.cookie = `orgarq_project_view_${projectId}=${view}; path=/; max-age=31536000; SameSite=Lax`
+      document.cookie = `orgarq_last_view=${view}; path=/; max-age=31536000; SameSite=Lax`
+      const url = new URL(window.location.href)
+      url.searchParams.set('view', view)
+      window.history.replaceState(null, '', url.toString())
+    } catch {
+      // safe fallback
+    }
+  }
+
+  // Sincroniza cookies e escuta histórico de navegação (Back/Forward)
+  useEffect(() => {
+    try {
+      localStorage.setItem(`orgarq_project_view_${projectId}`, activeView)
+      document.cookie = `orgarq_project_view_${projectId}=${activeView}; path=/; max-age=31536000; SameSite=Lax`
+      document.cookie = `orgarq_last_view=${activeView}; path=/; max-age=31536000; SameSite=Lax`
+      const searchParams = new URLSearchParams(window.location.search)
+      if (!searchParams.has('view')) {
+        const url = new URL(window.location.href)
+        url.searchParams.set('view', activeView)
+        window.history.replaceState(null, '', url.toString())
+      }
+    } catch {
+      // safe fallback
+    }
+
+    const handlePopState = () => {
+      try {
+        const searchParams = new URLSearchParams(window.location.search)
+        const viewParam = searchParams.get('view') as 'lista' | 'kanban' | 'gantt' | null
+        if (viewParam && ['lista', 'kanban', 'gantt'].includes(viewParam)) {
+          setActiveView(viewParam)
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [projectId, activeView])
   const [ganttViewMode, setGanttViewMode] = useState<'days' | 'weeks' | 'months'>('days')
   const [copied, setCopied] = useState(false)
   const [loadingStageId, setLoadingStageId] = useState<string | null>(null)
@@ -258,6 +389,7 @@ export default function ProjectHubClient({
     assigned_to: string
     start_date: string
     due_date: string
+    duration_days: number | ''
     status: TaskDetailData['status']
     is_client_approval_required: boolean
   }>({
@@ -266,9 +398,49 @@ export default function ProjectHubClient({
     assigned_to: '',
     start_date: '',
     due_date: '',
+    duration_days: '',
     status: 'a_iniciar',
     is_client_approval_required: true,
   })
+
+  const handleNewTaskStartDateChange = (newStart: string) => {
+    let newDue = newTaskData.due_date
+    if (newStart && newTaskData.duration_days !== '' && Number(newTaskData.duration_days) > 0) {
+      newDue = calculateDueDateFromDuration(newStart, Number(newTaskData.duration_days))
+    } else if (newStart && newDue) {
+      const calculatedDays = calculateDurationDays(newStart, newDue)
+      if (calculatedDays) {
+        setNewTaskData((prev) => ({
+          ...prev,
+          start_date: newStart,
+          due_date: newDue,
+          duration_days: calculatedDays,
+        }))
+        return
+      }
+    }
+    setNewTaskData((prev) => ({ ...prev, start_date: newStart, due_date: newDue }))
+  }
+
+  const handleNewTaskDurationChange = (val: string) => {
+    const parsed = val === '' ? '' : Math.max(1, parseInt(val) || 1)
+    let newDue = newTaskData.due_date
+    if (newTaskData.start_date && parsed !== '') {
+      newDue = calculateDueDateFromDuration(newTaskData.start_date, Number(parsed))
+    }
+    setNewTaskData((prev) => ({ ...prev, duration_days: parsed, due_date: newDue }))
+  }
+
+  const handleNewTaskDueDateChange = (newDue: string) => {
+    let newDuration: number | '' = newTaskData.duration_days
+    if (newTaskData.start_date && newDue) {
+      const calculatedDays = calculateDurationDays(newTaskData.start_date, newDue)
+      if (calculatedDays) {
+        newDuration = calculatedDays
+      }
+    }
+    setNewTaskData((prev) => ({ ...prev, due_date: newDue, duration_days: newDuration }))
+  }
 
   // Drag and Drop State - LISTA
   const [draggedListId, setDraggedListId] = useState<string | null>(null)
@@ -279,12 +451,11 @@ export default function ProjectHubClient({
   const [draggingKanbanId, setDraggingKanbanId] = useState<string | null>(null)
   const [activeDropCol, setActiveDropCol] = useState<string | null>(null)
 
-  const portalUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/portal/${portalToken}`
-    : `/portal/${portalToken}`
-
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(portalUrl)
+    const fullUrl = typeof window !== 'undefined'
+      ? `${window.location.origin}/portal/${portalToken}`
+      : `/portal/${portalToken}`
+    navigator.clipboard.writeText(fullUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2500)
   }
@@ -330,9 +501,38 @@ export default function ProjectHubClient({
       }
     }
 
+    // Modal de confirmação ao mover para uma etapa de "aprovada"
+    const isApprovedStage = Boolean(
+      targetStageCfg?.is_approved_stage ||
+      targetStageCfg?.name?.toLowerCase().includes('aprovad') ||
+      newStatus === 'concluido'
+    )
+
+    if (isApprovedStage && currentTask && currentTask.status !== newStatus) {
+      const stageName = currentTask.name || 'esta tarefa'
+      const targetStageName = targetStageCfg?.name || 'Aprovado'
+
+      const confirmed = await confirm({
+        title: 'Confirmar Aprovação da Tarefa',
+        message: `Deseja marcar a tarefa "${stageName}" como "${targetStageName}"?`,
+        description:
+          'Atenção: Ao realizar esta ação manualmente, você será registrado como o responsável pela aprovação no histórico de auditoria do projeto.',
+        confirmText: 'Confirmar e Aprovar',
+        cancelText: 'Cancelar',
+        variant: 'primary',
+      })
+
+      if (!confirmed) {
+        return
+      }
+    }
+
     setStages((prev) =>
       prev.map((s) => (s.id === stageId ? { ...s, status: newStatus } : s))
     )
+    if (selectedTask && selectedTask.id === stageId) {
+      setSelectedTask((prev) => (prev ? { ...prev, status: newStatus } : null))
+    }
     setLoadingStageId(stageId)
     const res = await updateStageStatusAction(projectId, stageId, newStatus)
     setLoadingStageId(null)
@@ -347,21 +547,63 @@ export default function ProjectHubClient({
         setStages((prev) =>
           prev.map((s) => (s.id === stageId ? currentTask : s))
         )
+        if (selectedTask && selectedTask.id === stageId) {
+          setSelectedTask(currentTask)
+        }
+      }
+    } else if (res?.comments) {
+      setStages((prev) =>
+        prev.map((s) => (s.id === stageId ? { ...s, comments: res.comments } : s))
+      )
+      if (selectedTask && selectedTask.id === stageId) {
+        setSelectedTask((prev) => (prev ? { ...prev, comments: res.comments } : null))
       }
     }
   }
 
   // Toggle rápido de exigência de aprovação do cliente no portal
   const handleToggleClientApproval = async (stageId: string, newState: boolean) => {
+    const stage = stages.find((s) => s.id === stageId)
+    const stageName = stage?.name || 'esta etapa'
+
+    const confirmed = await confirm({
+      title: newState ? 'Exigir Aprovação do Cliente' : 'Desativar Aprovação do Cliente',
+      message: newState
+        ? `Deseja ativar a exigência de aprovação do cliente para "${stageName}"?`
+        : `Deseja remover a exigência de aprovação do cliente para "${stageName}"?`,
+      description: newState
+        ? 'Esta etapa passará a exigir aprovação formal do cliente no portal para poder ser concluída.'
+        : 'Esta etapa será tratada como interna e não exigirá o aceite do cliente no portal.',
+      confirmText: newState ? 'Ativar Exigência' : 'Remover Exigência',
+      cancelText: 'Cancelar',
+      variant: newState ? 'primary' : 'warning',
+    })
+
+    if (!confirmed) return
+
     setStages((prev) =>
       prev.map((s) => (s.id === stageId ? { ...s, is_client_approval_required: newState } : s))
     )
     if (selectedTask && selectedTask.id === stageId) {
-      setSelectedTask((prev) => prev ? { ...prev, is_client_approval_required: newState } : null)
+      setSelectedTask((prev) => (prev ? { ...prev, is_client_approval_required: newState } : null))
     }
     setTogglingApprovalStageId(stageId)
-    await toggleStageClientApprovalAction(projectId, stageId, newState)
+    const res = await toggleStageClientApprovalAction(projectId, stageId, newState)
     setTogglingApprovalStageId(null)
+
+    if (res?.error) {
+      setStages((prev) =>
+        prev.map((s) => (s.id === stageId ? { ...s, is_client_approval_required: !newState } : s))
+      )
+      if (selectedTask && selectedTask.id === stageId) {
+        setSelectedTask((prev) => (prev ? { ...prev, is_client_approval_required: !newState } : null))
+      }
+      await showAlert({
+        title: 'Erro ao alterar aprovação',
+        message: res.error,
+        variant: 'error',
+      })
+    }
   }
 
   const handleStageUpdatedFromDrawer = (updated: TaskDetailData) => {
@@ -412,6 +654,7 @@ export default function ProjectHubClient({
       assigned_to: '',
       start_date: '',
       due_date: '',
+      duration_days: '',
       status: initialStatus,
       is_client_approval_required: true,
     })
@@ -928,7 +1171,7 @@ export default function ProjectHubClient({
           </button>
 
           <a
-            href={portalUrl}
+            href={`/portal/${portalToken}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white text-blue-600 hover:bg-blue-50 text-xs font-extrabold transition-all shadow-xs cursor-pointer"
@@ -938,11 +1181,88 @@ export default function ProjectHubClient({
         </div>
       </div>
 
+      {/* PANORAMA GERAL DO PROJETO & CRONOGRAMA */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center justify-between gap-4 max-w-md">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Progresso Geral do Projeto
+              </span>
+              <span className="font-mono text-sm font-extrabold text-blue-600">
+                {timelinePanorama.progressPercent}%
+              </span>
+            </div>
+            {/* Progress Bar */}
+            <div className="max-w-md bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500"
+                style={{ width: `${timelinePanorama.progressPercent}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Média ponderada do avanço individual de todas as {timelinePanorama.totalStages} tarefas do projeto
+            </p>
+          </div>
+
+          {/* Quick Metrics Badges */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Concluídas */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-bold">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                {timelinePanorama.completedStages} de {timelinePanorama.totalStages} concluídas
+              </span>
+            </div>
+
+            {/* No Prazo */}
+            {timelinePanorama.onTimeCount > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200/80 text-blue-800 text-xs font-bold" title="Tarefas com prazo confortável">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>{timelinePanorama.onTimeCount} no prazo</span>
+              </div>
+            )}
+
+            {/* Prazo Curto / Atenção */}
+            {timelinePanorama.urgentCount > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-900 text-xs font-bold" title="Tarefas que vencem hoje, amanhã ou em até 3 dias">
+                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>{timelinePanorama.urgentCount} prazo curto</span>
+              </div>
+            )}
+
+            {/* Extrapolou / Atrasadas */}
+            {timelinePanorama.overdueCount > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold animate-pulse" title="Tarefas não concluídas após a data limite">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                <span>{timelinePanorama.overdueCount} atrasada(s)</span>
+              </div>
+            )}
+
+            {/* Saúde Geral do Cronograma */}
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold">
+              {timelinePanorama.healthStatus === 'concluido' && (
+                <span className="text-emerald-700 flex items-center gap-1">🏆 100% Concluído</span>
+              )}
+              {timelinePanorama.healthStatus === 'atrasado' && (
+                <span className="text-rose-700 flex items-center gap-1">🚨 Prazos Críticos</span>
+              )}
+              {timelinePanorama.healthStatus === 'atencao' && (
+                <span className="text-amber-700 flex items-center gap-1">⚠️ Atenção aos Prazos</span>
+              )}
+              {timelinePanorama.healthStatus === 'em_dia' && (
+                <span className="text-blue-700 flex items-center gap-1">✨ Cronograma em Dia</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Navigation Views Switcher + Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
           <button
-            onClick={() => setActiveView('lista')}
+            onClick={() => handleSelectView('lista')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeView === 'lista'
               ? 'bg-white text-blue-600 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
@@ -952,7 +1272,7 @@ export default function ProjectHubClient({
             Lista
           </button>
           <button
-            onClick={() => setActiveView('kanban')}
+            onClick={() => handleSelectView('kanban')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeView === 'kanban'
               ? 'bg-white text-blue-600 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
@@ -962,7 +1282,7 @@ export default function ProjectHubClient({
             Kanban
           </button>
           <button
-            onClick={() => setActiveView('gantt')}
+            onClick={() => handleSelectView('gantt')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeView === 'gantt'
               ? 'bg-white text-blue-600 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
@@ -998,6 +1318,7 @@ export default function ProjectHubClient({
                   <th className="py-3.5 px-4">Nome da Tarefa</th>
                   <th className="py-3.5 px-4">Responsável</th>
                   <th className="py-3.5 px-4">Datas (DD/MM/AAAA)</th>
+                  <th className="py-3.5 px-4">Tempo / Prazo</th>
                   <th className="py-3.5 px-4">Checklist / Anexos</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Ações</th>
@@ -1006,7 +1327,7 @@ export default function ProjectHubClient({
               <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
                 {stages.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-slate-400">
+                    <td colSpan={8} className="py-10 text-center text-slate-400">
                       <p className="text-sm font-semibold text-slate-600">Nenhuma tarefa neste projeto.</p>
                       <p className="text-xs text-slate-400 mt-1">Clique em &quot;Nova Tarefa&quot; acima para adicionar a primeira etapa.</p>
                     </td>
@@ -1021,6 +1342,12 @@ export default function ProjectHubClient({
 
                   const isDragging = draggedListId === st.id
                   const isOver = dragOverListId === st.id
+
+                  const isFinal = Boolean(
+                    st.status === 'concluido' ||
+                    workflowStages.find((ws) => ws.id === st.status)?.is_final_stage
+                  )
+                  const taskTimeline = getTaskTimelineStatus(st.start_date, st.due_date, isFinal)
 
                   return (
                     <tr
@@ -1111,8 +1438,30 @@ export default function ProjectHubClient({
                             {formatDateRangeBR(st.start_date, st.due_date)}
                           </span>
                         ) : (
-                          <span className="text-slate-400 italic">Sem datas definidas</span>
+                          <span className="text-slate-400 italic">Sem datas</span>
                         )}
+                      </td>
+
+                      {/* Coluna Tempo / Prazo */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold border ${taskTimeline.badgeBg} ${taskTimeline.badgeColor} ${taskTimeline.badgeBorder} w-fit`}
+                          >
+                            {taskTimeline.type === 'extrapolou' && <AlertTriangle className="w-3 h-3 text-rose-600 shrink-0" />}
+                            {taskTimeline.type === 'hoje' && <Clock className="w-3 h-3 text-amber-600 shrink-0" />}
+                            {taskTimeline.type === 'amanha' && <Clock className="w-3 h-3 text-amber-600 shrink-0" />}
+                            {taskTimeline.type === 'curto' && <Clock className="w-3 h-3 text-amber-600 shrink-0" />}
+                            {taskTimeline.type === 'longo' && <Calendar className="w-3 h-3 text-blue-600 shrink-0" />}
+                            {taskTimeline.type === 'concluido' && <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />}
+                            {taskTimeline.shortLabel}
+                          </span>
+                          {taskTimeline.durationDays != null && (
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              ⏱️ {taskTimeline.durationDays} {taskTimeline.durationDays === 1 ? 'dia' : 'dias'}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -1198,7 +1547,7 @@ export default function ProjectHubClient({
 
                 {/* Quick Add Row at Bottom */}
                 <tr>
-                  <td colSpan={7} className="p-3 bg-slate-50/50 hover:bg-blue-50/30 transition-colors text-center border-t border-slate-100">
+                  <td colSpan={8} className="p-3 bg-slate-50/50 hover:bg-blue-50/30 transition-colors text-center border-t border-slate-100">
                     <button
                       type="button"
                       onClick={() => handleOpenCreateModal()}
@@ -1469,6 +1818,60 @@ export default function ProjectHubClient({
                                 <span className="truncate">{formatDateRangeBR(st.start_date, st.due_date)}</span>
                               </div>
                             )}
+
+                            {/* Duração & Status do Prazo no Kanban */}
+                            {(() => {
+                              const isTaskFinal = Boolean(
+                                col.id === 'concluido' ||
+                                workflowStages.find((ws) => ws.id === col.id)?.is_final_stage
+                              )
+                              const taskTimeline = getTaskTimelineStatus(st.start_date, st.due_date, isTaskFinal)
+                              let taskProgress = st.progress_percent || 0
+                              if (isTaskFinal) {
+                                taskProgress = 100
+                              } else if (Array.isArray(st.checklist) && st.checklist.length > 0) {
+                                const done = st.checklist.filter((c) => c.completed).length
+                                taskProgress = Math.round((done / st.checklist.length) * 100)
+                              }
+
+                              return (
+                                <div className="space-y-1.5 pt-1">
+                                  <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md font-bold border ${taskTimeline.badgeBg} ${taskTimeline.badgeColor} ${taskTimeline.badgeBorder}`}
+                                    >
+                                      {taskTimeline.type === 'extrapolou' && <AlertTriangle className="w-2.5 h-2.5 text-rose-600 shrink-0" />}
+                                      {taskTimeline.type === 'hoje' && <Clock className="w-2.5 h-2.5 text-amber-600 shrink-0" />}
+                                      {taskTimeline.type === 'amanha' && <Clock className="w-2.5 h-2.5 text-amber-600 shrink-0" />}
+                                      {taskTimeline.type === 'curto' && <Clock className="w-2.5 h-2.5 text-amber-600 shrink-0" />}
+                                      {taskTimeline.type === 'longo' && <Calendar className="w-2.5 h-2.5 text-blue-600 shrink-0" />}
+                                      {taskTimeline.type === 'concluido' && <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 shrink-0" />}
+                                      {taskTimeline.shortLabel}
+                                    </span>
+
+                                    {taskTimeline.durationDays != null && (
+                                      <span className="text-slate-500 font-medium">
+                                        ⏱️ {taskTimeline.durationDays}d
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Mini Barra de Progresso da Tarefa */}
+                                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all duration-300 ${
+                                        taskProgress === 100
+                                          ? 'bg-emerald-500'
+                                          : taskProgress > 0
+                                          ? 'bg-blue-600'
+                                          : 'bg-transparent'
+                                      }`}
+                                      style={{ width: `${taskProgress}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )
+                            })()}
 
                             {assignedMember && (
                               <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 text-[11px] font-semibold text-slate-700">
@@ -1965,7 +2368,7 @@ export default function ProjectHubClient({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
                     Data de Início
@@ -1975,9 +2378,28 @@ export default function ProjectHubClient({
                     <input
                       type="date"
                       value={newTaskData.start_date}
-                      onChange={(e) => setNewTaskData({ ...newTaskData, start_date: e.target.value })}
+                      onChange={(e) => handleNewTaskStartDateChange(e.target.value)}
                       className="w-full text-xs font-semibold text-slate-700 bg-transparent outline-hidden cursor-pointer"
                     />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                    Duração Sugerida
+                  </label>
+                  <div className="relative border border-slate-200 rounded-xl px-3 py-2 bg-slate-50/50 focus-within:bg-white focus-within:border-blue-500">
+                    <input
+                      type="number"
+                      min={1}
+                      value={newTaskData.duration_days}
+                      onChange={(e) => handleNewTaskDurationChange(e.target.value)}
+                      placeholder="Ex: 5"
+                      className="w-full text-xs font-bold text-slate-700 bg-transparent outline-hidden pr-8 font-mono"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-medium pointer-events-none">
+                      dias
+                    </span>
                   </div>
                 </div>
 
@@ -1990,7 +2412,7 @@ export default function ProjectHubClient({
                     <input
                       type="date"
                       value={newTaskData.due_date}
-                      onChange={(e) => setNewTaskData({ ...newTaskData, due_date: e.target.value })}
+                      onChange={(e) => handleNewTaskDueDateChange(e.target.value)}
                       className="w-full text-xs font-semibold text-slate-700 bg-transparent outline-hidden cursor-pointer"
                     />
                   </div>

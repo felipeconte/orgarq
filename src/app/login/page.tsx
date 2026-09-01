@@ -111,9 +111,18 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="pt-4 border-t border-slate-100 text-center">
+          <div className="pt-4 border-t border-slate-100 space-y-3 text-center">
+            <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl">
+              <p className="text-xs text-slate-700 font-medium">
+                É cliente de algum projeto?{' '}
+                <Link href="/portal/login" className="font-bold text-blue-600 hover:text-blue-700 block sm:inline mt-0.5 sm:mt-0">
+                  Acompanhar meu projeto com CPF →
+                </Link>
+              </p>
+            </div>
+
             <p className="text-xs text-slate-500">
-              Ainda não tem conta?{' '}
+              Ainda não tem conta de escritório?{' '}
               <Link href="/cadastro" className="font-bold text-blue-600 hover:text-blue-700">
                 Criar escritório grátis
               </Link>

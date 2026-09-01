@@ -37,7 +37,43 @@ export default async function ProjectsListPage() {
   }
 
   const { data: projs } = await projectsQuery
-  const projects = (projs || []) as unknown as ProjectItem[]
 
-  return <ProjectsManagerClient initialProjects={projects} />
+  // 4. Busca todos os clientes cadastrados das organizações
+  let clientsQuery = supabase
+    .from('clients')
+    .select('*')
+    .not('name', 'ilike', '%Julian%')
+    .order('name', { ascending: true })
+
+  if (allOrgIds.length > 0) {
+    clientsQuery = clientsQuery.in('organization_id', allOrgIds)
+  }
+
+  const { data: clientsData } = await clientsQuery
+  const clients = (clientsData || []) as any[]
+
+  // 5. Busca vínculos da tabela project_clients
+  const { data: pcData } = await supabase
+    .from('project_clients')
+    .select('project_id, client_id')
+
+  const projectClientsMap = new Map<string, string[]>()
+  ;(pcData || []).forEach((pc) => {
+    const list = projectClientsMap.get(pc.project_id) || []
+    list.push(pc.client_id)
+    projectClientsMap.set(pc.project_id, list)
+  })
+
+  const projects = (projs || []).map((p: any) => ({
+    ...p,
+    client_ids: projectClientsMap.get(p.id) || (p.client_id ? [p.client_id] : []),
+  })) as unknown as ProjectItem[]
+
+  return (
+    <ProjectsManagerClient
+      initialProjects={projects}
+      initialClients={clients}
+      organizationId={allOrgIds[0]}
+    />
+  )
 }
