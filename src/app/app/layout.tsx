@@ -12,7 +12,9 @@ import {
   User,
   Users,
   ChevronRight,
-  KanbanSquare
+  KanbanSquare,
+  Briefcase,
+  CircleDollarSign
 } from 'lucide-react'
 import { logoutAction } from '@/lib/actions/auth'
 
@@ -133,6 +135,22 @@ export default async function AppLayout({
               Projetos & Fases
             </Link>
 
+            <Link
+              href="/app/empresas"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100/80 hover:text-blue-600 transition-all"
+            >
+              <Briefcase className="w-4 h-4 text-indigo-600" />
+              Empresas & Serviços
+            </Link>
+
+            <Link
+              href="/app/financeiro"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-100/80 hover:text-emerald-600 transition-all"
+            >
+              <CircleDollarSign className="w-4 h-4 text-emerald-600" />
+              Financeiro
+            </Link>
+
             <div className="pt-4 pb-1 px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Configurações
             </div>
@@ -216,16 +234,6 @@ export default async function AppLayout({
             <span>Escritório</span>
             <span>/</span>
             <span className="text-slate-900">{officeName}</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              target="_blank"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-blue-600"
-            >
-              Ver Landing Page <ExternalLink className="w-3 h-3" />
-            </Link>
           </div>
         </header>
 

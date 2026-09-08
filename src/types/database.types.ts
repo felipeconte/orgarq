@@ -770,6 +770,407 @@ export type Database = {
           }
         ]
       }
+      companies: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          trade_name: string | null
+          document_number: string | null
+          person_type: 'PF' | 'PJ'
+          categories: string[]
+          contacts: Json | null
+          contact_name: string | null
+          email: string | null
+          phone: string | null
+          address: string | null
+          city: string | null
+          state: string | null
+          zip_code: string | null
+          website: string | null
+          instagram: string | null
+          commission_type: 'percent' | 'fixed' | 'none' | 'negotiable'
+          commission_rate: number
+          commission_payment_method: string | null
+          commission_payment_terms: string | null
+          notes: string | null
+          rating: number
+          status: 'ativo' | 'inativo'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          trade_name?: string | null
+          document_number?: string | null
+          person_type?: 'PF' | 'PJ'
+          categories?: string[]
+          contacts?: Json | null
+          contact_name?: string | null
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip_code?: string | null
+          website?: string | null
+          instagram?: string | null
+          commission_type?: 'percent' | 'fixed' | 'none' | 'negotiable'
+          commission_rate?: number
+          commission_payment_method?: string | null
+          commission_payment_terms?: string | null
+          notes?: string | null
+          rating?: number
+          status?: 'ativo' | 'inativo'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          trade_name?: string | null
+          document_number?: string | null
+          person_type?: 'PF' | 'PJ'
+          categories?: string[]
+          contacts?: Json | null
+          contact_name?: string | null
+          email?: string | null
+          phone?: string | null
+          address?: string | null
+          city?: string | null
+          state?: string | null
+          zip_code?: string | null
+          website?: string | null
+          instagram?: string | null
+          commission_type?: 'percent' | 'fixed' | 'none' | 'negotiable'
+          commission_rate?: number
+          commission_payment_method?: string | null
+          commission_payment_terms?: string | null
+          notes?: string | null
+          rating?: number
+          status?: 'ativo' | 'inativo'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      project_companies: {
+        Row: {
+          id: string
+          organization_id: string
+          project_id: string
+          company_id: string
+          service_description: string | null
+          category: string | null
+          contract_value: number
+          commission_type: 'percent' | 'fixed'
+          commission_rate: number
+          expected_commission_amount: number
+          received_commission_amount: number
+          commission_status: 'previsto' | 'pendente' | 'pago_parcial' | 'pago_total' | 'cancelado'
+          commission_payment_method: string | null
+          commission_payment_terms: string | null
+          commission_due_date: string | null
+          commission_paid_date: string | null
+          service_status: 'cotacao' | 'contratado' | 'em_andamento' | 'concluido' | 'cancelado'
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          project_id: string
+          company_id: string
+          service_description?: string | null
+          category?: string | null
+          contract_value?: number
+          commission_type?: 'percent' | 'fixed'
+          commission_rate?: number
+          expected_commission_amount?: number
+          received_commission_amount?: number
+          commission_status?: 'previsto' | 'pendente' | 'pago_parcial' | 'pago_total' | 'cancelado'
+          commission_payment_method?: string | null
+          commission_payment_terms?: string | null
+          commission_due_date?: string | null
+          commission_paid_date?: string | null
+          service_status?: 'cotacao' | 'contratado' | 'em_andamento' | 'concluido' | 'cancelado'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          project_id?: string
+          company_id?: string
+          service_description?: string | null
+          category?: string | null
+          contract_value?: number
+          commission_type?: 'percent' | 'fixed'
+          commission_rate?: number
+          expected_commission_amount?: number
+          received_commission_amount?: number
+          commission_status?: 'previsto' | 'pendente' | 'pago_parcial' | 'pago_total' | 'cancelado'
+          commission_payment_method?: string | null
+          commission_payment_terms?: string | null
+          commission_due_date?: string | null
+          commission_paid_date?: string | null
+          service_status?: 'cotacao' | 'contratado' | 'em_andamento' | 'concluido' | 'cancelado'
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_companies_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_companies_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      company_categories: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      recurring_expenses: {
+        Row: {
+          id: string
+          organization_id: string
+          project_id: string | null
+          client_id: string | null
+          company_id: string | null
+          type: string
+          title: string
+          category: string
+          amount: number
+          frequency: string
+          due_day: number
+          start_date: string
+          end_date: string | null
+          payment_method: string | null
+          is_active: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          project_id?: string | null
+          client_id?: string | null
+          company_id?: string | null
+          type?: string
+          title: string
+          category: string
+          amount: number
+          frequency?: string
+          due_day?: number
+          start_date?: string
+          end_date?: string | null
+          payment_method?: string | null
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          project_id?: string | null
+          client_id?: string | null
+          company_id?: string | null
+          type?: string
+          title?: string
+          category?: string
+          amount?: number
+          frequency?: string
+          due_day?: number
+          start_date?: string
+          end_date?: string | null
+          payment_method?: string | null
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      financial_transactions: {
+        Row: {
+          id: string
+          organization_id: string
+          project_id: string | null
+          company_id: string | null
+          client_id: string | null
+          recurring_expense_id: string | null
+          project_company_id: string | null
+          type: string
+          category: string
+          title: string
+          description: string | null
+          amount: number
+          due_date: string
+          payment_date: string | null
+          status: string
+          payment_method: string | null
+          receipt_url: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          project_id?: string | null
+          company_id?: string | null
+          client_id?: string | null
+          recurring_expense_id?: string | null
+          project_company_id?: string | null
+          type: string
+          category: string
+          title: string
+          description?: string | null
+          amount: number
+          due_date: string
+          payment_date?: string | null
+          status?: string
+          payment_method?: string | null
+          receipt_url?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          project_id?: string | null
+          company_id?: string | null
+          client_id?: string | null
+          recurring_expense_id?: string | null
+          project_company_id?: string | null
+          type?: string
+          category?: string
+          title?: string
+          description?: string | null
+          amount?: number
+          due_date?: string
+          payment_date?: string | null
+          status?: string
+          payment_method?: string | null
+          receipt_url?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_recurring_expense_id_fkey"
+            columns: ["recurring_expense_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_project_company_id_fkey"
+            columns: ["project_company_id"]
+            isOneToOne: false
+            referencedRelation: "project_companies"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

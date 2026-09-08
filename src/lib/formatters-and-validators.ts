@@ -13,6 +13,28 @@ export function cleanDigits(value: string | null | undefined): string {
   return value.replace(/\D/g, '')
 }
 
+export function parseNumber(value: string | number | null | undefined): number {
+  if (value === null || value === undefined || value === '') return 0
+  if (typeof value === 'number') return isNaN(value) ? 0 : value
+
+  const str = String(value).trim()
+  if (!str) return 0
+
+  // Se tem vírgula (ex: "1.500,50" ou "1500,50")
+  if (str.includes(',')) {
+    return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0
+  }
+
+  // Se tem mais de um ponto (ex: "1.000.000"), os pontos são separadores de milhar
+  const dotCount = (str.match(/\./g) || []).length
+  if (dotCount > 1) {
+    return parseFloat(str.replace(/\./g, '')) || 0
+  }
+
+  // Float padrão (ex: "10000" ou "10000.00")
+  return parseFloat(str) || 0
+}
+
 export function maskCPF(value: string): string {
   const digits = cleanDigits(value).slice(0, 11)
   if (digits.length <= 3) return digits

@@ -3,13 +3,15 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import {
-  ArrowLeft,
   FileText,
-  ShieldCheck
+  ShieldCheck,
+  Briefcase,
+  CircleDollarSign
 } from 'lucide-react'
 import ProjectHubClient from '@/components/projects/ProjectHubClient'
 import { formatDateBR } from '@/lib/date-utils'
 import { getWorkflowStagesAction } from '@/lib/actions/workflow-stages'
+import BackButton from '@/components/ui/BackButton'
 
 export default async function ProjectDetailPage({
   params,
@@ -161,12 +163,7 @@ export default async function ProjectDetailPage({
       {/* Top Breadcrumb & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link
-            href="/app/projetos"
-            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all shadow-2xs"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
+          <BackButton fallbackHref="/app/projetos" />
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -184,6 +181,20 @@ export default async function ProjectDetailPage({
 
         {/* Action Tabs & Portal Link */}
         <div className="flex items-center gap-2">
+          <Link
+            href={`/app/projetos/${id}/financeiro`}
+            className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white border border-emerald-200 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50/50 text-xs font-bold transition-all shadow-xs"
+          >
+            <CircleDollarSign className="w-3.5 h-3.5 text-emerald-600" /> Financeiro
+          </Link>
+
+          <Link
+            href={`/app/projetos/${id}/fornecedores`}
+            className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:text-indigo-800 hover:bg-indigo-50/50 text-xs font-bold transition-all shadow-xs"
+          >
+            <Briefcase className="w-3.5 h-3.5 text-indigo-600" /> Fornecedores & Serviços
+          </Link>
+
           <Link
             href={`/app/projetos/${id}/briefing`}
             className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 text-xs font-bold transition-all shadow-xs"

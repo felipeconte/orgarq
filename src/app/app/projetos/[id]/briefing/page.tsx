@@ -2,7 +2,6 @@ import { requireProjectAccess } from '@/lib/server/guard'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
-  ArrowLeft,
   FileText,
   Save,
   Compass,
@@ -10,6 +9,7 @@ import {
   Sparkles
 } from 'lucide-react'
 import { updateBriefingAction } from '@/lib/actions/projects'
+import BackButton from '@/components/ui/BackButton'
 
 export default async function ProjectBriefingPage({
   params,
@@ -40,12 +40,7 @@ export default async function ProjectBriefingPage({
       {/* Top Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link
-            href={`/app/projetos/${id}`}
-            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all shadow-2xs"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
+          <BackButton fallbackHref={`/app/projetos/${id}`} />
           <div>
             <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               Ficha de Briefing & Programa

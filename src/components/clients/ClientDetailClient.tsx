@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   ChevronRight,
 } from 'lucide-react'
+import BackButton from '@/components/ui/BackButton'
 import { ClientData, ClientProjectItem, resendClientPortalAccessAction } from '@/lib/actions/clients'
 import { maskCPFOrCNPJ, maskPhone, maskCEP } from '@/lib/formatters-and-validators'
 import { formatDateBR } from '@/lib/date-utils'
@@ -118,12 +119,7 @@ export default function ClientDetailClient({
       {/* 1. TOP BREADCRUMB & ACTIONS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link
-            href="/app/clientes"
-            className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all shadow-2xs"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
+          <BackButton fallbackHref="/app/clientes" />
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">

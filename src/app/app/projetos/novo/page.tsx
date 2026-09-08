@@ -1,8 +1,8 @@
 import { requireAuth } from '@/lib/server/guard'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import NewProjectForm from '@/components/projects/NewProjectForm'
 import { getClientsAction } from '@/lib/actions/clients'
+import BackButton from '@/components/ui/BackButton'
 
 export default async function NewProjectPage({
   searchParams,
@@ -64,12 +64,7 @@ export default async function NewProjectPage({
     <div className="max-w-4xl mx-auto space-y-6 antialiased">
       {/* Top Breadcrumb & Title */}
       <div className="flex items-center gap-3">
-        <Link
-          href="/app/projetos"
-          className="p-2 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-slate-50 transition-all shadow-2xs"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
+        <BackButton fallbackHref="/app/projetos" />
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
             Cadastrar Novo Projeto
