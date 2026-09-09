@@ -42,7 +42,7 @@ export default async function EmpresasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Empresas & Prestadores de Serviços
+            Empresas e Prestadores de Serviços
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Cadastre parceiros, controle quais serviços estão em cada projeto e acompanhe o repasse de comissões (RT).

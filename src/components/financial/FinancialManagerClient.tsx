@@ -210,10 +210,10 @@ export default function FinancialManagerClient({
     const optimistic = transactions.map((t) =>
       t.id === tx.id
         ? {
-            ...t,
-            status: newStatus,
-            payment_date: newStatus === 'paid' ? new Date().toISOString().split('T')[0] : null
-          }
+          ...t,
+          status: newStatus,
+          payment_date: newStatus === 'paid' ? new Date().toISOString().split('T')[0] : null
+        }
         : t
     )
     setTransactions(optimistic)
@@ -306,9 +306,6 @@ export default function FinancialManagerClient({
             <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               Gestão Financeira do Escritório
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-              Fluxo & Lucro
-            </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
             Acompanhe receitas, despesas, recorrências e a rentabilidade individual de cada projeto.
@@ -338,26 +335,24 @@ export default function FinancialManagerClient({
       <div className="flex items-center gap-1.5 border-b border-slate-200 overflow-x-auto pb-px">
         <button
           onClick={() => setActiveTab('visao_geral')}
-          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'visao_geral'
-              ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-          }`}
+          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'visao_geral'
+            ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
+            : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+            }`}
         >
           <PieChart className="w-4 h-4" />
-          Visão Geral & Indicadores
+          Visão Geral
         </button>
 
         <button
           onClick={() => setActiveTab('extrato')}
-          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'extrato'
-              ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-          }`}
+          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'extrato'
+            ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
+            : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+            }`}
         >
           <CircleDollarSign className="w-4 h-4" />
-          Lançamentos & Extrato
+          Lançamentos
           <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-100 text-slate-600">
             {transactions.length}
           </span>
@@ -365,11 +360,10 @@ export default function FinancialManagerClient({
 
         <button
           onClick={() => setActiveTab('projetos')}
-          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'projetos'
-              ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-          }`}
+          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'projetos'
+            ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
+            : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+            }`}
         >
           <FolderGit2 className="w-4 h-4" />
           Lucratividade por Projeto
@@ -380,11 +374,10 @@ export default function FinancialManagerClient({
 
         <button
           onClick={() => setActiveTab('projecao')}
-          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${
-            activeTab === 'projecao'
-              ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
-              : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
-          }`}
+          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'projecao'
+            ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
+            : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
+            }`}
         >
           <Sparkles className="w-4 h-4 text-amber-500" />
           Passado, Presente e Futuro
@@ -405,20 +398,18 @@ export default function FinancialManagerClient({
                   Saldo Realizado
                 </span>
                 <div
-                  className={`w-9 h-9 rounded-2xl flex items-center justify-center ${
-                    summary.realizedBalance >= 0
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-rose-100 text-rose-700'
-                  }`}
+                  className={`w-9 h-9 rounded-2xl flex items-center justify-center ${summary.realizedBalance >= 0
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-rose-100 text-rose-700'
+                    }`}
                 >
                   <CircleDollarSign className="w-5 h-5" />
                 </div>
               </div>
               <div className="mt-3">
                 <span
-                  className={`text-2xl font-extrabold tracking-tight ${
-                    summary.realizedBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                  }`}
+                  className={`text-2xl font-extrabold tracking-tight ${summary.realizedBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                    }`}
                 >
                   {formatBRL(summary.realizedBalance)}
                 </span>
@@ -611,7 +602,7 @@ export default function FinancialManagerClient({
       )}
 
       {/* ========================================================================= */}
-      {/* ABA 2: LANÇAMENTOS & EXTRATO */}
+      {/* ABA 2: LANÇAMENTOS */}
       {/* ========================================================================= */}
       {activeTab === 'extrato' && (
         <div className="space-y-4">
@@ -659,11 +650,10 @@ export default function FinancialManagerClient({
               <select
                 value={selectedRecurrence}
                 onChange={(e: any) => setSelectedRecurrence(e.target.value)}
-                className={`px-3 py-1.5 rounded-xl border font-semibold focus:outline-none transition-colors ${
-                  selectedRecurrence !== 'all'
-                    ? 'border-indigo-300 bg-indigo-50/70 text-indigo-800 ring-1 ring-indigo-300'
-                    : 'border-slate-200 bg-white text-slate-700'
-                }`}
+                className={`px-3 py-1.5 rounded-xl border font-semibold focus:outline-none transition-colors ${selectedRecurrence !== 'all'
+                  ? 'border-indigo-300 bg-indigo-50/70 text-indigo-800 ring-1 ring-indigo-300'
+                  : 'border-slate-200 bg-white text-slate-700'
+                  }`}
               >
                 <option value="all">Recorrência: Todas</option>
                 <option value="recurring_only">🔁 Apenas Recorrentes ({transactions.filter(t => t.recurring_expense_id).length})</option>
@@ -718,7 +708,7 @@ export default function FinancialManagerClient({
               <div className="p-12 text-center text-slate-400">
                 <CircleDollarSign className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                 <h3 className="text-sm font-bold text-slate-700">Nenhum lançamento encontrado</h3>
-                
+
                 {selectedRecurrence === 'recurring_only' && transactions.some((t) => t.recurring_expense_id) && dateRangeMode !== 'all' ? (
                   <div className="mt-3 max-w-md mx-auto p-4 rounded-2xl bg-indigo-50/80 border border-indigo-100 text-indigo-950 text-xs shadow-2xs">
                     <p className="font-bold flex items-center justify-center gap-1.5 text-indigo-800">
@@ -793,13 +783,12 @@ export default function FinancialManagerClient({
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <button
                               onClick={() => handleToggleStatus(tx)}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
-                                isPaid
-                                  ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                  : tx.status === 'overdue'
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${isPaid
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                : tx.status === 'overdue'
                                   ? 'bg-rose-100 text-rose-800 hover:bg-rose-200'
                                   : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                              }`}
+                                }`}
                               title="Clique para alternar entre Pago e Pendente"
                             >
                               {isPaid ? (
@@ -880,9 +869,8 @@ export default function FinancialManagerClient({
                           {/* Amount */}
                           <td className="py-3.5 px-4 whitespace-nowrap text-right">
                             <span
-                              className={`text-sm font-mono font-extrabold ${
-                                isIncome ? 'text-emerald-600' : 'text-rose-600'
-                              }`}
+                              className={`text-sm font-mono font-extrabold ${isIncome ? 'text-emerald-600' : 'text-rose-600'
+                                }`}
                             >
                               {isIncome ? '+' : '-'} {formatBRL(tx.amount)}
                             </span>
@@ -1011,11 +999,10 @@ export default function FinancialManagerClient({
                       {/* Net Profit */}
                       <td className="py-3.5 px-4 text-right font-mono font-extrabold">
                         <span
-                          className={`px-2 py-1 rounded-lg ${
-                            p.netProfit >= 0
-                              ? 'bg-emerald-50 text-emerald-700'
-                              : 'bg-rose-50 text-rose-700'
-                          }`}
+                          className={`px-2 py-1 rounded-lg ${p.netProfit >= 0
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-rose-50 text-rose-700'
+                            }`}
                         >
                           {formatBRL(p.netProfit)}
                         </span>
@@ -1024,13 +1011,12 @@ export default function FinancialManagerClient({
                       {/* Margem % */}
                       <td className="py-3.5 px-4 text-center">
                         <span
-                          className={`inline-block font-bold text-[11px] px-2 py-0.5 rounded-full ${
-                            p.profitMarginPercent >= 50
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : p.profitMarginPercent > 0
+                          className={`inline-block font-bold text-[11px] px-2 py-0.5 rounded-full ${p.profitMarginPercent >= 50
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : p.profitMarginPercent > 0
                               ? 'bg-blue-100 text-blue-800'
                               : 'bg-rose-100 text-rose-800'
-                          }`}
+                            }`}
                         >
                           {p.profitMarginPercent.toFixed(1)}%
                         </span>
@@ -1075,25 +1061,23 @@ export default function FinancialManagerClient({
             {projection.map((item) => (
               <div
                 key={item.monthKey}
-                className={`p-5 rounded-3xl border transition-all flex flex-col justify-between ${
-                  item.isCurrent
-                    ? 'bg-blue-50/50 border-blue-300 ring-2 ring-blue-500/20 shadow-md'
-                    : item.isPast
+                className={`p-5 rounded-3xl border transition-all flex flex-col justify-between ${item.isCurrent
+                  ? 'bg-blue-50/50 border-blue-300 ring-2 ring-blue-500/20 shadow-md'
+                  : item.isPast
                     ? 'bg-white border-slate-200/80 opacity-90'
                     : 'bg-white border-slate-200/80 shadow-xs'
-                }`}
+                  }`}
               >
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold font-mono text-slate-900">{item.monthLabel}</span>
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        item.isCurrent
-                          ? 'bg-blue-600 text-white'
-                          : item.isPast
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${item.isCurrent
+                        ? 'bg-blue-600 text-white'
+                        : item.isPast
                           ? 'bg-slate-100 text-slate-600'
                           : 'bg-amber-100 text-amber-800'
-                      }`}
+                        }`}
                     >
                       {item.isCurrent ? '📍 Mês Atual' : item.isPast ? 'Histórico Fechado' : '🔮 Projeção'}
                     </span>
@@ -1118,9 +1102,8 @@ export default function FinancialManagerClient({
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between font-bold">
                       <span className="text-slate-700">Resultado do Mês:</span>
                       <span
-                        className={`font-mono ${
-                          item.projectedBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                        }`}
+                        className={`font-mono ${item.projectedBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'
+                          }`}
                       >
                         {formatBRL(item.projectedBalance)}
                       </span>
@@ -1132,9 +1115,8 @@ export default function FinancialManagerClient({
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-medium">Saldo Acumulado:</span>
                   <span
-                    className={`font-mono font-extrabold ${
-                      item.accumulatedBalance >= 0 ? 'text-slate-900' : 'text-rose-600'
-                    }`}
+                    className={`font-mono font-extrabold ${item.accumulatedBalance >= 0 ? 'text-slate-900' : 'text-rose-600'
+                      }`}
                   >
                     {formatBRL(item.accumulatedBalance)}
                   </span>

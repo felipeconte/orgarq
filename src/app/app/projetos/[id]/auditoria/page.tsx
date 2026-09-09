@@ -11,6 +11,7 @@ import {
   MessageSquare
 } from 'lucide-react'
 import BackButton from '@/components/ui/BackButton'
+import { BreadcrumbSetter } from '@/contexts/BreadcrumbContext'
 
 export default async function ProjectAuditPage({
   params,
@@ -35,6 +36,14 @@ export default async function ProjectAuditPage({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 antialiased">
+      <BreadcrumbSetter
+        items={[
+          { label: 'Escritório', href: '/app' },
+          { label: 'Projetos', href: '/app/projetos' },
+          { label: project.title, href: `/app/projetos/${id}` },
+          { label: 'Auditoria' },
+        ]}
+      />
       {/* Top Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

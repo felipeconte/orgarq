@@ -12,6 +12,7 @@ import ProjectHubClient from '@/components/projects/ProjectHubClient'
 import { formatDateBR } from '@/lib/date-utils'
 import { getWorkflowStagesAction } from '@/lib/actions/workflow-stages'
 import BackButton from '@/components/ui/BackButton'
+import { BreadcrumbSetter } from '@/contexts/BreadcrumbContext'
 
 export default async function ProjectDetailPage({
   params,
@@ -160,6 +161,13 @@ export default async function ProjectDetailPage({
 
   return (
     <div className="space-y-6 antialiased">
+      <BreadcrumbSetter
+        items={[
+          { label: 'Escritório', href: '/app' },
+          { label: 'Projetos', href: '/app/projetos' },
+          { label: project.title },
+        ]}
+      />
       {/* Top Breadcrumb & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">

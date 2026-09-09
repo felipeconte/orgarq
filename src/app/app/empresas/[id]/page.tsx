@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/server/guard'
 import { notFound } from 'next/navigation'
 import { getCompanyByIdAction } from '@/lib/actions/companies'
 import CompanyDetailClient from '@/components/companies/CompanyDetailClient'
+import { BreadcrumbSetter } from '@/contexts/BreadcrumbContext'
 
 export const metadata = {
   title: 'Detalhes da Empresa | Orgarq',
@@ -30,11 +31,20 @@ export default async function CompanyDetailPage({
     .order('created_at', { ascending: false })
 
   return (
-    <CompanyDetailClient
-      initialCompany={res.company}
-      initialProjects={res.projects || []}
-      availableProjects={projects || []}
-      organizationId={res.company.organization_id}
-    />
+    <>
+      <BreadcrumbSetter
+        items={[
+          { label: 'Escritório', href: '/app' },
+          { label: 'Empresas e Serviços', href: '/app/empresas' },
+          { label: res.company.trade_name || res.company.name || 'Empresa Parceira' },
+        ]}
+      />
+      <CompanyDetailClient
+        initialCompany={res.company}
+        initialProjects={res.projects || []}
+        availableProjects={projects || []}
+        organizationId={res.company.organization_id}
+      />
+    </>
   )
 }

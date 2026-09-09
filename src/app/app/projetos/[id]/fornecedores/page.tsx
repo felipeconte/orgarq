@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getProjectCompaniesAction } from '@/lib/actions/project-companies'
 import { getCompaniesAction } from '@/lib/actions/companies'
 import ProjectCompaniesClient from '@/components/projects/ProjectCompaniesClient'
+import { BreadcrumbSetter } from '@/contexts/BreadcrumbContext'
 
 export const metadata = {
   title: 'Fornecedores & Serviços do Projeto | Orgarq',
@@ -31,17 +32,27 @@ export default async function ProjectFornecedoresPage({
   })
 
   return (
-    <ProjectCompaniesClient
-      project={{
-        id: project.id,
-        code: project.code,
-        title: project.title,
-        client_name: project.client_name,
-        organization_id: project.organization_id,
-      }}
-      initialItems={items || []}
-      availableCompanies={companies || []}
-      initialSummary={summary}
-    />
+    <>
+      <BreadcrumbSetter
+        items={[
+          { label: 'Escritório', href: '/app' },
+          { label: 'Projetos', href: '/app/projetos' },
+          { label: project.title, href: `/app/projetos/${id}` },
+          { label: 'Empresas e Serviços' },
+        ]}
+      />
+      <ProjectCompaniesClient
+        project={{
+          id: project.id,
+          code: project.code,
+          title: project.title,
+          client_name: project.client_name,
+          organization_id: project.organization_id,
+        }}
+        initialItems={items || []}
+        availableCompanies={companies || []}
+        initialSummary={summary}
+      />
+    </>
   )
 }

@@ -30,6 +30,13 @@ import {
   updateMemberRoleAction,
   removeMemberAction
 } from '@/lib/actions/organization'
+import {
+  cleanDigits,
+  maskCPFOrCNPJ,
+  maskPhone,
+  validateCPF,
+  validateCNPJ
+} from '@/lib/formatters-and-validators'
 import ImageCropperModal from './ImageCropperModal'
 
 export interface OrganizationData {
@@ -86,11 +93,35 @@ export default function OfficeSettingsClient({
     name: initialOrg.name || '',
     slug: initialOrg.slug || '',
     cau_caubr: initialOrg.cau_caubr || '',
-    cnpj: initialOrg.cnpj || '',
+    cnpj: initialOrg.cnpj ? maskCPFOrCNPJ(initialOrg.cnpj) : '',
     phone: initialOrg.phone || '',
     email: initialOrg.email || currentUserEmail || '',
     logo_url: initialOrg.logo_url || '',
   })
+
+  // Status de validação do documento em tempo real
+  const docDigits = cleanDigits(formData.cnpj)
+  const getDocStatus = () => {
+    if (!docDigits) return null
+    if (docDigits.length < 11) {
+      return { type: 'incomplete', label: 'CPF', message: `CPF (${docDigits.length}/11)` }
+    }
+    if (docDigits.length === 11) {
+      return validateCPF(docDigits)
+        ? { type: 'valid', label: 'CPF', message: 'CPF Válido' }
+        : { type: 'invalid', label: 'CPF', message: 'CPF Inválido' }
+    }
+    if (docDigits.length < 14) {
+      return { type: 'incomplete', label: 'CNPJ', message: `CNPJ (${docDigits.length}/14)` }
+    }
+    if (docDigits.length === 14) {
+      return validateCNPJ(docDigits)
+        ? { type: 'valid', label: 'CNPJ', message: 'CNPJ Válido' }
+        : { type: 'invalid', label: 'CNPJ', message: 'CNPJ Inválido' }
+    }
+    return { type: 'invalid', label: 'Documento', message: 'Excesso de dígitos' }
+  }
+  const docStatus = getDocStatus()
 
   // Modals & Feedback
   const [isEditing, setIsEditing] = useState(false)
@@ -140,6 +171,37 @@ export default function OfficeSettingsClient({
     e.preventDefault()
     if (!formData.name.trim() || !formData.slug.trim()) return
 
+    // Validação estrita de CPF ou CNPJ caso preenchido
+    const cleanDoc = cleanDigits(formData.cnpj)
+    if (cleanDoc) {
+      if (cleanDoc.length === 11) {
+        if (!validateCPF(cleanDoc)) {
+          await showAlert({
+            title: 'CPF Inválido',
+            message: 'O CPF informado para o escritório é inválido. Por favor, confira os números digitados.',
+            variant: 'error',
+          })
+          return
+        }
+      } else if (cleanDoc.length === 14) {
+        if (!validateCNPJ(cleanDoc)) {
+          await showAlert({
+            title: 'CNPJ Inválido',
+            message: 'O CNPJ informado para o escritório é inválido. Por favor, confira os números digitados.',
+            variant: 'error',
+          })
+          return
+        }
+      } else {
+        await showAlert({
+          title: 'Documento Incompleto',
+          message: 'Por favor, informe um CPF completo (11 dígitos) ou um CNPJ completo (14 dígitos).',
+          variant: 'error',
+        })
+        return
+      }
+    }
+
     setSavingOrg(true)
     const data = new FormData()
     data.append('name', formData.name.trim())
@@ -159,7 +221,7 @@ export default function OfficeSettingsClient({
         name: formData.name.trim(),
         slug: formData.slug.trim(),
         cau_caubr: formData.cau_caubr.trim() || null,
-        cnpj: formData.cnpj.trim() || null,
+        cnpj: formData.cnpj.trim() ? maskCPFOrCNPJ(formData.cnpj) : null,
         phone: formData.phone.trim() || null,
         email: formData.email.trim() || null,
         logo_url: formData.logo_url.trim() || null,
@@ -300,7 +362,7 @@ export default function OfficeSettingsClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
-            <Building2 className="w-6 h-6 text-blue-600" /> Perfil do Escritório & Equipe
+            <Building2 className="w-6 h-6 text-blue-600" /> Perfil do Escritório
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Gerencie os dados cadastrais da empresa de arquitetura e controle os membros com acesso ao sistema.
@@ -309,7 +371,18 @@ export default function OfficeSettingsClient({
 
         {!isEditing && (
           <button
-            onClick={() => setIsEditing(true)}
+            onClick={() => {
+              setFormData({
+                name: org.name || '',
+                slug: org.slug || '',
+                cau_caubr: org.cau_caubr || '',
+                cnpj: org.cnpj ? maskCPFOrCNPJ(org.cnpj) : '',
+                phone: org.phone || '',
+                email: org.email || currentUserEmail || '',
+                logo_url: org.logo_url || '',
+              })
+              setIsEditing(true)
+            }}
             className="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
           >
             <Edit2 className="w-3.5 h-3.5" /> Editar Informações
@@ -321,7 +394,7 @@ export default function OfficeSettingsClient({
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-6">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <FileCheck className="w-4 h-4 text-blue-600" /> Informações Institucionais
+            <FileCheck className="w-4 h-4 text-blue-600" /> Informações da Empresa
           </h2>
         </div>
 
@@ -406,13 +479,41 @@ export default function OfficeSettingsClient({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">CNPJ do Escritório</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700">
+                    CPF ou CNPJ do Escritório
+                  </label>
+                  {docStatus && (
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-all ${
+                        docStatus.type === 'valid'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : docStatus.type === 'invalid'
+                          ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {docStatus.message}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   value={formData.cnpj}
-                  onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                  placeholder="Ex: 12.345.678/0001-90"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      cnpj: maskCPFOrCNPJ(e.target.value)
+                    })
+                  }
+                  placeholder="000.000.000-00 ou 00.000.000/0001-90"
+                  className={`w-full text-xs border rounded-xl p-2.5 outline-hidden transition-all ${
+                    docStatus?.type === 'invalid'
+                      ? 'border-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10'
+                      : docStatus?.type === 'valid'
+                      ? 'border-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10'
+                      : 'border-slate-200 focus:border-blue-500'
+                  }`}
                 />
               </div>
 
@@ -432,7 +533,7 @@ export default function OfficeSettingsClient({
                 <input
                   type="text"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, phone: maskPhone(e.target.value) })}
                   placeholder="(11) 98765-4321"
                   className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
                 />
@@ -442,7 +543,18 @@ export default function OfficeSettingsClient({
             <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => setIsEditing(false)}
+                onClick={() => {
+                  setFormData({
+                    name: org.name || '',
+                    slug: org.slug || '',
+                    cau_caubr: org.cau_caubr || '',
+                    cnpj: org.cnpj ? maskCPFOrCNPJ(org.cnpj) : '',
+                    phone: org.phone || '',
+                    email: org.email || currentUserEmail || '',
+                    logo_url: org.logo_url || '',
+                  })
+                  setIsEditing(false)
+                }}
                 className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
                 Cancelar
@@ -482,8 +594,17 @@ export default function OfficeSettingsClient({
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">CNPJ</span>
-                <span className="text-slate-800 font-medium block">{org.cnpj || 'Não informado'}</span>
+                <span className="font-semibold text-slate-400 block">
+                  {(() => {
+                    const digits = cleanDigits(org.cnpj)
+                    if (digits.length === 11) return 'CPF do Escritório'
+                    if (digits.length === 14) return 'CNPJ do Escritório'
+                    return 'CPF / CNPJ'
+                  })()}
+                </span>
+                <span className="text-slate-800 font-medium block">
+                  {org.cnpj ? maskCPFOrCNPJ(org.cnpj) : 'Não informado'}
+                </span>
               </div>
 
               <div className="space-y-1">
@@ -507,12 +628,12 @@ export default function OfficeSettingsClient({
         )}
       </div>
 
-      {/* CARD: MEMBROS & COLABORADORES */}
+      {/* CARD: MEMBROS e COLABORADORES */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
             <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-600" /> Membros & Colaboradores
+              <Users className="w-4 h-4 text-blue-600" /> Membros e Colaboradores
             </h2>
             <p className="text-[11px] text-slate-400 mt-0.5">
               Controle quem tem acesso aos projetos e atribuição de tarefas do escritório.

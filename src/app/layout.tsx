@@ -12,13 +12,13 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Orgarq — Gestão de Projetos de Arquitetura",
+    default: "Orgarq — Gestão de Projetos",
     template: "%s | Orgarq",
   },
   description:
     "A plataforma SaaS definitiva para escritórios de arquitetura: cronogramas por etapas, Kanban ágil, Gantt e aprovação simplificada no Portal do Cliente sem senha.",
   keywords: [
-    "gestão de projetos de arquitetura",
+    "gestão de projetos",
     "software para arquitetos",
     "cronograma de arquitetura",
     "portal do cliente arquitetura",
@@ -44,14 +44,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     url: baseUrl,
-    title: "Orgarq — Gestão de Projetos de Arquitetura",
+    title: "Orgarq — Gestão de Projetos",
     description:
       "Controle prazos, visualize etapas em Lista, Kanban e Gantt, e colete aprovações com auditoria no Portal do Cliente.",
     siteName: "Orgarq",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Orgarq — Gestão de Projetos de Arquitetura",
+    title: "Orgarq — Gestão de Projetos",
     description:
       "Plataforma completa de gestão de etapas, Kanban e portal do cliente para arquitetos.",
   },

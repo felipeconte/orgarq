@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { updateBriefingAction } from '@/lib/actions/projects'
 import BackButton from '@/components/ui/BackButton'
+import { BreadcrumbSetter } from '@/contexts/BreadcrumbContext'
 
 export default async function ProjectBriefingPage({
   params,
@@ -37,6 +38,14 @@ export default async function ProjectBriefingPage({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 antialiased">
+      <BreadcrumbSetter
+        items={[
+          { label: 'Escritório', href: '/app' },
+          { label: 'Projetos', href: '/app/projetos' },
+          { label: project.title, href: `/app/projetos/${id}` },
+          { label: 'Briefing' },
+        ]}
+      />
       {/* Top Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

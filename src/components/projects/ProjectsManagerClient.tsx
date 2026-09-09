@@ -509,7 +509,7 @@ export default function ProjectsManagerClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
-            <FolderGit2 className="w-6 h-6 text-blue-600" /> Projetos de Arquitetura
+            <FolderGit2 className="w-6 h-6 text-blue-600" /> Projetos
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Gerencie o ciclo completo de projetos, prazos e controle de aprovações. ({projects.length} cadastrados)
@@ -703,7 +703,7 @@ export default function ProjectsManagerClient({
                     href={`/app/projetos/${proj.id}`}
                     className="inline-flex items-center gap-1 py-1.5 px-3 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
                   >
-                    Abrir Hub <ArrowRight className="w-3.5 h-3.5" />
+                    Ver detalhes <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
@@ -770,7 +770,7 @@ export default function ProjectsManagerClient({
                         <Link
                           href={`/app/projetos/${proj.id}`}
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg inline-flex items-center transition-colors cursor-pointer"
-                          title="Abrir Hub"
+                          title="Ver detalhes"
                         >
                           <ArrowRight className="w-3.5 h-3.5" />
                         </Link>

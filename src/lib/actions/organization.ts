@@ -4,6 +4,10 @@ import { revalidatePath } from 'next/cache'
 import { requireAuth, requireOrgAccess } from '@/lib/server/guard'
 import { sanitizeText } from '@/lib/server/sanitize'
 import { Database } from '@/types/database.types'
+import { cleanDigits, maskCPFOrCNPJ, validateCPF, validateCNPJ } from '@/lib/formatters-and-validators'
+import { createAdminClient } from '@/lib/supabase/server'
+import { sendUserInvitationEmail } from '@/lib/server/email'
+
 
 type OrganizationUpdate = Database['public']['Tables']['organizations']['Update']
 
@@ -38,6 +42,21 @@ export async function updateOrganizationAction(
     return { success: false, error: 'O identificador (slug) é obrigatório.' }
   }
 
+  if (cnpj) {
+    const digits = cleanDigits(cnpj)
+    if (digits.length === 11) {
+      if (!validateCPF(digits)) {
+        return { success: false, error: 'O CPF informado é inválido. Verifique os dígitos.' }
+      }
+    } else if (digits.length === 14) {
+      if (!validateCNPJ(digits)) {
+        return { success: false, error: 'O CNPJ informado é inválido. Verifique os dígitos.' }
+      }
+    } else {
+      return { success: false, error: 'O documento deve ser um CPF válido (11 dígitos) ou CNPJ válido (14 dígitos).' }
+    }
+  }
+
   // Verifica se o slug já está em uso por outro escritório
   const { data: existingSlug } = await supabase
     .from('organizations')
@@ -54,7 +73,7 @@ export async function updateOrganizationAction(
     name,
     slug,
     cau_caubr: cau_caubr || null,
-    cnpj: cnpj || null,
+    cnpj: cnpj ? maskCPFOrCNPJ(cnpj) : null,
     phone: phone || null,
     email: email || null,
     logo_url: logo_url || null,
@@ -83,7 +102,7 @@ export async function addOrganizationMemberAction(
     email: string
     role: 'owner' | 'admin' | 'architect' | 'intern'
   }
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; message?: string; error?: string }> {
   const { supabase } = await requireAuth()
   await requireOrgAccess(orgId)
 
@@ -122,11 +141,45 @@ export async function addOrganizationMemberAction(
     })
 
     if (lookupError || !foundUserId) {
+      // Se não encontrou usuário cadastrado, gera convite oficial via Admin e envia e-mail com layout Orgarq via Resend
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+      const resendApiKey = process.env.RESEND_API_KEY
+      if (serviceRoleKey && resendApiKey) {
+        try {
+          const adminClient = createAdminClient()
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+          const { data: inviteData, error: inviteError } = await adminClient.auth.admin.generateLink({
+            type: 'invite',
+            email: cleanEmail,
+            options: {
+              redirectTo: `${baseUrl}/app`,
+              data: { invited_to_org: orgId, role: data.role || 'architect' },
+            },
+          })
+
+          if (!inviteError && inviteData?.properties?.action_link) {
+            const { data: orgData } = await supabase.from('organizations').select('name').eq('id', orgId).single()
+            await sendUserInvitationEmail({
+              userEmail: cleanEmail,
+              officeName: orgData?.name || 'Nosso Escritório',
+              inviteLink: inviteData.properties.action_link,
+            })
+            return {
+              success: true,
+              message: `Convite enviado por e-mail para "${cleanEmail}". O colaborador poderá criar sua senha e acessar o escritório.`,
+            }
+          }
+        } catch (inviteErr) {
+          console.warn('Erro ao gerar/enviar convite de membro:', inviteErr)
+        }
+      }
+
       return {
         success: false,
         error: `Nenhum usuário com o e-mail "${cleanEmail}" foi encontrado. O usuário precisa se cadastrar na plataforma primeiro.`,
       }
     }
+
 
     const { error: insertError } = await supabase
       .from('organization_members')

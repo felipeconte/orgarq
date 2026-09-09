@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { requireAuth } from '@/lib/server/guard'
 import { getClientByIdAction } from '@/lib/actions/clients'
 import ClientDetailClient from '@/components/clients/ClientDetailClient'
+import { BreadcrumbSetter } from '@/contexts/BreadcrumbContext'
 
 export const metadata = {
   title: 'Detalhes do Cliente | Orgarq',
@@ -22,10 +23,19 @@ export default async function ClientDetailPage({
   }
 
   return (
-    <ClientDetailClient
-      client={res.client}
-      projects={res.projects || []}
-      organizationId={res.client.organization_id}
-    />
+    <>
+      <BreadcrumbSetter
+        items={[
+          { label: 'Escritório', href: '/app' },
+          { label: 'Clientes', href: '/app/clientes' },
+          { label: res.client.name },
+        ]}
+      />
+      <ClientDetailClient
+        client={res.client}
+        projects={res.projects || []}
+        organizationId={res.client.organization_id}
+      />
+    </>
   )
 }

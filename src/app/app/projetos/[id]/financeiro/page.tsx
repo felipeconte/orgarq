@@ -7,6 +7,7 @@ import {
 import { getCompaniesAction } from '@/lib/actions/companies'
 import { getProjectCompaniesAction } from '@/lib/actions/project-companies'
 import ProjectFinancialClient from '@/components/projects/ProjectFinancialClient'
+import { BreadcrumbSetter } from '@/contexts/BreadcrumbContext'
 
 export const metadata = {
   title: 'Financeiro do Projeto | Orgarq',
@@ -48,21 +49,31 @@ export default async function ProjectFinanceiroPage({
   }))
 
   return (
-    <ProjectFinancialClient
-      project={{
-        id: project.id,
-        code: project.code,
-        title: project.title,
-        client_name: project.client_name,
-        organization_id: project.organization_id,
-        typology: project.typology,
-        area_sqm: project.area_sqm ? Number(project.area_sqm) : null,
-        estimated_budget: project.estimated_budget ? Number(project.estimated_budget) : null
-      }}
-      initialTransactions={initialTransactions}
-      initialProfitability={initialProfitability}
-      companies={companies}
-      projectCompaniesSummary={projectCompaniesRes.summary}
-    />
+    <>
+      <BreadcrumbSetter
+        items={[
+          { label: 'Escritório', href: '/app' },
+          { label: 'Projetos', href: '/app/projetos' },
+          { label: project.title, href: `/app/projetos/${id}` },
+          { label: 'Financeiro' },
+        ]}
+      />
+      <ProjectFinancialClient
+        project={{
+          id: project.id,
+          code: project.code,
+          title: project.title,
+          client_name: project.client_name,
+          organization_id: project.organization_id,
+          typology: project.typology,
+          area_sqm: project.area_sqm ? Number(project.area_sqm) : null,
+          estimated_budget: project.estimated_budget ? Number(project.estimated_budget) : null
+        }}
+        initialTransactions={initialTransactions}
+        initialProfitability={initialProfitability}
+        companies={companies}
+        projectCompaniesSummary={projectCompaniesRes.summary}
+      />
+    </>
   )
 }

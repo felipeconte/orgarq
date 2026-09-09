@@ -16,11 +16,11 @@ import {
   GripVertical,
   CheckCircle2,
   AlertTriangle,
-  KanbanSquare,
   ShieldCheck,
   Shield,
   Flag
 } from 'lucide-react'
+import BackButton from '@/components/ui/BackButton'
 import {
   WorkflowStage,
   WorkflowStageColor,
@@ -38,6 +38,7 @@ import DeleteWorkflowStageModal from '@/components/workflow/DeleteWorkflowStageM
 interface WorkflowStagesManagerProps {
   organizationId: string
   initialStages: WorkflowStage[]
+  children?: React.ReactNode
 }
 
 const COLOR_OPTIONS: WorkflowStageColor[] = [
@@ -56,6 +57,7 @@ const COLOR_OPTIONS: WorkflowStageColor[] = [
 export default function WorkflowStagesManager({
   organizationId,
   initialStages,
+  children,
 }: WorkflowStagesManagerProps) {
   const confirm = useConfirm()
   const showAlert = useAlert()
@@ -289,7 +291,7 @@ export default function WorkflowStagesManager({
   }
 
   return (
-    <div className="space-y-8 antialiased">
+    <div className="space-y-6 antialiased">
       {/* Toast Feedback */}
       {feedback && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-semibold animate-in fade-in slide-in-from-bottom-2">
@@ -298,25 +300,25 @@ export default function WorkflowStagesManager({
         </div>
       )}
 
-      {/* Header Card */}
-      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              <KanbanSquare className="w-5 h-5" />
-            </div>
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {children || (
+          <div className="flex items-center gap-3">
+            <BackButton fallbackHref="/app" />
             <div>
-              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                Etapas do Projeto (Fluxo de Trabalho)
-              </h2>
-              <p className="text-xs text-slate-500">
-                Personalize os nomes, cores e ordem das etapas das tarefas. O que você configurar aqui reflete automaticamente no Kanban, Gantt e no Portal do Cliente.
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Etapas do Projeto
+                </h1>
+              </div>
+              <p className="text-sm text-slate-500">
+                Gerencie as colunas do Kanban e legendas do Gantt compartilhadas pelo escritório.
               </p>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
           <button
             type="button"
             onClick={handleReset}
@@ -345,7 +347,7 @@ export default function WorkflowStagesManager({
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="space-y-1">
-            <p className="font-bold text-slate-900 text-sm">Papéis Especiais das Etapas no Fluxo de Trabalho</p>
+            <p className="font-bold text-slate-900 text-sm">Etapas especiais do fluxo de trabalho</p>
             <p className="text-slate-600 leading-relaxed">
               Você pode atribuir funções inteligentes para etapas específicas do seu fluxo. Essas regras automatizam a comunicação com o Portal do Cliente e garantem a integridade das entregas:
             </p>
@@ -440,9 +442,8 @@ export default function WorkflowStagesManager({
                       type="button"
                       onClick={() => setNewColor(c)}
                       title={cfg.name}
-                      className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                        isSelected ? 'ring-2 ring-offset-2 ring-blue-600 scale-110 shadow-xs' : 'opacity-80 hover:opacity-100'
-                      }`}
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'ring-2 ring-offset-2 ring-blue-600 scale-110 shadow-xs' : 'opacity-80 hover:opacity-100'
+                        }`}
                       style={{ backgroundColor: cfg.previewHex }}
                     >
                       {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
@@ -549,11 +550,10 @@ export default function WorkflowStagesManager({
           return (
             <div
               key={stage.id}
-              className={`p-4 sm:p-5 rounded-2xl bg-white border transition-all shadow-2xs ${
-                isEditing
+              className={`p-4 sm:p-5 rounded-2xl bg-white border transition-all shadow-2xs ${isEditing
                   ? 'border-blue-500 ring-2 ring-blue-500/10 shadow-md'
                   : 'border-slate-200/80 hover:border-slate-300'
-              }`}
+                }`}
             >
               {isEditing ? (
                 /* Edit Mode */
@@ -590,9 +590,8 @@ export default function WorkflowStagesManager({
                               type="button"
                               onClick={() => setEditColor(c)}
                               title={optCfg.name}
-                              className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
-                                isSelected ? 'ring-2 ring-offset-2 ring-blue-600 scale-110' : 'opacity-70 hover:opacity-100'
-                              }`}
+                              className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'ring-2 ring-offset-2 ring-blue-600 scale-110' : 'opacity-70 hover:opacity-100'
+                                }`}
                               style={{ backgroundColor: optCfg.previewHex }}
                             >
                               {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}

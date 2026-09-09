@@ -125,11 +125,10 @@ export default function ClientDetailClient({
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 {client.name}
               </h1>
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                client.status === 'ativo'
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${client.status === 'ativo'
                   ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                   : 'bg-slate-100 text-slate-600 border-slate-200'
-              }`}>
+                }`}>
                 {client.status === 'ativo' ? 'Ativo' : 'Inativo'}
               </span>
             </div>
@@ -162,11 +161,10 @@ export default function ClientDetailClient({
         {/* Identificação e Documentos */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-2xl font-extrabold text-base flex items-center justify-center shrink-0 ${
-              client.person_type === 'PJ'
+            <div className={`w-12 h-12 rounded-2xl font-extrabold text-base flex items-center justify-center shrink-0 ${client.person_type === 'PJ'
                 ? 'bg-purple-100 text-purple-700 border border-purple-200'
                 : 'bg-blue-100 text-blue-700 border border-blue-200'
-            }`}>
+              }`}>
               {client.person_type === 'PJ' ? <Building className="w-6 h-6" /> : getInitials(client.name)}
             </div>
             <div className="min-w-0 flex-1">
@@ -313,7 +311,7 @@ export default function ClientDetailClient({
                 Projetos Vinculados ({projects.length})
               </h3>
               <p className="text-xs text-slate-500">
-                Todos os projetos de arquitetura e design vinculados a este cliente.
+                Todos os projetos vinculados a este cliente.
               </p>
             </div>
           </div>
@@ -354,13 +352,12 @@ export default function ClientDetailClient({
                     <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
                       {proj.code}
                     </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      proj.status === 'concluido'
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${proj.status === 'concluido'
                         ? 'bg-emerald-100 text-emerald-800'
                         : proj.status === 'pausado'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }`}>
                       {proj.status}
                     </span>
                   </div>

@@ -1,12 +1,14 @@
 import { requireAuth } from '@/lib/server/guard'
-import Link from 'next/link'
-import {
-  FolderGit2,
-  Plus,
-  ArrowRight,
-  Compass,
-  CheckCircle2
-} from 'lucide-react'
+import { getFinancialSummaryAction } from '@/lib/actions/financial'
+import OverviewDashboardClient, {
+  DashboardProject,
+  DashboardFinancialSummary,
+} from '@/components/dashboard/OverviewDashboardClient'
+
+export const metadata = {
+  title: 'Visão Geral | Orgarq',
+  description: 'Painel executivo do escritório de arquitetura com projetos, aprovações de clientes e controle financeiro.',
+}
 
 export default async function DashboardPage() {
   const { supabase, user } = await requireAuth()
@@ -14,28 +16,80 @@ export default async function DashboardPage() {
   // 1. Busca todas as organizações onde o usuário é membro ou owner
   const { data: memberOrgs } = await supabase
     .from('organization_members')
-    .select('organization_id')
+    .select('organization_id, role, organizations(id, name, slug)')
     .eq('user_id', user.id)
 
   const { data: ownedOrgs } = await supabase
     .from('organizations')
-    .select('id')
+    .select('id, name, slug')
     .eq('owner_id', user.id)
 
   const orgIdsSet = new Set<string>()
-  if (memberOrgs) {
-    memberOrgs.forEach((m) => orgIdsSet.add(m.organization_id))
+  let officeName = 'Meu Escritório'
+  let primaryOrgId = ''
+
+  if (ownedOrgs && ownedOrgs.length > 0) {
+    ownedOrgs.forEach((o) => {
+      orgIdsSet.add(o.id)
+      if (!primaryOrgId) {
+        primaryOrgId = o.id
+        officeName = o.name || officeName
+      }
+    })
   }
-  if (ownedOrgs) {
-    ownedOrgs.forEach((o) => orgIdsSet.add(o.id))
+
+  if (memberOrgs && memberOrgs.length > 0) {
+    memberOrgs.forEach((m: any) => {
+      orgIdsSet.add(m.organization_id)
+      if (!primaryOrgId) {
+        primaryOrgId = m.organization_id
+        officeName = m.organizations?.name || officeName
+      }
+    })
   }
 
   const allOrgIds = Array.from(orgIdsSet)
 
-  // 2. Monta consulta unificada de projetos
+  // 2. Busca perfil do usuário
+  const { data: dbProfile } = await supabase
+    .from('user_profiles')
+    .select('full_name, display_name')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const meta = user.user_metadata || {}
+  const userDisplayName =
+    dbProfile?.full_name ||
+    dbProfile?.display_name ||
+    meta.full_name ||
+    meta.display_name ||
+    user.email?.split('@')[0] ||
+    'Arquiteto'
+
+  // 3. Monta consulta de projetos com etapas aninhadas
   let query = supabase
     .from('projects')
-    .select('*')
+    .select(`
+      id,
+      code,
+      title,
+      client_name,
+      client_email,
+      typology,
+      status,
+      area_sqm,
+      deadline,
+      created_at,
+      project_stages (
+        id,
+        name,
+        stage_order,
+        status,
+        progress_percent,
+        due_date,
+        is_client_approval_required
+      )
+    `)
     .order('created_at', { ascending: false })
 
   if (allOrgIds.length > 0) {
@@ -44,138 +98,71 @@ export default async function DashboardPage() {
     query = query.eq('created_by', user.id)
   }
 
-  const { data: projs } = await query
+  const { data: projs, error: projsError } = await query
 
-  const projects = projs || []
+  if (projsError) {
+    console.error('Erro ao buscar projetos no dashboard:', projsError)
+  }
 
-  // Estatísticas
-  const totalProjects = projects.length
-  const totalArea = projects.reduce((acc, p) => acc + (p.area_sqm || 0), 0)
+  const rawProjects = projs || []
+
+  // 4. Busca tokens ativos do Portal do Cliente para ações rápidas de cópia
+  const projectIds = rawProjects.map((p) => p.id)
+  const tokensMap = new Map<string, string>()
+
+  if (projectIds.length > 0) {
+    const { data: tokens } = await supabase
+      .from('client_access_tokens')
+      .select('project_id, token')
+      .in('project_id', projectIds)
+      .eq('is_revoked', false)
+
+    if (tokens) {
+      tokens.forEach((t) => {
+        if (t.project_id && t.token) {
+          tokensMap.set(t.project_id, t.token)
+        }
+      })
+    }
+  }
+
+  // 5. Busca dados consolidados do financeiro (se houver organização)
+  let financialSummary: DashboardFinancialSummary | null = null
+
+  if (primaryOrgId) {
+    try {
+      const summaryRes = await getFinancialSummaryAction({ organizationId: primaryOrgId })
+      if (summaryRes.success && summaryRes.summary) {
+        financialSummary = summaryRes.summary as unknown as DashboardFinancialSummary
+      }
+    } catch (err) {
+      console.error('Erro ao buscar resumo financeiro no dashboard:', err)
+    }
+  }
+
+  // 6. Formata projetos para o componente cliente
+  const projects: DashboardProject[] = rawProjects.map((p: any) => ({
+    id: p.id,
+    code: p.code,
+    title: p.title,
+    client_name: p.client_name,
+    client_email: p.client_email,
+    typology: p.typology,
+    status: p.status || 'ativo',
+    area_sqm: p.area_sqm,
+    deadline: p.deadline,
+    created_at: p.created_at,
+    project_stages: p.project_stages || [],
+    portalToken: tokensMap.get(p.id) || null,
+  }))
 
   return (
-    <div className="space-y-8 antialiased">
-      {/* Header & Welcome */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Dashboard do Escritório
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Acompanhe o andamento das tarefas e aprovações de clientes em tempo real.
-          </p>
-        </div>
-
-        <Link
-          href="/app/projetos/novo"
-          className="inline-flex items-center gap-1.5 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm shadow-blue-500/25 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" /> Novo Projeto
-        </Link>
-      </div>
-
-      {/* Metric Cards (ClickUp Clean) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Projetos Ativos</span>
-            <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
-              <FolderGit2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900 font-mono">
-            {totalProjects}
-          </div>
-          <p className="text-[11px] text-slate-400">Escritório conectado ao Supabase</p>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Área Projetada Total</span>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-              <Compass className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900 font-mono">
-            {totalArea > 0 ? `${totalArea} m²` : '—'}
-          </div>
-          <p className="text-[11px] text-slate-400">Somatório de obras ativas</p>
-        </div>
-      </div>
-
-      {/* Projects List & Quick Access */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900">Projetos Recentes</h2>
-            <p className="text-xs text-slate-500">Acesse o hub completo de cada projeto com Lista, Kanban e Gantt</p>
-          </div>
-
-          <Link
-            href="/app/projetos"
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
-          >
-            Ver todos <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {projects.length === 0 ? (
-          <div className="p-12 text-center space-y-4">
-            <div className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-              <FolderGit2 className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-sm font-bold text-slate-800">Nenhum projeto cadastrado ainda</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Crie seu primeiro projeto para que as tarefas do fluxo sejam clonadas automaticamente!
-              </p>
-            </div>
-            <Link
-              href="/app/projetos/novo"
-              className="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Cadastrar Primeiro Projeto
-            </Link>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {projects.map((proj) => (
-              <div
-                key={proj.id}
-                className="p-4 hover:bg-slate-50/70 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-bold">
-                      {proj.code}
-                    </span>
-                    <Link
-                      href={`/app/projetos/${proj.id}`}
-                      className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors cursor-pointer"
-                    >
-                      {proj.title}
-                    </Link>
-                  </div>
-                  <p className="text-xs text-slate-500">
-                    Cliente: <strong>{proj.client_name}</strong> • {proj.typology || 'Residencial'} • {proj.area_sqm ? `${proj.area_sqm} m²` : 'Metragem a definir'}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Ativo
-                  </span>
-                  <Link
-                    href={`/app/projetos/${proj.id}`}
-                    className="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 text-xs font-bold transition-all cursor-pointer"
-                  >
-                    Abrir Hub
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    <OverviewDashboardClient
+      officeName={officeName}
+      userDisplayName={userDisplayName}
+      projects={projects}
+      financialSummary={financialSummary}
+      hasPrimaryOrg={Boolean(primaryOrgId)}
+    />
   )
 }
