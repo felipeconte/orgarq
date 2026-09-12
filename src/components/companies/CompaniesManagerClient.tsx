@@ -169,11 +169,11 @@ export default function CompaniesManagerClient({
         {/* Card 1: Total de Parceiros */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Total de Parceiros</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total de Parceiros</span>
             <span className="text-2xl font-black text-slate-900 mt-1 block">
               {metrics.total}
             </span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5 block">
+            <span className="text-xs font-medium text-slate-400 mt-0.5 block">
               empresas e prestadores
             </span>
           </div>
@@ -185,11 +185,11 @@ export default function CompaniesManagerClient({
         {/* Card 2: Especialidades Atendidas */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Categorias & Serviços</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Categorias & Serviços</span>
             <span className="text-2xl font-black text-slate-900 mt-1 block">
               {new Set(companies.flatMap((c) => c.categories || [])).size}
             </span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5 block">
+            <span className="text-xs font-medium text-slate-400 mt-0.5 block">
               especialidades cadastradas
             </span>
           </div>
@@ -201,12 +201,12 @@ export default function CompaniesManagerClient({
         {/* Card 3: Comissões Recebidas */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Comissões Recebidas (RT)</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Comissões Recebidas (RT)</span>
             <span className="text-xl font-black text-emerald-600 mt-1 block">
               {formatCurrency(metrics.received)}
             </span>
-            <span className="text-[11px] font-medium text-emerald-700/80 mt-0.5 block flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Total faturado pelo escritório
+            <span className="text-xs font-medium text-emerald-700/80 mt-0.5 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Total faturado pelo escritório
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-2xs">
@@ -217,12 +217,12 @@ export default function CompaniesManagerClient({
         {/* Card 4: Comissões Previstas / Pendentes */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Comissões Previstas</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Comissões Previstas</span>
             <span className="text-xl font-black text-amber-600 mt-1 block">
               {formatCurrency(metrics.pending)}
             </span>
-            <span className="text-[11px] font-medium text-amber-700/80 mt-0.5 block flex items-center gap-1">
-              <Clock className="w-3 h-3" /> A receber de projetos ativos
+            <span className="text-xs font-medium text-amber-700/80 mt-0.5 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> A receber de projetos ativos
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-2xs">
@@ -235,13 +235,13 @@ export default function CompaniesManagerClient({
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
           <input
             type="text"
             placeholder="Buscar por empresa, nome fantasia, representante ou cidade..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
           />
         </div>
 
@@ -251,7 +251,7 @@ export default function CompaniesManagerClient({
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
           >
             <option value="todas">Todas as Especialidades</option>
             {allCategories.map((cat) => (
@@ -266,31 +266,31 @@ export default function CompaniesManagerClient({
             <button
               onClick={() => setViewMode('grid')}
               title="Visualização em Grade"
-              className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`p-2 rounded-lg text-sm font-medium transition-all ${
                 viewMode === 'grid'
                   ? 'bg-white text-indigo-600 shadow-2xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Grid className="w-3.5 h-3.5" />
+              <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('table')}
               title="Visualização em Tabela"
-              className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`p-2 rounded-lg text-sm font-medium transition-all ${
                 viewMode === 'table'
                   ? 'bg-white text-indigo-600 shadow-2xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <List className="w-3.5 h-3.5" />
+              <List className="w-4 h-4" />
             </button>
           </div>
 
           {/* Add Company Button */}
           <button
             onClick={handleOpenNew}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shadow-indigo-500/20 shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-xs shadow-indigo-500/20 shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Nova Empresa
           </button>
@@ -309,7 +309,7 @@ export default function CompaniesManagerClient({
               ? 'Nenhuma empresa encontrada com estes filtros'
               : 'Nenhuma empresa ou parceiro cadastrado ainda'}
           </h3>
-          <p className="text-xs text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
+          <p className="text-sm text-slate-500 mt-1.5 max-w-sm mx-auto leading-relaxed">
             {search || selectedCategory !== 'todas'
               ? 'Tente ajustar os termos de busca ou remover os filtros aplicados.'
               : 'Cadastre marcenarias, marmorarias, lojas de iluminação e outros prestadores de serviços para vincular aos seus projetos e gerenciar comissões.'}
@@ -322,14 +322,14 @@ export default function CompaniesManagerClient({
                   setSearch('')
                   setSelectedCategory('todas')
                 }}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all"
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all"
               >
                 Limpar Filtros
               </button>
             ) : null}
             <button
               onClick={handleOpenNew}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shadow-indigo-500/20"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-xs shadow-indigo-500/20"
             >
               <Plus className="w-4 h-4" /> Cadastrar Primeira Empresa
             </button>
@@ -361,13 +361,13 @@ export default function CompaniesManagerClient({
                   <div className="min-w-0">
                     <Link
                       href={`/app/empresas/${company.id}`}
-                      className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors block truncate"
+                      className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors block truncate"
                       title={company.trade_name || company.name}
                     >
                       {company.trade_name || company.name}
                     </Link>
                     {company.trade_name && (
-                      <span className="text-[11px] font-medium text-slate-400 block truncate" title={company.name}>
+                      <span className="text-xs font-medium text-slate-500 block truncate mt-0.5" title={company.name}>
                         {company.name}
                       </span>
                     )}
@@ -384,12 +384,12 @@ export default function CompaniesManagerClient({
 
                     {primaryContact ? (
                       <div className="flex items-center gap-1 min-w-0" title={primaryContact.name}>
-                        <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[130px]">
+                        <span className="text-xs font-semibold text-slate-700 truncate max-w-[140px]">
                           {primaryContact.name}
                         </span>
                         {extraContactsCount > 0 && (
                           <span
-                            className="px-1.5 py-0.2 bg-slate-100 text-slate-500 text-[9px] font-bold rounded-md shrink-0"
+                            className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md shrink-0"
                             title={`+${extraContactsCount} outros vendedores/representantes`}
                           >
                             +{extraContactsCount}
@@ -397,7 +397,7 @@ export default function CompaniesManagerClient({
                         )}
                       </div>
                     ) : company.contact_name ? (
-                      <span className="text-[11px] font-semibold text-slate-600 truncate max-w-[160px]">
+                      <span className="text-xs font-semibold text-slate-600 truncate max-w-[160px]">
                         {company.contact_name}
                       </span>
                     ) : null}
@@ -410,19 +410,19 @@ export default function CompaniesManagerClient({
                         {company.categories.slice(0, 2).map((cat) => (
                           <span
                             key={cat}
-                            className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-lg border border-indigo-100 truncate"
+                            className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-100 truncate"
                           >
                             {cat}
                           </span>
                         ))}
                         {company.categories.length > 2 && (
-                          <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-lg">
+                          <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg">
                             +{company.categories.length - 2}
                           </span>
                         )}
                       </>
                     ) : (
-                      <span className="text-[10px] text-slate-400 italic">
+                      <span className="text-xs text-slate-400 italic">
                         Sem especialidade definida
                       </span>
                     )}
@@ -431,8 +431,8 @@ export default function CompaniesManagerClient({
                   {/* Commission Policy Box */}
                   <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                      <span className="text-slate-400 font-medium text-[11px]">Comissão / RT:</span>
-                      <span className="text-indigo-600">
+                      <span className="text-slate-500 font-medium text-xs">Comissão / RT:</span>
+                      <span className="text-indigo-600 font-bold">
                         {company.commission_type === 'percent'
                           ? `${company.commission_rate}% sobre contrato`
                           : company.commission_type === 'fixed'
@@ -444,10 +444,10 @@ export default function CompaniesManagerClient({
                     </div>
 
                     {company.commission_payment_method && (
-                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <div className="flex items-center justify-between text-xs text-slate-500">
                         <span>Forma: {company.commission_payment_method}</span>
                         {company.commission_payment_terms && (
-                          <span className="truncate max-w-[130px]" title={company.commission_payment_terms}>
+                          <span className="truncate max-w-[140px]" title={company.commission_payment_terms}>
                             {company.commission_payment_terms}
                           </span>
                         )}
@@ -456,15 +456,15 @@ export default function CompaniesManagerClient({
                   </div>
 
                   {/* Projects Stats Bar */}
-                  <div className="flex items-center justify-between pt-1 text-xs">
+                  <div className="flex items-center justify-between pt-1 text-sm">
                     <div className="flex items-center gap-1.5 text-slate-600">
-                      <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-semibold">{company.projects_count || 0}</span>
-                      <span className="text-slate-400 text-[11px]">projetos</span>
+                      <FolderGit2 className="w-4 h-4 text-slate-400" />
+                      <span className="font-bold text-slate-800">{company.projects_count || 0}</span>
+                      <span className="text-slate-500 text-xs">projetos</span>
                     </div>
 
                     {Number(company.total_commission_received || 0) > 0 && (
-                      <span className="text-[11px] font-bold text-emerald-600">
+                      <span className="text-xs font-bold text-emerald-600">
                         {formatCurrency(Number(company.total_commission_received))} recebidos
                       </span>
                     )}
@@ -480,9 +480,9 @@ export default function CompaniesManagerClient({
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Conversar no WhatsApp"
-                        className="p-1.5 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                        className="p-2 text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors"
                       >
-                        <Phone className="w-3.5 h-3.5" />
+                        <Phone className="w-4 h-4" />
                       </a>
                     )}
 
@@ -490,18 +490,18 @@ export default function CompaniesManagerClient({
                       <a
                         href={`mailto:${effectiveEmail}`}
                         title={`Enviar e-mail para ${effectiveEmail}`}
-                        className="p-1.5 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
                       >
-                        <Mail className="w-3.5 h-3.5" />
+                        <Mail className="w-4 h-4" />
                       </a>
                     )}
 
                     {company.city && (
                       <span
-                        className="text-[10px] text-slate-400 flex items-center gap-0.5 ml-1 truncate max-w-[110px]"
+                        className="text-xs text-slate-500 flex items-center gap-1 ml-1 truncate max-w-[120px]"
                         title={`${company.city} - ${company.state || ''}`}
                       >
-                        <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         {company.city}
                       </span>
                     )}
@@ -511,23 +511,23 @@ export default function CompaniesManagerClient({
                     <button
                       onClick={() => handleOpenEdit(company)}
                       title="Editar Empresa"
-                      className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                      className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
+                      <Edit2 className="w-4 h-4" />
                     </button>
 
                     <button
                       onClick={() => handleDelete(company.id, company.name)}
                       disabled={deletingId === company.id}
                       title="Excluir Empresa"
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
 
                     <Link
                       href={`/app/empresas/${company.id}`}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 text-xs font-bold rounded-xl transition-all shadow-2xs"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 text-sm font-semibold rounded-xl transition-all shadow-2xs"
                     >
                       Ver Detalhes
                     </Link>
@@ -541,16 +541,16 @@ export default function CompaniesManagerClient({
         /* TABLE VIEW */
         <div className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-50/80 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="bg-slate-50/80 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
                 <tr>
-                  <th className="px-5 py-3.5">Empresa / Nome Fantasia</th>
-                  <th className="px-4 py-3.5">Especialidade(s)</th>
-                  <th className="px-4 py-3.5">Representante / Contato</th>
-                  <th className="px-4 py-3.5">Comissão Padrão</th>
-                  <th className="px-4 py-3.5">Projetos</th>
-                  <th className="px-4 py-3.5">Comissões Recebidas</th>
-                  <th className="px-5 py-3.5 text-right">Ações</th>
+                  <th className="px-5 py-4">Empresa / Nome Fantasia</th>
+                  <th className="px-4 py-4">Especialidade(s)</th>
+                  <th className="px-4 py-4">Representante / Contato</th>
+                  <th className="px-4 py-4">Comissão Padrão</th>
+                  <th className="px-4 py-4">Projetos</th>
+                  <th className="px-4 py-4">Comissões Recebidas</th>
+                  <th className="px-5 py-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -572,60 +572,60 @@ export default function CompaniesManagerClient({
                       key={company.id}
                       className="hover:bg-slate-50/60 transition-colors group"
                     >
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-4">
                         <Link
                           href={`/app/empresas/${company.id}`}
-                          className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors block"
+                          className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors block text-sm"
                           title={company.trade_name || company.name}
                         >
                           {company.trade_name || company.name}
                         </Link>
                         {company.trade_name && (
-                          <span className="text-[10px] text-slate-400 block" title={company.name}>
+                          <span className="text-xs text-slate-400 block mt-0.5" title={company.name}>
                             {company.name}
                           </span>
                         )}
                       </td>
 
-                      <td className="px-4 py-3.5">
-                        <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      <td className="px-4 py-4">
+                        <div className="flex flex-wrap gap-1 max-w-[220px]">
                           {Array.isArray(company.categories) && company.categories.length > 0 ? (
                             company.categories.slice(0, 2).map((cat) => (
                               <span
                                 key={cat}
-                                className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-lg border border-indigo-100 truncate"
+                                className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-100 truncate"
                               >
                                 {cat}
                               </span>
                             ))
                           ) : (
-                            <span className="text-[10px] text-slate-400 italic">-</span>
+                            <span className="text-xs text-slate-400 italic">-</span>
                           )}
                         </div>
                       </td>
 
-                      <td className="px-4 py-3.5">
+                      <td className="px-4 py-4">
                         {primaryContact ? (
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-slate-800 text-[11px] truncate max-w-[140px]">
+                              <span className="font-bold text-slate-800 text-xs truncate max-w-[150px]">
                                 {primaryContact.name}
                               </span>
                               {primaryContact.role && (
-                                <span className="text-[9px] text-slate-400 font-medium truncate max-w-[90px]">
+                                <span className="text-xs text-slate-400 font-medium truncate max-w-[100px]">
                                   ({primaryContact.role})
                                 </span>
                               )}
                               {extraContactsCount > 0 && (
                                 <span
-                                  className="px-1.5 py-0.2 bg-slate-100 text-slate-500 text-[9px] font-bold rounded-md"
+                                  className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md"
                                   title={`+${extraContactsCount} outros vendedores/representantes`}
                                 >
                                   +{extraContactsCount}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
                               {waUrl && (
                                 <a
                                   href={waUrl}
@@ -642,17 +642,17 @@ export default function CompaniesManagerClient({
                                   className="text-slate-400 hover:text-blue-600"
                                   title={effectiveEmail}
                                 >
-                                  <Mail className="w-3 h-3 inline" />
+                                  <Mail className="w-3.5 h-3.5 inline" />
                                 </a>
                               )}
                             </div>
                           </div>
                         ) : company.contact_name ? (
                           <div className="space-y-0.5">
-                            <span className="font-bold text-slate-800 block text-[11px]">
+                            <span className="font-bold text-slate-800 block text-xs">
                               {company.contact_name}
                             </span>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
                               {waUrl && (
                                 <a
                                   href={waUrl}
@@ -668,17 +668,17 @@ export default function CompaniesManagerClient({
                                   href={`mailto:${company.email}`}
                                   className="text-slate-400 hover:text-blue-600"
                                 >
-                                  <Mail className="w-3 h-3 inline" />
+                                  <Mail className="w-3.5 h-3.5 inline" />
                                 </a>
                               )}
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[11px] text-slate-400 italic">Sem vendedor</span>
+                          <span className="text-xs text-slate-400 italic">Sem vendedor</span>
                         )}
                       </td>
 
-                      <td className="px-4 py-3.5 font-bold text-indigo-600">
+                      <td className="px-4 py-4 font-bold text-indigo-600 text-sm">
                         {company.commission_type === 'percent'
                           ? `${company.commission_rate}%`
                           : company.commission_type === 'fixed'
@@ -688,21 +688,21 @@ export default function CompaniesManagerClient({
                           : 'Sem comissão'}
                       </td>
 
-                      <td className="px-4 py-3.5">
-                        <span className="font-bold text-slate-800">
+                      <td className="px-4 py-4">
+                        <span className="font-bold text-slate-800 text-sm">
                           {company.projects_count || 0}
                         </span>
                       </td>
 
-                      <td className="px-4 py-3.5 font-bold text-emerald-600">
+                      <td className="px-4 py-4 font-bold text-emerald-600 text-sm">
                         {formatCurrency(Number(company.total_commission_received || 0))}
                       </td>
 
-                      <td className="px-5 py-3.5 text-right">
+                      <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Link
                             href={`/app/empresas/${company.id}`}
-                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
                             title="Ver Detalhes"
                           >
                             <ExternalLink className="w-4 h-4" />
@@ -711,7 +711,7 @@ export default function CompaniesManagerClient({
                           <button
                             onClick={() => handleOpenEdit(company)}
                             title="Editar"
-                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors cursor-pointer"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
@@ -720,7 +720,7 @@ export default function CompaniesManagerClient({
                             onClick={() => handleDelete(company.id, company.name)}
                             disabled={deletingId === company.id}
                             title="Excluir"
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

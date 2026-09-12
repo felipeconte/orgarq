@@ -83,11 +83,13 @@ export default async function DashboardPage() {
       project_stages (
         id,
         name,
+        code,
         stage_order,
         status,
         progress_percent,
         due_date,
-        is_client_approval_required
+        is_client_approval_required,
+        deleted_at
       )
     `)
     .order('created_at', { ascending: false })
@@ -152,7 +154,7 @@ export default async function DashboardPage() {
     area_sqm: p.area_sqm,
     deadline: p.deadline,
     created_at: p.created_at,
-    project_stages: p.project_stages || [],
+    project_stages: (p.project_stages || []).filter((s: any) => !s.deleted_at),
     portalToken: tokensMap.get(p.id) || null,
   }))
 

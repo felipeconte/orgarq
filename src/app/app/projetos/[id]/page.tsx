@@ -45,12 +45,21 @@ export default async function ProjectDetailPage({
     initialView = cookieView as ViewType
   }
 
-  // Busca as etapas do projeto
+  // Busca as etapas ativas do projeto (exclui soft-deleted)
   const { data: stages } = await supabase
     .from('project_stages')
     .select('*')
     .eq('project_id', id)
+    .is('deleted_at', null)
     .order('stage_order', { ascending: true })
+
+  // Busca tarefas excluídas para histórico e pesquisa de códigos
+  const { data: rawDeletedStages } = await (supabase
+    .from('project_stages') as any)
+    .select('id, name, code, deleted_at, deleted_by, created_at, status')
+    .eq('project_id', id)
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false })
 
   // Busca etapas do fluxo configuradas para o escritório
   const { stages: workflowStages } = await getWorkflowStagesAction(project.organization_id)
@@ -262,6 +271,16 @@ export default async function ProjectDetailPage({
         members={membersList}
         initialWorkflowStages={workflowStages}
         initialView={initialView}
+        initialDeletedStages={(rawDeletedStages || []).map((ds: any) => ({
+          id: ds.id,
+          name: ds.name,
+          code: ds.code || null,
+          deleted_at: ds.deleted_at,
+          deleted_by: ds.deleted_by || null,
+          deleted_by_name: ds.deleted_by ? (profileMap.get(ds.deleted_by)?.name || 'Membro da equipe') : 'Sistema',
+          created_at: ds.created_at,
+          status: ds.status,
+        }))}
       />
     </div>
   )

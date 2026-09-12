@@ -449,7 +449,7 @@ export default function NewProjectForm({
               {/* Ponto 1: Código do Projeto Automático e Imutável */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Código do Projeto *
                   </label>
                   <div className="flex items-center gap-1">
@@ -457,23 +457,23 @@ export default function NewProjectForm({
                       type="button"
                       onClick={handleRegenerateCode}
                       title="Gerar outro código aleatório"
-                      className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-0.5 p-0.5 rounded hover:bg-blue-50"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-blue-50 cursor-pointer"
                     >
-                      <RefreshCw className="w-2.5 h-2.5" /> Regerar
+                      <RefreshCw className="w-3 h-3" /> Regerar
                     </button>
                     <button
                       type="button"
                       onClick={handleCopyCode}
                       title="Copiar código"
-                      className="text-[10px] font-semibold text-slate-500 hover:text-slate-700 flex items-center gap-0.5 p-0.5 rounded hover:bg-slate-100 ml-1"
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-700 flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-100 ml-1 cursor-pointer"
                     >
-                      {copiedCode ? <Check className="w-2.5 h-2.5 text-emerald-600" /> : <Copy className="w-2.5 h-2.5" />}
+                      {copiedCode ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                     </button>
                   </div>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <Lock className="w-4 h-4 text-slate-400" />
                   </div>
                   <input
                     type="text"
@@ -482,16 +482,16 @@ export default function NewProjectForm({
                     readOnly
                     required
                     placeholder="Gerando código..."
-                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl text-xs text-slate-800 font-mono font-bold select-all cursor-not-allowed focus:outline-none"
+                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl text-sm text-slate-800 font-mono font-bold select-all cursor-not-allowed focus:outline-none"
                   />
                 </div>
-                <span className="text-[10px] text-slate-400 mt-1 block">
+                <span className="text-xs text-slate-400 mt-1 block">
                   🔒 Código gerado automaticamente (padrão AAAA-MM-DD-XXXXXX).
                 </span>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Título do Projeto *
                 </label>
                 <input
@@ -499,20 +499,20 @@ export default function NewProjectForm({
                   name="title"
                   required
                   placeholder="Residência Alphaville ou Escritório Advocacia"
-                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Tipologia
                 </label>
                 <select
                   name="typology"
                   defaultValue="Residencial Unifamiliar"
-                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 >
                   <option value="Residencial Unifamiliar">Residencial Unifamiliar</option>
                   <option value="Residencial Multifamiliar">Residencial Multifamiliar</option>
@@ -525,12 +525,12 @@ export default function NewProjectForm({
 
               {/* Ponto 2: Área do Projeto formatada como medida */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Área do Projeto (m²)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <Compass className="w-3.5 h-3.5" />
+                    <Compass className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
@@ -538,19 +538,19 @@ export default function NewProjectForm({
                     value={areaInput}
                     onChange={(e) => handleAreaChange(e.target.value)}
                     placeholder="Ex: 350 m²"
-                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
               </div>
 
               {/* Ponto 3: Orçamento Estimado formatado como moeda em tempo real */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Orçamento Estimado (R$)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <DollarSign className="w-3.5 h-3.5" />
+                    <DollarSign className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
@@ -558,7 +558,7 @@ export default function NewProjectForm({
                     value={budgetInput}
                     onChange={(e) => handleBudgetChange(e.target.value)}
                     placeholder="R$ 850.000,00"
-                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -588,25 +588,25 @@ export default function NewProjectForm({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Data de Início
                 </label>
                 <input
                   type="date"
                   name="startDate"
                   defaultValue={new Date().toISOString().split('T')[0]}
-                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Prazo Final Estimado
                 </label>
                 <input
                   type="date"
                   name="deadline"
-                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 />
               </div>
             </div>
@@ -614,15 +614,15 @@ export default function NewProjectForm({
             {/* Ponto 5: Busca Global de Endereço (API Gratuita OpenStreetMap via proxy interno) */}
             <div className="space-y-3">
               <div ref={searchContainerRef} className="relative">
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Buscar Endereço
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     {isSearchingAddress ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                     ) : (
-                      <Search className="w-3.5 h-3.5" />
+                      <Search className="w-4 h-4" />
                     )}
                   </div>
                   <input
@@ -633,7 +633,7 @@ export default function NewProjectForm({
                       if (addressSuggestions.length > 0) setShowSuggestions(true)
                     }}
                     placeholder="Digite rua, avenida, condomínio ou cidade no mundo todo para autocompletar..."
-                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
 
@@ -645,14 +645,14 @@ export default function NewProjectForm({
                         key={place.place_id}
                         type="button"
                         onClick={() => handleSelectSuggestion(place)}
-                        className="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-start gap-2.5 transition-colors"
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-start gap-2.5 transition-colors cursor-pointer"
                       >
                         <MapPin className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                         <div className="truncate">
-                          <span className="text-xs font-semibold text-slate-800 block truncate">
+                          <span className="text-sm font-semibold text-slate-800 block truncate">
                             {place.display_name}
                           </span>
-                          <span className="text-[10px] text-slate-400 block">
+                          <span className="text-xs text-slate-400 block">
                             Lat: {parseFloat(place.lat).toFixed(4)}, Long: {parseFloat(place.lon).toFixed(4)}
                           </span>
                         </div>
@@ -665,7 +665,7 @@ export default function NewProjectForm({
               {/* Campos de Logradouro, Número e Complemento separados */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Logradouro
                   </label>
                   <input
@@ -674,12 +674,12 @@ export default function NewProjectForm({
                     value={addressRoad}
                     onChange={(e) => setAddressRoad(e.target.value)}
                     placeholder="Rua Oscar Freire"
-                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Número
                   </label>
                   <input
@@ -688,12 +688,12 @@ export default function NewProjectForm({
                     value={addressNumber}
                     onChange={(e) => setAddressNumber(e.target.value)}
                     placeholder="1000"
-                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Complemento <span className="text-slate-400 font-normal lowercase">(opcional)</span>
                   </label>
                   <input
@@ -702,7 +702,7 @@ export default function NewProjectForm({
                     value={addressComplement}
                     onChange={(e) => setAddressComplement(e.target.value)}
                     placeholder="Apto 52, Bloco B"
-                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -710,7 +710,7 @@ export default function NewProjectForm({
               {/* Campos de Bairro, Cidade, Estado e CEP separados */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Bairro
                   </label>
                   <input
@@ -719,12 +719,12 @@ export default function NewProjectForm({
                     value={addressNeighborhood}
                     onChange={(e) => setAddressNeighborhood(e.target.value)}
                     placeholder="Bela Vista ou Jardins"
-                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Cidade
                   </label>
                   <input
@@ -733,12 +733,12 @@ export default function NewProjectForm({
                     value={addressCity}
                     onChange={(e) => setAddressCity(e.target.value)}
                     placeholder="São Paulo"
-                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Estado / UF
                   </label>
                   <input
@@ -747,12 +747,12 @@ export default function NewProjectForm({
                     value={addressState}
                     onChange={(e) => setAddressState(e.target.value)}
                     placeholder="SP"
-                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     CEP
                   </label>
                   <input
@@ -761,7 +761,7 @@ export default function NewProjectForm({
                     value={addressPostalCode}
                     onChange={(e) => setAddressPostalCode(e.target.value)}
                     placeholder="01310-100"
-                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -782,14 +782,14 @@ export default function NewProjectForm({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                 Descrição ou Observações do Projeto
               </label>
               <textarea
                 name="description"
                 rows={3}
                 placeholder="Detalhes adicionais sobre o terreno, expectativas de programa ou condicionantes..."
-                className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
               />
             </div>
           </div>
@@ -812,14 +812,14 @@ export default function NewProjectForm({
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
                     <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${templateMode === 'template' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${templateMode === 'template' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
                         }`}
                     >
-                      <ListTodo className="w-4 h-4" />
+                      <ListTodo className="w-4.5 h-4.5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Usar Modelo Predefinido</h4>
-                      <p className="text-[11px] text-slate-500">Inicia com etapas e prazos estruturados</p>
+                      <h4 className="text-sm font-bold text-slate-900">Usar Modelo Predefinido</h4>
+                      <p className="text-xs text-slate-500">Inicia com etapas e prazos estruturados</p>
                     </div>
                   </div>
                   <input
@@ -833,12 +833,12 @@ export default function NewProjectForm({
 
                 {templateMode === 'template' && (
                   <div className="pt-2 border-t border-blue-100 space-y-2 animate-in fade-in" onClick={(e) => e.stopPropagation()}>
-                    <label className="block text-[11px] font-bold text-slate-700">Selecione o Modelo:</label>
+                    <label className="block text-xs font-bold text-slate-700">Selecione o Modelo:</label>
                     {templates && templates.length > 0 ? (
                       <select
                         value={selectedTemplateId}
                         onChange={(e) => setSelectedTemplateId(e.target.value)}
-                        className="w-full text-xs font-semibold bg-white border border-blue-200 rounded-xl p-2.5 text-slate-800 outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                        className="w-full text-sm font-semibold bg-white border border-blue-200 rounded-xl p-2.5 text-slate-800 outline-hidden focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
                       >
                         {templates.map((tpl) => (
                           <option key={tpl.id} value={tpl.id}>
@@ -847,7 +847,7 @@ export default function NewProjectForm({
                         ))}
                       </select>
                     ) : (
-                      <div className="p-2.5 rounded-xl bg-white border border-blue-200 text-[11px] text-slate-700 font-medium">
+                      <div className="p-2.5 rounded-xl bg-white border border-blue-200 text-xs text-slate-700 font-medium">
                         📋 Modelo Padrão do Sistema (7 etapas essenciais)
                       </div>
                     )}
@@ -866,14 +866,14 @@ export default function NewProjectForm({
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
                     <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${templateMode === 'none' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${templateMode === 'none' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
                         }`}
                     >
-                      <Sparkles className="w-4 h-4" />
+                      <Sparkles className="w-4.5 h-4.5" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Projeto em Branco</h4>
-                      <p className="text-[11px] text-slate-500">Sem tarefas ou etapas pré-cadastradas</p>
+                      <h4 className="text-sm font-bold text-slate-900">Projeto em Branco</h4>
+                      <p className="text-xs text-slate-500">Sem tarefas ou etapas pré-cadastradas</p>
                     </div>
                   </div>
                   <input
@@ -885,7 +885,7 @@ export default function NewProjectForm({
                   />
                 </div>
 
-                <p className="text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                <p className="text-xs text-slate-500 pt-2 border-t border-slate-100">
                   O projeto começará limpo. Você poderá criar tarefas avulsas personalizadas na página do projeto a qualquer momento.
                 </p>
               </div>
@@ -896,7 +896,7 @@ export default function NewProjectForm({
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
             <Link
               href="/app/projetos"
-              className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all"
+              className="py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
             >
               Cancelar
             </Link>
@@ -904,7 +904,7 @@ export default function NewProjectForm({
             <button
               type="submit"
               disabled={isPending}
-              className="py-2.5 px-6 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/25 transition-all flex items-center gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+              className="py-2.5 px-6 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm shadow-blue-500/25 transition-all flex items-center gap-1.5 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
             >
               {isPending ? (
                 <>

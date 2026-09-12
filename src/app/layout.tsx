@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://orgarq.com.br";
 
@@ -61,7 +68,7 @@ import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="h-full antialiased">
+    <html lang="pt-BR" className={`h-full antialiased ${inter.variable}`}>
       <head>
         <link
           rel="stylesheet"
@@ -69,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           crossOrigin=""
         />
       </head>
-      <body className="min-h-full flex flex-col bg-[#F8FAFC] text-slate-800 selection:bg-blue-100 selection:text-blue-700">
+      <body className={`${inter.className} min-h-full flex flex-col bg-[#F8FAFC] text-slate-800 text-sm selection:bg-blue-100 selection:text-blue-700`}>
         <ConfirmProvider>
           {children}
         </ConfirmProvider>

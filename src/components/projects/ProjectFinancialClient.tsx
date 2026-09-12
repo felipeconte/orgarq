@@ -245,28 +245,28 @@ export default function ProjectFinancialClient({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <Link
             href={`/app/projetos/${project.id}/fornecedores`}
-            className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50/50 text-xs font-bold transition-all shadow-xs"
+            className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50/50 text-sm font-semibold transition-all shadow-xs"
           >
-            <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+            <Briefcase className="w-4 h-4 text-indigo-600" />
             Comissões & Parceiros
           </Link>
 
           <button
             onClick={() => handleOpenModal('expense')}
-            className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 text-sm font-semibold transition-all shadow-xs cursor-pointer"
           >
-            <TrendingDown className="w-3.5 h-3.5 text-rose-600" />
+            <TrendingDown className="w-4 h-4 text-rose-600" />
             + Nova Despesa
           </button>
 
           <button
             onClick={() => handleOpenModal('income')}
-            className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs shadow-emerald-600/20 cursor-pointer"
+            className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all shadow-xs shadow-emerald-600/20 cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             + Nova Receita
           </button>
         </div>
@@ -288,7 +288,7 @@ export default function ProjectFinancialClient({
             <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {formatBRL(stats.totalRevenue)}
             </span>
-            <div className="text-[11px] text-slate-500 mt-1 font-medium">
+            <div className="text-xs text-slate-500 mt-1.5 font-medium">
               <span>Honorários: <strong>{formatBRL(stats.directRevenue)}</strong> • RT: <strong>{formatBRL(stats.commissionsRevenue)}</strong></span>
               {stats.pendingIncome > 0 && (
                 <span className="block text-emerald-600 font-bold mt-0.5">
@@ -313,7 +313,7 @@ export default function ProjectFinancialClient({
             <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
               {formatBRL(stats.expensesTotal)}
             </span>
-            <div className="text-[11px] text-slate-400 mt-1 font-medium">
+            <div className="text-xs text-slate-400 mt-1.5 font-medium">
               <span>Visitas, brindes, salas, plotagens e taxas</span>
               {stats.pendingExpense > 0 && (
                 <span className="block text-rose-600 font-bold mt-0.5">
@@ -346,7 +346,7 @@ export default function ProjectFinancialClient({
             >
               {formatBRL(stats.netProfit)}
             </span>
-            <p className="text-[11px] text-slate-400 mt-1 font-medium">
+            <p className="text-xs text-slate-400 mt-1.5 font-medium">
               Faturamento líquido após despesas diretas
             </p>
           </div>
@@ -379,7 +379,7 @@ export default function ProjectFinancialClient({
                 style={{ width: `${Math.max(0, Math.min(stats.profitMargin, 100))}%` }}
               />
             </div>
-            <p className="text-[11px] text-slate-400 mt-2 font-medium">
+            <p className="text-xs text-slate-400 mt-2 font-medium">
               Eficiência operacional e rentabilidade
             </p>
           </div>
@@ -396,7 +396,7 @@ export default function ProjectFinancialClient({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {/* Visitas */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold uppercase tracking-wider">
               <Car className="w-3.5 h-3.5 text-amber-500" />
               <span>Visitas & Deslocamento</span>
             </div>
@@ -407,7 +407,7 @@ export default function ProjectFinancialClient({
 
           {/* Brindes */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold uppercase tracking-wider">
               <Gift className="w-3.5 h-3.5 text-pink-500" />
               <span>Brindes & Mimos</span>
             </div>
@@ -418,7 +418,7 @@ export default function ProjectFinancialClient({
 
           {/* Locação de Sala */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold uppercase tracking-wider">
               <Building className="w-3.5 h-3.5 text-orange-500" />
               <span>Aluguel de Reunião</span>
             </div>
@@ -429,8 +429,8 @@ export default function ProjectFinancialClient({
 
           {/* Plotagens & Impressões */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold">
-              <Printer className="w-3.5 h-3.5 text-purple-500" />
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold uppercase tracking-wider">
+              <Printer className="w-3.5 h-3.5 text-indigo-500" />
               <span>Plotagens & Pranchas</span>
             </div>
             <span className="text-sm font-bold text-slate-900 block mt-2 font-mono">
@@ -440,7 +440,7 @@ export default function ProjectFinancialClient({
 
           {/* Maquetes & Renders */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5 text-rose-500" />
               <span>Render 3D / Maquetes</span>
             </div>
@@ -451,7 +451,7 @@ export default function ProjectFinancialClient({
 
           {/* Outros / Taxas */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold uppercase tracking-wider">
               <Layers className="w-3.5 h-3.5 text-slate-500" />
               <span>Taxas RRT & Outros</span>
             </div>
@@ -467,19 +467,19 @@ export default function ProjectFinancialClient({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-slate-900">Extrato Financeiro do Projeto</h2>
-            <p className="text-xs text-slate-500">Histórico de todas as entradas e saídas associadas a este contrato.</p>
+            <p className="text-sm text-slate-500">Histórico de todas as entradas e saídas associadas a este contrato.</p>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleOpenModal('expense')}
-              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition-colors cursor-pointer"
             >
               + Despesa
             </button>
             <button
               onClick={() => handleOpenModal('income')}
-              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors shadow-xs cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-xs cursor-pointer"
             >
               + Receita
             </button>
@@ -489,23 +489,23 @@ export default function ProjectFinancialClient({
         {transactions.length === 0 ? (
           <div className="p-10 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl">
             <CircleDollarSign className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            <h3 className="text-xs font-bold text-slate-700">Nenhum lançamento vinculado ainda</h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <h3 className="text-sm font-bold text-slate-700">Nenhum lançamento vinculado ainda</h3>
+            <p className="text-xs text-slate-400 mt-1">
               Adicione os honorários do contrato ou os gastos de visitas, reuniões e brindes.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="bg-slate-50/70 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-3">Status</th>
-                  <th className="py-3 px-3">Descrição</th>
-                  <th className="py-3 px-3">Categoria</th>
-                  <th className="py-3 px-3">Vencimento</th>
-                  <th className="py-3 px-3">Forma</th>
-                  <th className="py-3 px-3 text-right">Valor</th>
-                  <th className="py-3 px-3 text-right">Ações</th>
+                <tr className="bg-slate-50/70 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-xs">
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Descrição</th>
+                  <th className="py-3.5 px-4">Categoria</th>
+                  <th className="py-3.5 px-4">Vencimento</th>
+                  <th className="py-3.5 px-4">Forma</th>
+                  <th className="py-3.5 px-4 text-right">Valor</th>
+                  <th className="py-3.5 px-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -517,10 +517,10 @@ export default function ProjectFinancialClient({
                   return (
                     <tr key={tx.id} className="hover:bg-slate-50/70 transition-colors group">
                       {/* Status Toggle */}
-                      <td className="py-3 px-3 whitespace-nowrap">
+                      <td className="py-4 px-4 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleStatus(tx)}
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-bold text-[10px] transition-all cursor-pointer ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${
                             isPaid
                               ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                               : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
@@ -528,12 +528,12 @@ export default function ProjectFinancialClient({
                         >
                           {isPaid ? (
                             <>
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               <span>Pago</span>
                             </>
                           ) : (
                             <>
-                              <Clock className="w-3 h-3 text-amber-600" />
+                              <Clock className="w-3.5 h-3.5 text-amber-600" />
                               <span>Pendente</span>
                             </>
                           )}
@@ -541,46 +541,46 @@ export default function ProjectFinancialClient({
                       </td>
 
                       {/* Title */}
-                      <td className="py-3 px-3 font-bold text-slate-800">
+                      <td className="py-4 px-4 font-bold text-slate-800">
                         {tx.title}
                         {tx.companies && (
-                          <span className="text-[10px] text-slate-400 block font-normal">
+                          <span className="text-xs text-slate-400 block font-normal mt-0.5">
                             Parceiro: {tx.companies.name}
                           </span>
                         )}
                       </td>
 
                       {/* Category */}
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600">
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600">
                           {catDef?.label || tx.category}
                         </span>
                       </td>
 
                       {/* Due Date */}
-                      <td className="py-3 px-3 whitespace-nowrap font-medium text-slate-600">
+                      <td className="py-4 px-4 whitespace-nowrap font-medium text-slate-600">
                         {formatDateBR(tx.due_date)}
                       </td>
 
                       {/* Payment Method */}
-                      <td className="py-3 px-3 whitespace-nowrap text-slate-500 font-medium">
+                      <td className="py-4 px-4 whitespace-nowrap text-slate-500 font-medium">
                         {tx.payment_method || '-'}
                       </td>
 
                       {/* Amount */}
-                      <td className="py-3 px-3 whitespace-nowrap text-right font-mono font-extrabold">
+                      <td className="py-4 px-4 whitespace-nowrap text-right font-mono font-extrabold">
                         <span className={isIncome ? 'text-emerald-600' : 'text-rose-600'}>
                           {isIncome ? '+' : '-'} {formatBRL(tx.amount)}
                         </span>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3 px-3 whitespace-nowrap text-right">
+                      <td className="py-4 px-4 whitespace-nowrap text-right">
                         <button
                           onClick={() => handleOpenEdit(tx)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>

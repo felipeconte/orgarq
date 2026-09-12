@@ -315,7 +315,7 @@ export default function FinancialManagerClient({
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
           <button
             onClick={() => handleOpenNewTransaction('expense')}
-            className="inline-flex items-center gap-1.5 py-2.5 px-4 rounded-xl bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 py-2.5 px-4.5 rounded-xl bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 text-sm font-semibold transition-all shadow-xs cursor-pointer"
           >
             <TrendingDown className="w-4 h-4 text-rose-600" />
             Nova Despesa
@@ -323,7 +323,7 @@ export default function FinancialManagerClient({
 
           <button
             onClick={() => handleOpenNewTransaction('income')}
-            className="inline-flex items-center gap-1.5 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs shadow-emerald-600/20 cursor-pointer"
+            className="inline-flex items-center gap-1.5 py-2.5 px-4.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all shadow-xs shadow-emerald-600/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Nova Receita
@@ -335,7 +335,7 @@ export default function FinancialManagerClient({
       <div className="flex items-center gap-1.5 border-b border-slate-200 overflow-x-auto pb-px">
         <button
           onClick={() => setActiveTab('visao_geral')}
-          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'visao_geral'
+          className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'visao_geral'
             ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
             : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
@@ -346,35 +346,35 @@ export default function FinancialManagerClient({
 
         <button
           onClick={() => setActiveTab('extrato')}
-          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'extrato'
+          className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'extrato'
             ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
             : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
         >
           <CircleDollarSign className="w-4 h-4" />
           Lançamentos
-          <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-100 text-slate-600">
+          <span className="px-2 py-0.5 text-xs rounded-full bg-slate-100 text-slate-600 font-bold">
             {transactions.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('projetos')}
-          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'projetos'
+          className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'projetos'
             ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
             : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
         >
           <FolderGit2 className="w-4 h-4" />
           Lucratividade por Projeto
-          <span className="px-1.5 py-0.2 text-[10px] rounded-full bg-blue-100 text-blue-700 font-bold">
+          <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 font-bold">
             {profitability.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('projecao')}
-          className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'projecao'
+          className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 whitespace-nowrap transition-all cursor-pointer ${activeTab === 'projecao'
             ? 'border-emerald-600 text-emerald-700 bg-emerald-50/40 rounded-t-xl'
             : 'border-transparent text-slate-500 hover:text-slate-900 hover:border-slate-300'
             }`}
@@ -756,9 +756,9 @@ export default function FinancialManagerClient({
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="bg-slate-50/70 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <tr className="bg-slate-50/70 border-b border-slate-200/80 text-slate-500 font-bold uppercase tracking-wider text-xs">
                       <th className="py-3.5 px-4">Status</th>
                       <th className="py-3.5 px-4">Descrição / Categoria</th>
                       <th className="py-3.5 px-4">Projeto / Parceiro</th>
@@ -780,10 +780,10 @@ export default function FinancialManagerClient({
                           className="hover:bg-slate-50/70 transition-colors group"
                         >
                           {/* Status Toggle */}
-                          <td className="py-3.5 px-4 whitespace-nowrap">
+                          <td className="py-4 px-4 whitespace-nowrap">
                             <button
                               onClick={() => handleToggleStatus(tx)}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${isPaid
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${isPaid
                                 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                                 : tx.status === 'overdue'
                                   ? 'bg-rose-100 text-rose-800 hover:bg-rose-200'
@@ -793,12 +793,12 @@ export default function FinancialManagerClient({
                             >
                               {isPaid ? (
                                 <>
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                                   <span>Pago</span>
                                 </>
                               ) : (
                                 <>
-                                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                  <Clock className="w-4 h-4 text-amber-600" />
                                   <span>Pendente</span>
                                 </>
                               )}
@@ -806,27 +806,27 @@ export default function FinancialManagerClient({
                           </td>
 
                           {/* Title & Category & Recurrence Badge */}
-                          <td className="py-3.5 px-4 max-w-xs">
+                          <td className="py-4 px-4 max-w-xs">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-slate-800 truncate group-hover:text-blue-600">
                                 {tx.title}
                               </span>
                               {tx.recurring_expense_id && (
                                 <span
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200/80 shrink-0 shadow-2xs"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 shrink-0 shadow-2xs"
                                   title="Lançamento gerado automaticamente por regra recorrente"
                                 >
-                                  <Repeat className="w-3 h-3 text-indigo-600" /> Recorrente
+                                  <Repeat className="w-3.5 h-3.5 text-indigo-600" /> Recorrente
                                 </span>
                               )}
                             </div>
-                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600">
+                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-600">
                               {catDef?.label || tx.category}
                             </span>
                           </td>
 
                           {/* Project & Company */}
-                          <td className="py-3.5 px-4 max-w-xs">
+                          <td className="py-4 px-4 max-w-xs">
                             {tx.projects ? (
                               <Link
                                 href={`/app/projetos/${tx.projects.id}/financeiro`}
@@ -835,41 +835,41 @@ export default function FinancialManagerClient({
                                 [{tx.projects.code}] {tx.projects.title}
                               </Link>
                             ) : (
-                              <span className="text-slate-400 font-medium text-[11px]">
+                              <span className="text-slate-400 font-medium text-xs">
                                 Geral do Escritório
                               </span>
                             )}
 
                             {tx.companies && (
-                              <span className="text-[10px] text-slate-500 block truncate mt-0.5">
+                              <span className="text-xs text-slate-500 block truncate mt-0.5">
                                 Parceiro: {tx.companies.name}
                               </span>
                             )}
                           </td>
 
                           {/* Due Date & Payment Date */}
-                          <td className="py-3.5 px-4 whitespace-nowrap">
+                          <td className="py-4 px-4 whitespace-nowrap">
                             <span className="font-bold text-slate-700 block">
                               {formatDateBR(tx.due_date)}
                             </span>
                             {isPaid && tx.payment_date && (
-                              <span className="text-[10px] text-emerald-600 font-medium block">
+                              <span className="text-xs text-emerald-600 font-medium block">
                                 Pago em: {formatDateBR(tx.payment_date)}
                               </span>
                             )}
                           </td>
 
                           {/* Payment Method */}
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <span className="text-[11px] font-semibold text-slate-600">
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className="text-xs font-semibold text-slate-600">
                               {tx.payment_method || '-'}
                             </span>
                           </td>
 
                           {/* Amount */}
-                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                          <td className="py-4 px-4 whitespace-nowrap text-right">
                             <span
-                              className={`text-sm font-mono font-extrabold ${isIncome ? 'text-emerald-600' : 'text-rose-600'
+                              className={`text-base font-mono font-extrabold ${isIncome ? 'text-emerald-600' : 'text-rose-600'
                                 }`}
                             >
                               {isIncome ? '+' : '-'} {formatBRL(tx.amount)}
@@ -877,7 +877,7 @@ export default function FinancialManagerClient({
                           </td>
 
                           {/* Actions */}
-                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                          <td className="py-4 px-4 whitespace-nowrap text-right">
                             <button
                               onClick={() => handleOpenEditTransaction(tx)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"

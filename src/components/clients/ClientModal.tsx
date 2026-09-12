@@ -399,14 +399,14 @@ export default function ClientModal({
         {/* Modal Header */}
         <div className="p-5 sm:px-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+            <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
               {personType === 'PJ' ? <Building className="w-5 h-5" /> : <User className="w-5 h-5" />}
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-slate-900">
+              <h3 className="text-lg font-bold text-slate-900">
                 {clientToEdit ? 'Editar Cliente' : 'Novo Cliente'}
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {clientToEdit
                   ? 'Atualize os dados e contatos deste cliente.'
                   : 'Cadastre um cliente para vincular a novos e existentes projetos.'}
@@ -427,36 +427,36 @@ export default function ClientModal({
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
           {/* Tipo de Pessoa Toggle (PF x PJ) */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
               Tipo de Cliente
             </label>
             <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl border border-slate-200/70 max-w-xs">
               <button
                 type="button"
                 onClick={() => handlePersonTypeChange('PF')}
-                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${personType === 'PF'
+                className={`py-2 px-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${personType === 'PF'
                   ? 'bg-white text-blue-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
-                <User className="w-3.5 h-3.5" /> Pessoa Física (PF)
+                <User className="w-4 h-4" /> Pessoa Física (PF)
               </button>
               <button
                 type="button"
                 onClick={() => handlePersonTypeChange('PJ')}
-                className={`py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${personType === 'PJ'
+                className={`py-2 px-3.5 rounded-xl text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${personType === 'PJ'
                   ? 'bg-white text-blue-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
-                <Building className="w-3.5 h-3.5" /> Pessoa Jurídica (PJ)
+                <Building className="w-4 h-4" /> Pessoa Jurídica (PJ)
               </button>
             </div>
           </div>
 
           {/* Nome / Razão Social */}
           <div>
-            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
               {personType === 'PJ' ? 'Razão Social / Nome da Empresa' : 'Nome Completo'} *
             </label>
             <div className="relative">
@@ -475,7 +475,7 @@ export default function ClientModal({
                   }
                 }}
                 placeholder={personType === 'PJ' ? 'Ex: Studio Arquitetura & Design Ltda.' : 'Ex: Dra. Mariana Vasconcelos'}
-                className={`w-full text-xs font-bold border rounded-xl p-3 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.name
+                className={`w-full text-sm font-medium border rounded-xl p-3 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.name
                   ? 'border-rose-300 ring-2 ring-rose-500/20 text-rose-900'
                   : 'border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900'
                   }`}
@@ -483,8 +483,8 @@ export default function ClientModal({
               />
             </div>
             {errors.name && (
-              <p className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3 shrink-0" /> {errors.name}
+              <p className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {errors.name}
               </p>
             )}
           </div>
@@ -492,7 +492,7 @@ export default function ClientModal({
           {/* Documento (CPF / CNPJ) & Status */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                 {personType === 'PJ' ? 'CNPJ' : 'CPF'}
               </label>
               <div className="relative">
@@ -501,7 +501,7 @@ export default function ClientModal({
                   value={documentNumber}
                   onChange={(e) => handleDocumentChange(e.target.value)}
                   placeholder={personType === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'}
-                  className={`w-full text-xs font-mono font-bold border rounded-xl p-3 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.documentNumber
+                  className={`w-full text-sm font-mono font-medium border rounded-xl p-3 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.documentNumber
                     ? 'border-rose-300 ring-2 ring-rose-500/20 text-rose-900'
                     : 'border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900'
                     }`}
@@ -511,20 +511,20 @@ export default function ClientModal({
                 )}
               </div>
               {errors.documentNumber && (
-                <p className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 shrink-0" /> {errors.documentNumber}
+                <p className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {errors.documentNumber}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                 Status do Cliente
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'ativo' | 'inativo')}
-                className="w-full text-xs font-bold border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden cursor-pointer"
+                className="w-full text-sm font-semibold border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden cursor-pointer"
               >
                 <option value="ativo">🟢 Ativo</option>
                 <option value="inativo">⚪ Inativo</option>
@@ -535,43 +535,43 @@ export default function ClientModal({
           {/* Contatos (E-mail e WhatsApp/Telefone) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1 flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5 text-slate-400" /> E-mail
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
+                <Mail className="w-4 h-4 text-slate-400" /> E-mail
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => handleEmailChange(e.target.value)}
                 placeholder="cliente@exemplo.com.br"
-                className={`w-full text-xs font-semibold border rounded-xl p-3 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.email
+                className={`w-full text-sm font-medium border rounded-xl p-3 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.email
                   ? 'border-rose-300 ring-2 ring-rose-500/20 text-rose-900'
                   : 'border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900'
                   }`}
               />
               {errors.email && (
-                <p className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 shrink-0" /> {errors.email}
+                <p className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {errors.email}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1 flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5 text-slate-400" /> Telefone / WhatsApp
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
+                <Phone className="w-4 h-4 text-slate-400" /> Telefone / WhatsApp
               </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => handlePhoneChange(e.target.value)}
                 placeholder="(11) 98765-4321"
-                className={`w-full text-xs font-mono font-bold border rounded-xl p-3 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.phone
+                className={`w-full text-sm font-mono font-medium border rounded-xl p-3 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.phone
                   ? 'border-rose-300 ring-2 ring-rose-500/20 text-rose-900'
                   : 'border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900'
                   }`}
               />
               {errors.phone && (
-                <p className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3 shrink-0" /> {errors.phone}
+                <p className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {errors.phone}
                 </p>
               )}
             </div>
@@ -580,17 +580,17 @@ export default function ClientModal({
           {/* Endereço & CEP com Busca Automática e Campos Separados */}
           <div className="space-y-3.5 pt-3 border-t border-slate-100">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-blue-600" /> Localização & Endereço
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-blue-600" /> Localização & Endereço
               </span>
               {isSearchingCep && (
-                <span className="text-[11px] font-semibold text-blue-600 flex items-center gap-1 animate-pulse">
+                <span className="text-xs font-semibold text-blue-600 flex items-center gap-1 animate-pulse">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando dados do CEP...
                 </span>
               )}
               {cepSuccessMessage && !isSearchingCep && (
-                <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in duration-200">
-                  <Check className="w-3.5 h-3.5" /> {cepSuccessMessage}
+                <span className="text-xs font-bold text-emerald-600 flex items-center gap-1 animate-in fade-in duration-200">
+                  <Check className="w-4 h-4" /> {cepSuccessMessage}
                 </span>
               )}
             </div>
@@ -598,9 +598,9 @@ export default function ClientModal({
             {/* Linha 1: CEP e Logradouro */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1 flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
                   <span>CEP</span>
-                  <span className="text-[10px] text-blue-600 font-semibold lowercase">busca automática</span>
+                  <span className="text-xs text-blue-600 font-semibold lowercase">busca automática</span>
                 </label>
                 <div className="relative flex items-center">
                   <input
@@ -609,7 +609,7 @@ export default function ClientModal({
                     onChange={(e) => handleCepChange(e.target.value)}
                     placeholder="00000-000"
                     maxLength={9}
-                    className={`w-full text-xs font-mono font-bold border rounded-xl p-3 pr-9 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.zipCode
+                    className={`w-full text-sm font-mono font-medium border rounded-xl p-3 pr-9 outline-hidden transition-all bg-slate-50/50 focus:bg-white ${errors.zipCode
                       ? 'border-rose-300 ring-2 ring-rose-500/20 text-rose-900'
                       : 'border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-900'
                       }`}
@@ -630,14 +630,14 @@ export default function ClientModal({
                   </div>
                 </div>
                 {errors.zipCode && (
-                  <p className="text-[11px] text-rose-600 font-semibold mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0" /> {errors.zipCode}
+                  <p className="text-xs text-rose-600 font-semibold mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {errors.zipCode}
                   </p>
                 )}
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   Rua / Logradouro / Avenida
                 </label>
                 <input
@@ -645,7 +645,7 @@ export default function ClientModal({
                   value={street}
                   onChange={(e) => setStreet(e.target.value)}
                   placeholder="Ex: Av. Paulista, Rua Oscar Freire..."
-                  className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900"
+                  className="w-full text-sm font-medium border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900"
                 />
               </div>
             </div>
@@ -653,7 +653,7 @@ export default function ClientModal({
             {/* Linha 2: Número + Complemento (Opcional) + Bairro */}
             <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   Número
                 </label>
                 <input
@@ -662,12 +662,12 @@ export default function ClientModal({
                   value={number}
                   onChange={(e) => setNumber(e.target.value)}
                   placeholder="Ex: 1000 ou S/N"
-                  className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900 font-mono"
+                  className="w-full text-sm font-medium border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900 font-mono"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   Complemento <span className="text-slate-400 font-normal lowercase">(opcional)</span>
                 </label>
                 <input
@@ -675,12 +675,12 @@ export default function ClientModal({
                   value={complement}
                   onChange={(e) => setComplement(e.target.value)}
                   placeholder="Ex: Apto 52, Bloco B"
-                  className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900"
+                  className="w-full text-sm font-medium border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   Bairro
                 </label>
                 <input
@@ -688,7 +688,7 @@ export default function ClientModal({
                   value={neighborhood}
                   onChange={(e) => setNeighborhood(e.target.value)}
                   placeholder="Ex: Bela Vista"
-                  className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900"
+                  className="w-full text-sm font-medium border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900"
                 />
               </div>
             </div>
@@ -696,7 +696,7 @@ export default function ClientModal({
             {/* Linha 3: Cidade + Estado (UF) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   Cidade
                 </label>
                 <input
@@ -704,18 +704,18 @@ export default function ClientModal({
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   placeholder="Ex: Belém"
-                  className="w-full text-xs font-semibold border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900"
+                  className="w-full text-sm font-medium border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-900"
                 />
               </div>
 
               <div className="sm:col-span-1">
-                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   Estado (UF)
                 </label>
                 <select
                   value={state}
                   onChange={(e) => setState(e.target.value)}
-                  className={`w-full text-xs font-bold border rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden cursor-pointer transition-all ${!state ? 'text-slate-400 border-slate-200' : 'text-slate-900 border-slate-200'
+                  className={`w-full text-sm font-semibold border rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden cursor-pointer transition-all ${!state ? 'text-slate-400 border-slate-200' : 'text-slate-900 border-slate-200'
                     }`}
                 >
                   <option value="">
@@ -733,15 +733,15 @@ export default function ClientModal({
 
           {/* Observações Internas */}
           <div className="pt-2 border-t border-slate-100">
-            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1 flex items-center gap-1">
-              <FileText className="w-3.5 h-3.5 text-slate-400" /> Observações e Preferências do Cliente
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center gap-1">
+              <FileText className="w-4 h-4 text-slate-400" /> Observações e Preferências do Cliente
             </label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Ex: Preferência por contato via WhatsApp no período da tarde; casal com 2 filhos..."
-              className="w-full text-xs border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-800 resize-none"
+              className="w-full text-sm border border-slate-200 rounded-xl p-3 bg-slate-50/50 focus:bg-white focus:border-blue-500 outline-hidden transition-all text-slate-800 resize-none"
             />
           </div>
 
@@ -751,7 +751,7 @@ export default function ClientModal({
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              className="px-4.5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
             >
               Cancelar
             </button>
@@ -759,7 +759,7 @@ export default function ClientModal({
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm shadow-blue-500/20 disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-sm shadow-blue-500/20 disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
                 <>

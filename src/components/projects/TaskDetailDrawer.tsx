@@ -32,7 +32,11 @@ import {
   Flag,
   Eye,
   EyeOff,
-  Globe
+  Globe,
+  GitFork,
+  ChevronRight,
+  Unlink,
+  ListTree
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -50,6 +54,8 @@ import {
   toggleStageAttachmentVisibilityAction,
   deleteStageAttachmentAction,
   deleteStageAction,
+  createStageAction,
+  unlinkSubtaskAction,
   ChecklistItem,
   StageComment,
   StageAttachment
@@ -95,6 +101,11 @@ export interface TaskDetailData {
   checklist?: ChecklistItem[]
   comments?: StageComment[]
   attachments?: StageAttachment[]
+  parent_stage_id?: string | null
+  code?: string | null
+  deleted_at?: string | null
+  deleted_by?: string | null
+  created_at?: string
 }
 
 export interface TaskDetailDrawerProps {
@@ -103,9 +114,13 @@ export interface TaskDetailDrawerProps {
   portalToken?: string
   members?: MemberOption[]
   workflowStages?: WorkflowStage[]
+  allStages?: TaskDetailData[]
   onClose: () => void
   onUpdateStage: (updated: TaskDetailData) => void
-  onDeleteStage?: (stageId: string) => void
+  onDeleteStage?: (stageId: string, subtaskMode?: 'cascade' | 'unlink') => void
+  onSelectStage?: (stage: TaskDetailData) => void
+  onCreateSubtask?: (newSubtask: TaskDetailData) => void
+  onUnlinkSubtask?: (stageId: string) => void
 }
 
 export default function TaskDetailDrawer({
@@ -114,9 +129,13 @@ export default function TaskDetailDrawer({
   portalToken,
   members = [],
   workflowStages = [],
+  allStages = [],
   onClose,
   onUpdateStage,
   onDeleteStage,
+  onSelectStage,
+  onCreateSubtask,
+  onUnlinkSubtask,
 }: TaskDetailDrawerProps) {
   const confirm = useConfirm()
   const showAlert = useAlert()
@@ -198,6 +217,15 @@ export default function TaskDetailDrawer({
   const [editingAttachmentId, setEditingAttachmentId] = useState<string | null>(null)
   const [editingAttachmentName, setEditingAttachmentName] = useState('')
   const [savingAttachmentId, setSavingAttachmentId] = useState<string | null>(null)
+
+  // Subtasks State
+  const [showAddSubtask, setShowAddSubtask] = useState(false)
+  const [newSubtaskName, setNewSubtaskName] = useState('')
+  const [newSubtaskAssignedTo, setNewSubtaskAssignedTo] = useState('')
+  const [newSubtaskDueDate, setNewSubtaskDueDate] = useState('')
+  const [creatingSubtask, setCreatingSubtask] = useState(false)
+  const [subtaskDeleteModalOpen, setSubtaskDeleteModalOpen] = useState(false)
+  const [unlinkingSubtaskId, setUnlinkingSubtaskId] = useState<string | null>(null)
 
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -323,7 +351,7 @@ export default function TaskDetailDrawer({
   // Helper para montar objeto TaskDetailData tipado
   const getUpdatedTaskData = useCallback(
     (overrides?: Partial<TaskDetailData>): TaskDetailData => ({
-      ...stage!,
+      ...(stage || ({} as TaskDetailData)),
       name: formData.name,
       description: formData.description,
       assigned_to: formData.assigned_to || null,
@@ -416,13 +444,218 @@ export default function TaskDetailDrawer({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleAttemptClose])
 
-  if (!stage) return null
+  // Subtarefas diretas desta etapa
+  const subtasks = useMemo(() => {
+    if (!stage?.id || !allStages) return []
+    return allStages.filter((s) => s.parent_stage_id === stage.id)
+  }, [stage?.id, allStages])
+
+  // Subtarefas concluídas
+  const completedSubtasksCount = useMemo(() => {
+    return subtasks.filter((s) => {
+      const cfg = (workflowStages || DEFAULT_WORKFLOW_STAGES).find((ws) => ws.id === s.status)
+      return s.status === 'concluido' || Boolean(cfg?.is_final_stage)
+    }).length
+  }, [subtasks, workflowStages])
+
+  const subtaskProgressPercent = subtasks.length > 0
+    ? Math.round((completedSubtasksCount / subtasks.length) * 100)
+    : 0
+
+  // Cadeia de tarefas ancestrais (para navegação em múltiplos níveis)
+  const ancestors = useMemo(() => {
+    if (!stage?.parent_stage_id || !allStages) return []
+    const list: TaskDetailData[] = []
+    let currId: string | null = stage.parent_stage_id
+    const visited = new Set<string>()
+    while (currId && !visited.has(currId)) {
+      visited.add(currId)
+      const p = allStages.find((s) => s.id === currId)
+      if (p) {
+        list.unshift(p)
+        currId = p.parent_stage_id || null
+      } else {
+        break
+      }
+    }
+    return list
+  }, [stage?.parent_stage_id, allStages])
+
+  const handleNavigateToTask = useCallback(
+    async (targetTask: TaskDetailData) => {
+      if (isDirty) {
+        const choice = await promptSaveOrDiscard({
+          title: 'Salvar alterações da tarefa atual?',
+          message: 'Você possui alterações não salvas nesta tarefa.',
+          description: 'Deseja salvar antes de navegar para a outra tarefa?',
+          saveText: 'Salvar e Abrir',
+          discardText: 'Abrir sem Salvar',
+          cancelText: 'Continuar Aqui',
+        })
+
+        if (choice === 'save') {
+          const saved = await handleSaveDetails()
+          if (saved) {
+            onSelectStage?.(targetTask)
+          }
+        } else if (choice === 'discard') {
+          onSelectStage?.(targetTask)
+        }
+        return
+      }
+      onSelectStage?.(targetTask)
+    },
+    [isDirty, promptSaveOrDiscard, handleSaveDetails, onSelectStage]
+  )
+
+  const handleCreateSubtaskSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimmed = newSubtaskName.trim()
+    if (!trimmed || !stage) return
+
+    setCreatingSubtask(true)
+    const res = await createStageAction(projectId, {
+      name: trimmed,
+      assigned_to: newSubtaskAssignedTo || null,
+      due_date: newSubtaskDueDate || null,
+      parent_stage_id: stage.id,
+      status: 'a_iniciar',
+      is_client_approval_required: false,
+    })
+    setCreatingSubtask(false)
+
+    if (res.success && res.stage) {
+      const created = res.stage as TaskDetailData
+      if (onCreateSubtask) {
+        onCreateSubtask(created)
+      }
+      setNewSubtaskName('')
+      setNewSubtaskAssignedTo('')
+      setNewSubtaskDueDate('')
+      setShowAddSubtask(false)
+    } else {
+      await showAlert({
+        title: 'Erro ao criar subtarefa',
+        message: res.error || 'Não foi possível criar a subtarefa.',
+        variant: 'error',
+      })
+    }
+  }
+
+  const handleUnlinkCurrentFromParent = async () => {
+    if (!stage?.parent_stage_id) return
+    const confirmed = await confirm({
+      title: 'Desvincular da Tarefa Principal',
+      message: `Deseja transformar a subtarefa "${stage.name}" em uma tarefa principal independente?`,
+      description: 'Ela deixará de ser listada como subtarefa e passará a ser uma tarefa normal no projeto.',
+      confirmText: 'Desvincular',
+      cancelText: 'Cancelar',
+      variant: 'info',
+    })
+
+    if (!confirmed) return
+
+    const res = await unlinkSubtaskAction(projectId, stage.id)
+    if (res.success) {
+      const updated = { ...stage, parent_stage_id: null }
+      onUpdateStage(updated)
+      if (onUnlinkSubtask) {
+        onUnlinkSubtask(stage.id)
+      }
+    } else {
+      await showAlert({
+        title: 'Erro ao desvincular',
+        message: res.error || 'Não foi possível desvincular a subtarefa.',
+        variant: 'error',
+      })
+    }
+  }
+
+  const handleUnlinkChildSubtask = async (child: TaskDetailData) => {
+    const confirmed = await confirm({
+      title: 'Desvincular Subtarefa',
+      message: `Deseja desvincular "${child.name}" desta tarefa?`,
+      description: 'Ela se tornará uma tarefa independente de primeiro nível no projeto.',
+      confirmText: 'Desvincular',
+      cancelText: 'Cancelar',
+      variant: 'info',
+    })
+
+    if (!confirmed) return
+
+    setUnlinkingSubtaskId(child.id)
+    const res = await unlinkSubtaskAction(projectId, child.id)
+    setUnlinkingSubtaskId(null)
+
+    if (res.success) {
+      const updated = { ...child, parent_stage_id: null }
+      onUpdateStage(updated)
+      if (onUnlinkSubtask) {
+        onUnlinkSubtask(child.id)
+      }
+    } else {
+      await showAlert({
+        title: 'Erro ao desvincular',
+        message: res.error || 'Não foi possível desvincular a subtarefa.',
+        variant: 'error',
+      })
+    }
+  }
+
+  const handleDeleteChildSubtask = async (child: TaskDetailData) => {
+    const codeDisplay = child.code ? `[${child.code}] ` : ''
+    const confirmed = await confirm({
+      title: 'Excluir Subtarefa',
+      message: `Tem certeza que deseja excluir a subtarefa ${codeDisplay}"${child.name}"?`,
+      description: 'A subtarefa será movida para o histórico de tarefas excluídas e poderá ser restaurada posteriormente.',
+      confirmText: 'Excluir Subtarefa',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    })
+
+    if (!confirmed) return
+
+    const res = await deleteStageAction(projectId, child.id, 'cascade')
+    if (res.success) {
+      if (onDeleteStage) {
+        onDeleteStage(child.id, 'cascade')
+      }
+    } else {
+      await showAlert({
+        title: 'Erro ao excluir subtarefa',
+        message: res.error || 'Não foi possível excluir a subtarefa.',
+        variant: 'error',
+      })
+    }
+  }
+
+  const handleConfirmDeleteWithSubtasks = async (mode: 'cascade' | 'unlink') => {
+    if (!stage) return
+    setDeletingStage(true)
+    const res = await deleteStageAction(projectId, stage.id, mode)
+    setDeletingStage(false)
+    setSubtaskDeleteModalOpen(false)
+
+    if (res.success) {
+      if (onDeleteStage) {
+        onDeleteStage(stage.id, mode)
+      }
+      onClose()
+    } else {
+      await showAlert({
+        title: 'Erro ao excluir tarefa',
+        message: res.error || 'Não foi possível excluir a tarefa.',
+        variant: 'error',
+      })
+    }
+  }
 
   const currentStageConfig = (workflowStages || DEFAULT_WORKFLOW_STAGES).find((s) => s.id === formData.status)
   const isTaskFinalized = Boolean(currentStageConfig?.is_final_stage || formData.status === 'concluido')
   const timelineStatus = getTaskTimelineStatus(formData.start_date, formData.due_date, isTaskFinalized)
 
   const handleStatusSelectChange = async (newStatus: string) => {
+    if (!stage) return
     const targetCfg = (workflowStages || DEFAULT_WORKFLOW_STAGES).find((s) => s.id === newStatus)
     if (targetCfg?.is_final_stage && newStatus !== stage.status) {
       const check = canMoveToFinalStage(getUpdatedTaskData({ status: newStatus }), workflowStages)
@@ -443,8 +676,8 @@ export default function TaskDetailDrawer({
       newStatus === 'concluido'
     )
 
-    if (isApprovedStage && newStatus !== stage.status) {
-      const stageName = stage.name || 'esta tarefa'
+    if (isApprovedStage && newStatus !== stage?.status) {
+      const stageName = stage?.name || 'esta tarefa'
       const targetStageName = targetCfg?.name || 'Aprovado'
 
       const confirmed = await confirm({
@@ -468,10 +701,18 @@ export default function TaskDetailDrawer({
   // Delete Stage Action
   const handleDeleteCurrentStage = async () => {
     if (!stage) return
+
+    // Se possui subtarefas vinculadas, exibe modal inteligente com escolhas (P2: A)
+    if (subtasks.length > 0) {
+      setSubtaskDeleteModalOpen(true)
+      return
+    }
+
+    const codeDisplay = stage.code ? `[${stage.code}] ` : ''
     const confirmed = await confirm({
       title: 'Excluir Tarefa',
-      message: `Tem certeza que deseja excluir permanentemente a tarefa "${stage.name}"?`,
-      description: 'Esta ação não poderá ser desfeita e removerá todos os checklists, comentários e anexos vinculados.',
+      message: `Tem certeza que deseja excluir a tarefa ${codeDisplay}"${stage.name}"?`,
+      description: 'A tarefa será movida para o histórico de tarefas excluídas e poderá ser restaurada a qualquer momento.',
       confirmText: 'Excluir Tarefa',
       cancelText: 'Cancelar',
       variant: 'danger',
@@ -479,11 +720,11 @@ export default function TaskDetailDrawer({
 
     if (confirmed) {
       setDeletingStage(true)
-      const res = await deleteStageAction(projectId, stage.id)
+      const res = await deleteStageAction(projectId, stage.id, 'cascade')
       setDeletingStage(false)
       if (res.success) {
         if (onDeleteStage) {
-          onDeleteStage(stage.id)
+          onDeleteStage(stage.id, 'cascade')
         }
         onClose()
       } else {
@@ -498,6 +739,7 @@ export default function TaskDetailDrawer({
 
   // Checklist Actions
   const handleToggleChecklist = async (itemId: string, currentCompleted: boolean) => {
+    if (!stage) return
     const updated = checklist.map((item) =>
       item.id === itemId ? { ...item, completed: !currentCompleted } : item
     )
@@ -508,7 +750,7 @@ export default function TaskDetailDrawer({
 
   const handleAddChecklistItem = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newChecklistText.trim()) return
+    if (!newChecklistText.trim() || !stage) return
 
     const res = await addStageChecklistItemAction(
       projectId,
@@ -542,7 +784,7 @@ export default function TaskDetailDrawer({
   }
 
   const handleSaveEditChecklist = async (itemId: string) => {
-    if (!editingChecklistText.trim()) return
+    if (!editingChecklistText.trim() || !stage) return
     setSavingChecklistItemId(itemId)
 
     const res = await editStageChecklistItemAction(
@@ -573,6 +815,7 @@ export default function TaskDetailDrawer({
   }
 
   const handleDeleteChecklistItem = async (itemId: string) => {
+    if (!stage) return
     const updated = checklist.filter((item) => item.id !== itemId)
     setChecklist(updated)
     onUpdateStage(getUpdatedTaskData({ checklist: updated }))
@@ -594,7 +837,7 @@ export default function TaskDetailDrawer({
   // Comments Actions (Persistência Imediata)
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newCommentText.trim()) return
+    if (!newCommentText.trim() || !stage) return
 
     const res = await addStageCommentAction(projectId, stage.id, newCommentText)
     if (res.success && res.comment) {
@@ -616,7 +859,7 @@ export default function TaskDetailDrawer({
   }
 
   const handleSaveEditComment = async (commentId: string) => {
-    if (!editingCommentText.trim()) return
+    if (!editingCommentText.trim() || !stage) return
     setSavingCommentId(commentId)
 
     const res = await editStageCommentAction(projectId, stage.id, commentId, editingCommentText)
@@ -638,6 +881,7 @@ export default function TaskDetailDrawer({
   }
 
   const handleDeleteComment = async (commentId: string) => {
+    if (!stage) return
     const confirmed = await confirm({
       title: 'Excluir Comentário',
       message: 'Tem certeza que deseja excluir este comentário permanentemente?',
@@ -659,7 +903,7 @@ export default function TaskDetailDrawer({
     e.preventDefault()
     setAttachmentError(null)
 
-    if (!selectedFile) {
+    if (!selectedFile || !stage) {
       setAttachmentError('Por favor, selecione um arquivo no seu dispositivo.')
       return
     }
@@ -759,7 +1003,7 @@ export default function TaskDetailDrawer({
     e.preventDefault()
     setAttachmentError(null)
 
-    if (!newAttachmentName.trim() || !newAttachmentUrl.trim()) {
+    if (!stage || !newAttachmentName.trim() || !newAttachmentUrl.trim()) {
       setAttachmentError('Nome e URL do link são obrigatórios.')
       return
     }
@@ -785,6 +1029,7 @@ export default function TaskDetailDrawer({
   }
 
   const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!stage) return
     const confirmed = await confirm({
       title: 'Remover Anexo',
       message: 'Tem certeza que deseja remover este anexo?',
@@ -813,7 +1058,7 @@ export default function TaskDetailDrawer({
 
   const handleSaveEditAttachment = async (attachmentId: string) => {
     const trimmed = editingAttachmentName.trim()
-    if (!trimmed) return
+    if (!trimmed || !stage) return
     setSavingAttachmentId(attachmentId)
 
     const res = await editStageAttachmentAction(projectId, stage.id, attachmentId, trimmed)
@@ -835,6 +1080,7 @@ export default function TaskDetailDrawer({
   }
 
   const handleToggleAttachmentVisibility = async (attachment: StageAttachment) => {
+    if (!stage) return
     const current = attachment.is_visible_to_client !== false
     const nextVal = !current
 
@@ -878,11 +1124,13 @@ export default function TaskDetailDrawer({
     if (['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'].includes(ext))
       return <ImageIcon className="w-4 h-4 text-blue-600 shrink-0" />
     if (['dwg', 'dxf', 'rvt', 'ifc', 'skp'].includes(ext))
-      return <File className="w-4 h-4 text-purple-600 shrink-0" />
+      return <File className="w-4 h-4 text-indigo-600 shrink-0" />
     if (url.startsWith('http') && !url.includes('supabase.co'))
       return <Link2 className="w-4 h-4 text-emerald-600 shrink-0" />
     return <Paperclip className="w-4 h-4 text-slate-500 shrink-0" />
   }
+
+  if (!stage) return null
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden antialiased overscroll-contain">
@@ -899,8 +1147,13 @@ export default function TaskDetailDrawer({
           <div className="p-5 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 border border-blue-200">
-                Tarefa #{stage.stage_order}
+                {stage.code ? `Tarefa ${stage.code}` : `Tarefa #${stage.stage_order}`}
               </span>
+              {stage.parent_stage_id && (
+                <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 border border-indigo-200 flex items-center gap-1">
+                  <GitFork className="w-3 h-3 rotate-180" /> Subtarefa
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -922,7 +1175,7 @@ export default function TaskDetailDrawer({
                 type="button"
                 onClick={handleSaveDetails}
                 disabled={saving}
-                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer ${isDirty ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-500/20' : 'bg-slate-700 hover:bg-slate-800'
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-sm font-semibold transition-all shadow-xs disabled:opacity-50 cursor-pointer ${isDirty ? 'bg-blue-600 hover:bg-blue-700 ring-2 ring-blue-500/20' : 'bg-slate-700 hover:bg-slate-800'
                   }`}
               >
                 {saving ? (
@@ -949,9 +1202,45 @@ export default function TaskDetailDrawer({
           {/* Drawer Body Scrollable */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain">
 
+            {/* Hierarquia / Ancestrais Breadcrumb */}
+            {ancestors.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 text-indigo-950 flex flex-wrap items-center justify-between gap-2 text-xs shadow-2xs">
+                <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                  <span className="font-bold text-indigo-700 flex items-center gap-1">
+                    <GitFork className="w-3.5 h-3.5 rotate-180 text-indigo-600 shrink-0" />
+                    Subtarefa de:
+                  </span>
+                  {ancestors.map((anc, idx) => (
+                    <div key={anc.id} className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleNavigateToTask(anc)}
+                        className="font-bold text-indigo-800 hover:text-indigo-950 hover:underline max-w-[220px] truncate cursor-pointer"
+                        title={`Abrir tarefa pai: ${anc.code ? `${anc.code} - ` : ''}${anc.name}`}
+                      >
+                        {anc.code ? `${anc.code} - ${anc.name}` : anc.name}
+                      </button>
+                      {idx < ancestors.length - 1 && (
+                        <ChevronRight className="w-3 h-3 text-indigo-400 shrink-0" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleUnlinkCurrentFromParent}
+                  className="text-xs font-semibold text-indigo-600 hover:text-rose-600 hover:bg-white/80 px-2.5 py-1 rounded-lg border border-indigo-200/60 transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                  title="Desvincular da tarefa principal e transformar em tarefa avulsa independente"
+                >
+                  <Unlink className="w-3.5 h-3.5" />
+                  Desvincular da Principal
+                </button>
+              </div>
+            )}
+
             {/* Finalized / Concluded Banner */}
             {isTaskFinalized && (
-              <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 text-indigo-900 flex items-center gap-2.5 text-xs font-semibold shadow-2xs">
+              <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 text-indigo-900 flex items-center gap-2.5 text-sm font-semibold shadow-2xs">
                 <Flag className="w-4 h-4 text-indigo-600 shrink-0" />
                 <span>Esta tarefa está na <strong>Etapa Finalizada (Serviço Concluído)</strong> com todos os requisitos atendidos.</span>
               </div>
@@ -960,7 +1249,7 @@ export default function TaskDetailDrawer({
             {/* Title & Description Form */}
             <div className="space-y-4">
               <div>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
                   Título da Tarefa
                 </label>
                 <input
@@ -973,14 +1262,14 @@ export default function TaskDetailDrawer({
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
                   Instruções e Escopo de Trabalho
                 </label>
                 <textarea
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full text-xs text-slate-700 border border-slate-200/80 rounded-xl p-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none bg-slate-50/50 hover:bg-white"
+                  className="w-full text-sm text-slate-800 border border-slate-200/80 rounded-xl p-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none bg-slate-50/50 hover:bg-white leading-relaxed"
                   placeholder="Detalhe o que deve ser produzido e aprovado nesta fase..."
                 />
               </div>
@@ -990,13 +1279,13 @@ export default function TaskDetailDrawer({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
               {/* Status / Etapa */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" /> Status da Tarefa
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => handleStatusSelectChange(e.target.value)}
-                  className="w-full text-xs font-bold bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-hidden focus:border-blue-500 cursor-pointer"
+                  className="w-full text-sm font-semibold bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 outline-hidden focus:border-blue-500 cursor-pointer"
                 >
                   {(workflowStages && workflowStages.length > 0 ? workflowStages : DEFAULT_WORKFLOW_STAGES).map((ws) => (
                     <option key={ws.id} value={ws.id}>
@@ -1008,13 +1297,13 @@ export default function TaskDetailDrawer({
 
               {/* Assignee */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <User className="w-3.5 h-3.5 text-blue-600" /> Responsável Interno
                 </label>
                 <select
                   value={formData.assigned_to}
                   onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                  className="w-full text-xs font-semibold bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-hidden focus:border-blue-500 cursor-pointer"
+                  className="w-full text-sm font-semibold bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 outline-hidden focus:border-blue-500 cursor-pointer"
                 >
                   <option value="">Não atribuído</option>
                   {members.map((m) => (
@@ -1027,7 +1316,7 @@ export default function TaskDetailDrawer({
 
               {/* Client Approval Flag */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Aprovação do Cliente
                 </label>
                 <button
@@ -1038,7 +1327,7 @@ export default function TaskDetailDrawer({
                       is_client_approval_required: !formData.is_client_approval_required,
                     })
                   }
-                  className={`w-full text-xs font-bold px-3 py-2 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${formData.is_client_approval_required
+                  className={`w-full text-sm font-semibold px-3 py-2 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${formData.is_client_approval_required
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                     : 'bg-slate-100 text-slate-600 border-slate-200'
                     }`}
@@ -1054,33 +1343,33 @@ export default function TaskDetailDrawer({
 
               {/* Data de Início */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <Calendar className="w-3.5 h-3.5 text-blue-600" /> Data de Início
                 </label>
                 <input
                   type="date"
                   value={formData.start_date}
                   onChange={(e) => handleStartDateChange(e.target.value)}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-hidden focus:border-blue-500 font-medium"
+                  className="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 outline-hidden focus:border-blue-500 font-medium"
                 />
               </div>
 
               {/* Prazo de Entrega */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <Calendar className="w-3.5 h-3.5 text-amber-600" /> Prazo de Entrega
                 </label>
                 <input
                   type="date"
                   value={formData.due_date}
                   onChange={(e) => handleDueDateChange(e.target.value)}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-hidden focus:border-blue-500 font-medium"
+                  className="w-full text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 outline-hidden focus:border-blue-500 font-medium"
                 />
               </div>
 
               {/* Duração Sugerida (dias) */}
               <div>
-                <label className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5 mb-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <Clock className="w-3.5 h-3.5 text-indigo-600" /> Duração Sugerida (dias)
                 </label>
                 <div className="relative">
@@ -1090,9 +1379,9 @@ export default function TaskDetailDrawer({
                     value={formData.duration_days}
                     onChange={(e) => handleDurationChange(e.target.value)}
                     placeholder="Ex: 5"
-                    className="w-full text-xs bg-white border border-slate-200 rounded-xl pl-3 pr-11 py-2 text-slate-700 outline-hidden focus:border-blue-500 font-mono font-bold"
+                    className="w-full text-sm bg-white border border-slate-200 rounded-xl pl-3 pr-11 py-2 text-slate-800 outline-hidden focus:border-blue-500 font-mono font-bold"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400 font-medium pointer-events-none">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium pointer-events-none">
                     dias
                   </span>
                 </div>
@@ -1101,7 +1390,7 @@ export default function TaskDetailDrawer({
               {/* Status do Cronograma Banner */}
               <div className="sm:col-span-2 lg:col-span-3 pt-2.5 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold text-slate-500">Status do Prazo:</span>
+                  <span className="text-xs font-bold text-slate-500">Status do Prazo:</span>
                   <span
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${timelineStatus.badgeBg} ${timelineStatus.badgeColor} ${timelineStatus.badgeBorder}`}
                   >
@@ -1115,10 +1404,240 @@ export default function TaskDetailDrawer({
                   </span>
                 </div>
                 {formData.duration_days && Number(formData.duration_days) > 0 && (
-                  <span className="text-[11px] text-slate-500 font-medium">
+                  <span className="text-xs text-slate-500 font-medium">
                     Intervalo total: <strong className="text-slate-700 font-mono">{formData.duration_days} dias corridos</strong>
                   </span>
                 )}
+              </div>
+            </div>
+
+            {/* Subtarefas Vinculadas Section */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <GitFork className="w-4 h-4 text-indigo-600" />
+                  <h4 className="text-sm font-bold text-slate-900">Subtarefas Vinculadas</h4>
+                  <span className="text-xs text-slate-400 font-mono">({subtasks.length})</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {subtasks.length > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                      <span>
+                        <strong className="text-slate-800">{completedSubtasksCount}</strong> de{' '}
+                        <strong className="text-slate-800">{subtasks.length}</strong> concluídas
+                      </span>
+                      <div className="w-20 bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            subtaskProgressPercent === 100 ? 'bg-emerald-500' : 'bg-blue-600'
+                          }`}
+                          style={{ width: `${subtaskProgressPercent}%` }}
+                        />
+                      </div>
+                      <span className="font-mono text-xs font-bold text-slate-600">{subtaskProgressPercent}%</span>
+                    </div>
+                  )}
+
+                  {!showAddSubtask && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddSubtask(true)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Adicionar Subtarefa
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Formulário de Criação Rápida de Subtarefa */}
+              {showAddSubtask && (
+                <form onSubmit={handleCreateSubtaskSubmit} className="p-3.5 bg-indigo-50/50 rounded-2xl border border-indigo-200/80 space-y-3 animate-in fade-in">
+                  <div className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5 text-indigo-600" /> Nova Subtarefa
+                  </div>
+                  <input
+                    type="text"
+                    value={newSubtaskName}
+                    onChange={(e) => setNewSubtaskName(e.target.value)}
+                    placeholder="Título da subtarefa..."
+                    className="w-full text-sm font-semibold bg-white border border-indigo-200 rounded-xl px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    autoFocus
+                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                      <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <select
+                        value={newSubtaskAssignedTo}
+                        onChange={(e) => setNewSubtaskAssignedTo(e.target.value)}
+                        className="text-xs font-semibold text-slate-700 outline-hidden bg-transparent cursor-pointer max-w-[160px]"
+                      >
+                        <option value="">Sem responsável</option>
+                        {members.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <input
+                        type="date"
+                        value={newSubtaskDueDate}
+                        onChange={(e) => setNewSubtaskDueDate(e.target.value)}
+                        className="text-xs text-slate-700 outline-hidden bg-transparent cursor-pointer"
+                        title="Prazo de entrega da subtarefa"
+                      />
+                    </div>
+
+                    <div className="ml-auto flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddSubtask(false)
+                          setNewSubtaskName('')
+                          setNewSubtaskAssignedTo('')
+                          setNewSubtaskDueDate('')
+                        }}
+                        className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={creatingSubtask || !newSubtaskName.trim()}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                      >
+                        {creatingSubtask && <Loader2 className="w-3 h-3 animate-spin" />}
+                        Criar Subtarefa
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+
+              {/* Lista de Subtarefas */}
+              <div className="space-y-2">
+                {subtasks.length === 0 && !showAddSubtask && (
+                  <div className="p-4 rounded-xl border border-dashed border-slate-200 text-center bg-slate-50/50">
+                    <p className="text-xs font-medium text-slate-400">
+                      Nenhuma subtarefa vinculada a esta tarefa principal.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddSubtask(true)}
+                      className="mt-1 text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                    >
+                      + Adicionar a primeira subtarefa
+                    </button>
+                  </div>
+                )}
+
+                {subtasks.map((child) => {
+                  const childMember = members.find((m) => m.id === child.assigned_to)
+                  const childStageCfg = (workflowStages || DEFAULT_WORKFLOW_STAGES).find((ws) => ws.id === child.status)
+                  const childIsFinal = Boolean(child.status === 'concluido' || childStageCfg?.is_final_stage)
+                  const childChecklistDone = Array.isArray(child.checklist) ? child.checklist.filter((c) => c.completed).length : 0
+                  const childChecklistTotal = Array.isArray(child.checklist) ? child.checklist.length : 0
+                  const grandChildrenCount = (allStages || []).filter((s) => s.parent_stage_id === child.id).length
+
+                  return (
+                    <div
+                      key={child.id}
+                      onClick={() => handleNavigateToTask(child)}
+                      className="p-3 bg-slate-50/70 hover:bg-blue-50/40 rounded-xl border border-slate-200/80 hover:border-blue-300 transition-all flex items-center justify-between gap-3 group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {childIsFinal ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        ) : (
+                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
+                        )}
+                        <div className="truncate">
+                          <div className="flex items-center gap-1.5 truncate">
+                            {child.code && (
+                              <span className="font-mono text-[11px] font-bold text-slate-500 bg-white border border-slate-200/80 px-1.5 py-0.5 rounded shrink-0">
+                                {child.code}
+                              </span>
+                            )}
+                            <span className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">
+                              {child.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
+                            <span className="font-semibold text-slate-600">
+                              {childStageCfg?.name || child.status}
+                            </span>
+                            {childChecklistTotal > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="font-mono">
+                                  Checklist: {childChecklistDone}/{childChecklistTotal}
+                                </span>
+                              </>
+                            )}
+                            {grandChildrenCount > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="text-indigo-600 font-semibold flex items-center gap-0.5">
+                                  <GitFork className="w-3 h-3" /> {grandChildrenCount} subtarefas
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {child.due_date && (
+                          <span className="text-xs font-mono text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-400" />
+                            {formatDateBR(child.due_date)}
+                          </span>
+                        )}
+
+                        {childMember && (
+                          <span
+                            className="text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-2 py-0.5 rounded-md"
+                            title={`Responsável: ${childMember.name}`}
+                          >
+                            {childMember.name.split(' ')[0]}
+                          </span>
+                        )}
+
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleUnlinkChildSubtask(child)
+                            }}
+                            disabled={unlinkingSubtaskId === child.id}
+                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer"
+                            title="Desvincular da tarefa principal"
+                          >
+                            <Unlink className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteChildSubtask(child)
+                            }}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                            title="Excluir subtarefa"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -1137,7 +1656,7 @@ export default function TaskDetailDrawer({
               {/* Checklist items list */}
               <div className="space-y-1.5">
                 {checklist.length === 0 && (
-                  <p className="text-xs text-slate-400 italic py-2">Nenhum item no checklist desta tarefa.</p>
+                  <p className="text-sm text-slate-400 italic py-2">Nenhum item no checklist desta tarefa.</p>
                 )}
 
                 {checklist.map((item) => {
@@ -1153,7 +1672,7 @@ export default function TaskDetailDrawer({
                               type="text"
                               value={editingChecklistText}
                               onChange={(e) => setEditingChecklistText(e.target.value)}
-                              className="flex-1 text-xs border border-blue-400 rounded-lg p-2.5 bg-white outline-hidden focus:ring-2 focus:ring-blue-500/20"
+                              className="flex-1 text-sm border border-blue-400 rounded-lg p-2.5 bg-white outline-hidden focus:ring-2 focus:ring-blue-500/20"
                               placeholder="Descrição do item..."
                               autoFocus
                             />
@@ -1164,7 +1683,7 @@ export default function TaskDetailDrawer({
                                 type="date"
                                 value={editingChecklistDueDate}
                                 onChange={(e) => setEditingChecklistDueDate(e.target.value)}
-                                className="text-xs text-slate-700 outline-hidden bg-transparent cursor-pointer"
+                                className="text-sm text-slate-700 outline-hidden bg-transparent cursor-pointer"
                                 title="Data prevista de conclusão"
                               />
                             </div>
@@ -1174,7 +1693,7 @@ export default function TaskDetailDrawer({
                               <select
                                 value={editingChecklistAssignedTo}
                                 onChange={(e) => setEditingChecklistAssignedTo(e.target.value)}
-                                className="text-xs font-semibold text-slate-700 outline-hidden bg-transparent cursor-pointer max-w-[150px]"
+                                className="text-sm font-semibold text-slate-700 outline-hidden bg-transparent cursor-pointer max-w-[160px]"
                                 title="Responsável pelo item"
                               >
                                 <option value="">Não atribuído</option>
@@ -1191,7 +1710,7 @@ export default function TaskDetailDrawer({
                             <button
                               type="button"
                               onClick={handleCancelEditChecklist}
-                              className="px-2.5 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-200 rounded-lg cursor-pointer"
+                              className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer"
                             >
                               Cancelar
                             </button>
@@ -1199,7 +1718,7 @@ export default function TaskDetailDrawer({
                               type="button"
                               onClick={() => handleSaveEditChecklist(item.id)}
                               disabled={savingChecklistItemId === item.id || !editingChecklistText.trim()}
-                              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg shadow-2xs disabled:opacity-50 cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-2xs disabled:opacity-50 cursor-pointer"
                             >
                               {savingChecklistItemId === item.id && <Loader2 className="w-3 h-3 animate-spin" />}
                               Salvar
@@ -1216,7 +1735,7 @@ export default function TaskDetailDrawer({
                               className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer shrink-0"
                             />
                             <span
-                              className={`text-xs truncate ${item.completed ? 'line-through text-slate-400' : 'text-slate-700 font-medium'
+                              className={`text-sm truncate ${item.completed ? 'line-through text-slate-400' : 'text-slate-800 font-medium'
                                 }`}
                             >
                               {item.text}
@@ -1227,21 +1746,21 @@ export default function TaskDetailDrawer({
                             {/* Responsável Badge */}
                             {assignedName && (
                               <span
-                                className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md border ${item.completed
+                                className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md border ${item.completed
                                   ? 'bg-slate-100 text-slate-400 border-slate-200'
                                   : 'bg-indigo-50 text-indigo-700 border-indigo-200/70'
                                   }`}
                                 title={`Responsável: ${assignedName}`}
                               >
                                 <User className="w-3 h-3 text-indigo-500" />
-                                <span className="max-w-[100px] truncate">{assignedName}</span>
+                                <span className="max-w-[120px] truncate">{assignedName}</span>
                               </span>
                             )}
 
                             {/* Data Prevista Badge */}
                             {item.due_date && (
                               <span
-                                className={`inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded-md border ${item.completed
+                                className={`inline-flex items-center gap-1 text-xs font-mono font-medium px-2 py-0.5 rounded-md border ${item.completed
                                   ? 'bg-slate-100 text-slate-400 border-slate-200'
                                   : 'bg-blue-50 text-blue-700 border-blue-200/70'
                                   }`}
@@ -1285,26 +1804,26 @@ export default function TaskDetailDrawer({
                   value={newChecklistText}
                   onChange={(e) => setNewChecklistText(e.target.value)}
                   placeholder="Adicionar novo item ao checklist..."
-                  className="flex-1 text-xs border border-slate-200 rounded-xl px-3 py-2 focus:outline-hidden focus:border-blue-500 transition-all bg-slate-50/50 focus:bg-white"
+                  className="flex-1 text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-hidden focus:border-blue-500 transition-all bg-slate-50/50 focus:bg-white"
                 />
 
-                <div className="flex items-center gap-1.5 bg-slate-50/50 focus-within:bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 transition-all">
+                <div className="flex items-center gap-1.5 bg-slate-50/50 focus-within:bg-white border border-slate-200 rounded-xl px-2.5 py-2 transition-all">
                   <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <input
                     type="date"
                     value={newChecklistDueDate}
                     onChange={(e) => setNewChecklistDueDate(e.target.value)}
-                    className="text-xs text-slate-700 outline-hidden bg-transparent cursor-pointer"
+                    className="text-sm text-slate-700 outline-hidden bg-transparent cursor-pointer"
                     title="Data prevista de conclusão (Opcional)"
                   />
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-slate-50/50 focus-within:bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 transition-all">
+                <div className="flex items-center gap-1.5 bg-slate-50/50 focus-within:bg-white border border-slate-200 rounded-xl px-2.5 py-2 transition-all">
                   <User className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                   <select
                     value={newChecklistAssignedTo}
                     onChange={(e) => setNewChecklistAssignedTo(e.target.value)}
-                    className="text-xs font-semibold text-slate-700 outline-hidden bg-transparent cursor-pointer max-w-[130px]"
+                    className="text-sm font-semibold text-slate-700 outline-hidden bg-transparent cursor-pointer max-w-[140px]"
                     title="Atribuir a um membro (Opcional)"
                   >
                     <option value="">Responsável</option>
@@ -1319,7 +1838,7 @@ export default function TaskDetailDrawer({
                 <button
                   type="submit"
                   disabled={!newChecklistText.trim()}
-                  className="inline-flex items-center justify-center gap-1 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all disabled:opacity-40 shadow-2xs cursor-pointer shrink-0"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all disabled:opacity-40 shadow-2xs cursor-pointer shrink-0"
                 >
                   <Plus className="w-4 h-4" /> Adicionar
                 </button>
@@ -1340,9 +1859,9 @@ export default function TaskDetailDrawer({
                     setShowAddAttachment(!showAddAttachment)
                     setAttachmentError(null)
                   }}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline cursor-pointer"
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:underline cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Anexar Arquivo/Prancha
+                  <Plus className="w-4 h-4" /> Anexar Arquivo/Prancha
                 </button>
               </div>
 
@@ -1357,12 +1876,12 @@ export default function TaskDetailDrawer({
                         setAttachmentMode('file')
                         setAttachmentError(null)
                       }}
-                      className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${attachmentMode === 'file'
+                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${attachmentMode === 'file'
                         ? 'bg-white text-blue-600 shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                      <UploadCloud className="w-3.5 h-3.5" /> Enviar do Dispositivo (Storage)
+                      <UploadCloud className="w-4 h-4" /> Enviar do Dispositivo (Storage)
                     </button>
 
                     <button
@@ -1371,12 +1890,12 @@ export default function TaskDetailDrawer({
                         setAttachmentMode('link')
                         setAttachmentError(null)
                       }}
-                      className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${attachmentMode === 'link'
+                      className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${attachmentMode === 'link'
                         ? 'bg-white text-blue-600 shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
-                      <Link2 className="w-3.5 h-3.5" /> Link Externo (URL)
+                      <Link2 className="w-4 h-4" /> Link Externo (URL)
                     </button>
                   </div>
 
@@ -1390,7 +1909,7 @@ export default function TaskDetailDrawer({
 
                   {/* MODE 1: FILE UPLOAD (SUPABASE STORAGE) */}
                   {attachmentMode === 'file' && (
-                    <form onSubmit={handleUploadFileSubmit} className="space-y-3 text-xs">
+                    <form onSubmit={handleUploadFileSubmit} className="space-y-3 text-sm">
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -1414,19 +1933,19 @@ export default function TaskDetailDrawer({
                         <UploadCloud className="w-6 h-6 text-blue-600 mx-auto" />
                         {selectedFile ? (
                           <div className="space-y-0.5">
-                            <span className="font-bold text-slate-800 block truncate max-w-xs mx-auto">
+                            <span className="font-bold text-slate-800 block truncate max-w-xs mx-auto text-sm">
                               {selectedFile.name}
                             </span>
-                            <span className="text-[11px] text-slate-500 font-mono block">
+                            <span className="text-xs text-slate-500 font-mono block">
                               {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Clique para trocar arquivo
                             </span>
                           </div>
                         ) : (
                           <div>
-                            <span className="font-bold text-slate-700 block">
+                            <span className="font-bold text-slate-700 block text-sm">
                               Clique para selecionar ou arraste o arquivo aqui
                             </span>
-                            <span className="text-[11px] text-slate-400 block mt-0.5">
+                            <span className="text-xs text-slate-400 block mt-0.5">
                               Suporta qualquer tipo (PDF, DWG, DXF, PNG, JPG, RVT, IFC, ZIP até 100MB)
                             </span>
                           </div>
@@ -1434,7 +1953,7 @@ export default function TaskDetailDrawer({
                       </div>
 
                       <div>
-                        <label className="text-[11px] font-bold text-slate-600 block mb-1">
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                           Nome de exibição do documento (Opcional)
                         </label>
                         <input
@@ -1442,18 +1961,18 @@ export default function TaskDetailDrawer({
                           value={newAttachmentName}
                           onChange={(e) => setNewAttachmentName(e.target.value)}
                           placeholder="Ex: Prancha 01 - Planta Baixa Arquitetônica R02"
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-white outline-hidden focus:border-blue-500"
+                          className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-white outline-hidden focus:border-blue-500"
                         />
                       </div>
 
                       {/* Configuração de Visibilidade no Portal do Cliente */}
                       <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/90 flex items-center justify-between gap-3">
                         <div className="space-y-0.5">
-                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                            <Globe className="w-3.5 h-3.5 text-blue-600" />
+                          <span className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                            <Globe className="w-4 h-4 text-blue-600" />
                             Exibir no portal de aprovação do cliente
                           </span>
-                          <span className="text-[11px] text-slate-500 block">
+                          <span className="text-xs text-slate-500 block">
                             {newAttachmentVisibleToClient
                               ? 'O cliente poderá visualizar e baixar este arquivo na etapa de aprovação.'
                               : 'Arquivo interno. Ficará visível apenas para a equipe do escritório.'}
@@ -1481,14 +2000,14 @@ export default function TaskDetailDrawer({
                             setShowAddAttachment(false)
                             setSelectedFile(null)
                           }}
-                          className="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-200 rounded-xl cursor-pointer"
+                          className="px-3.5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
                         >
                           Cancelar
                         </button>
                         <button
                           type="submit"
                           disabled={uploadingFile || !selectedFile}
-                          className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                         >
                           {uploadingFile && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                           {uploadingFile ? 'Enviando para Storage...' : 'Enviar Arquivo'}
@@ -1499,39 +2018,39 @@ export default function TaskDetailDrawer({
 
                   {/* MODE 2: EXTERNAL LINK */}
                   {attachmentMode === 'link' && (
-                    <form onSubmit={handleAddLinkSubmit} className="space-y-2.5 text-xs">
+                    <form onSubmit={handleAddLinkSubmit} className="space-y-2.5 text-sm">
                       <div>
-                        <label className="text-[11px] font-bold text-slate-600 block mb-1">Nome do Anexo *</label>
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Nome do Anexo *</label>
                         <input
                           type="text"
                           required
                           value={newAttachmentName}
                           onChange={(e) => setNewAttachmentName(e.target.value)}
                           placeholder="Ex: Arquivo 3D no Trimble Connect / Figma"
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-white outline-hidden focus:border-blue-500"
+                          className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-white outline-hidden focus:border-blue-500"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[11px] font-bold text-slate-600 block mb-1">URL / Link *</label>
+                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">URL / Link *</label>
                         <input
                           type="url"
                           required
                           value={newAttachmentUrl}
                           onChange={(e) => setNewAttachmentUrl(e.target.value)}
                           placeholder="https://drive.google.com/..."
-                          className="w-full text-xs border border-slate-200 rounded-xl p-2.5 bg-white outline-hidden focus:border-blue-500"
+                          className="w-full text-sm border border-slate-200 rounded-xl p-2.5 bg-white outline-hidden focus:border-blue-500"
                         />
                       </div>
 
                       {/* Configuração de Visibilidade no Portal do Cliente */}
                       <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/90 flex items-center justify-between gap-3">
                         <div className="space-y-0.5">
-                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                            <Globe className="w-3.5 h-3.5 text-blue-600" />
+                          <span className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                            <Globe className="w-4 h-4 text-blue-600" />
                             Exibir no portal de aprovação do cliente
                           </span>
-                          <span className="text-[11px] text-slate-500 block">
+                          <span className="text-xs text-slate-500 block">
                             {newAttachmentVisibleToClient
                               ? 'O cliente poderá visualizar e acessar este link na etapa de aprovação.'
                               : 'Link interno. Ficará visível apenas para a equipe do escritório.'}
@@ -1556,14 +2075,14 @@ export default function TaskDetailDrawer({
                         <button
                           type="button"
                           onClick={() => setShowAddAttachment(false)}
-                          className="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-200 rounded-xl cursor-pointer"
+                          className="px-3.5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-xl cursor-pointer"
                         >
                           Cancelar
                         </button>
                         <button
                           type="submit"
                           disabled={!newAttachmentName.trim() || !newAttachmentUrl.trim()}
-                          className="px-4 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-all shadow-xs cursor-pointer"
                         >
                           Salvar Link
                         </button>
@@ -1574,7 +2093,7 @@ export default function TaskDetailDrawer({
               )}
 
               {attachments.length === 0 && !showAddAttachment ? (
-                <p className="text-xs text-slate-400 italic">Nenhum anexo ou prancha adicionada nesta tarefa.</p>
+                <p className="text-sm text-slate-400 italic">Nenhum anexo ou prancha adicionada nesta tarefa.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {attachments.map((att) => {
@@ -1591,7 +2110,7 @@ export default function TaskDetailDrawer({
                             <div className="p-1 rounded-md bg-blue-50 border border-blue-200 shrink-0">
                               {getFileIcon(att.name, att.url)}
                             </div>
-                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                               Editar Nome do Arquivo / Prancha
                             </span>
                           </div>
@@ -1611,7 +2130,7 @@ export default function TaskDetailDrawer({
                                 }
                               }}
                               autoFocus
-                              className="flex-1 text-xs font-semibold text-slate-900 border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                              className="flex-1 text-sm font-semibold text-slate-900 border border-slate-300 rounded-lg px-3 py-2 bg-white outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                               placeholder="Nome do arquivo ou prancha..."
                             />
 
@@ -1619,7 +2138,7 @@ export default function TaskDetailDrawer({
                               type="button"
                               onClick={() => handleSaveEditAttachment(att.id)}
                               disabled={savingAttachmentId === att.id || !editingAttachmentName.trim()}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer shrink-0"
+                              className="inline-flex items-center gap-1 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all shadow-xs disabled:opacity-50 cursor-pointer shrink-0"
                               title="Salvar novo nome (Enter)"
                             >
                               {savingAttachmentId === att.id ? (
@@ -1659,21 +2178,21 @@ export default function TaskDetailDrawer({
                             {getFileIcon(att.name, att.url)}
                           </div>
                           <div className="truncate space-y-0.5">
-                            <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 transition-colors block truncate">
+                            <span className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors block truncate">
                               {att.name}
                             </span>
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[10px] text-slate-400 font-mono">
+                              <span className="text-xs text-slate-400 font-mono">
                                 {att.size || 'Arquivo'}
                               </span>
                               <span className="text-slate-300">•</span>
                               {isVisibleToClient ? (
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-0.5">
-                                  <Eye className="w-2.5 h-2.5" /> Portal
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                  <Eye className="w-3 h-3" /> Portal
                                 </span>
                               ) : (
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-slate-200/70 text-slate-600 border border-slate-300 inline-flex items-center gap-0.5">
-                                  <EyeOff className="w-2.5 h-2.5" /> Oculto
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-200/70 text-slate-600 border border-slate-300 inline-flex items-center gap-1">
+                                  <EyeOff className="w-3 h-3" /> Oculto
                                 </span>
                               )}
                             </div>
@@ -1756,15 +2275,15 @@ export default function TaskDetailDrawer({
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
                   placeholder="Escreva um comentário ou alinhamento com a equipe..."
-                  className="w-full text-xs border border-slate-200 rounded-xl p-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none bg-slate-50/50 focus:bg-white"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none bg-slate-50/50 focus:bg-white leading-relaxed"
                 />
                 <div className="flex justify-end">
                   <button
                     type="submit"
                     disabled={!newCommentText.trim()}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-40 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-xs disabled:opacity-40 cursor-pointer"
                   >
-                    <Send className="w-3 h-3" /> Comentar
+                    <Send className="w-3.5 h-3.5" /> Comentar
                   </button>
                 </div>
               </form>
@@ -1772,7 +2291,7 @@ export default function TaskDetailDrawer({
               {/* Comments list */}
               <div className="space-y-2.5 max-h-72 overflow-y-auto pt-1">
                 {comments.length === 0 && (
-                  <p className="text-xs text-slate-400 italic">Nenhum comentário registrado nesta tarefa.</p>
+                  <p className="text-sm text-slate-400 italic">Nenhum comentário registrado nesta tarefa.</p>
                 )}
 
                 {comments.map((cmt) => {
@@ -1785,12 +2304,12 @@ export default function TaskDetailDrawer({
                   return (
                     <div
                       key={cmt.id}
-                      className={`p-3 rounded-xl border space-y-2 transition-all group ${isAudit
+                      className={`p-3.5 rounded-xl border space-y-2 transition-all group ${isAudit
                           ? 'bg-emerald-50/70 border-emerald-200/90 shadow-2xs'
                           : 'bg-slate-50 border-slate-100 hover:border-slate-200'
                         }`}
                     >
-                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                      <div className="flex items-center justify-between text-xs text-slate-400">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
                             className={`font-bold ${isAudit ? 'text-emerald-950 flex items-center gap-1.5' : 'text-slate-700'
@@ -1800,14 +2319,14 @@ export default function TaskDetailDrawer({
                             {cmt.user_name}
                           </span>
                           {isAudit && (
-                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded-md">
+                            <span className="text-xs font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md">
                               Auditoria & Aprovação
                             </span>
                           )}
                           <span>•</span>
                           <span>{formatDateTimeBR(cmt.created_at)}</span>
                           {cmt.updated_at && (
-                            <span className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 rounded-md font-medium">
+                            <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md font-medium">
                               Editado em {formatDateTimeBR(cmt.updated_at)}
                             </span>
                           )}
@@ -1841,14 +2360,14 @@ export default function TaskDetailDrawer({
                             rows={2}
                             value={editingCommentText}
                             onChange={(e) => setEditingCommentText(e.target.value)}
-                            className="w-full text-xs border border-blue-400 rounded-lg p-2.5 bg-white outline-hidden focus:ring-2 focus:ring-blue-500/20 resize-none"
+                            className="w-full text-sm border border-blue-400 rounded-lg p-2.5 bg-white outline-hidden focus:ring-2 focus:ring-blue-500/20 resize-none leading-relaxed"
                             autoFocus
                           />
                           <div className="flex justify-end gap-1.5">
                             <button
                               type="button"
                               onClick={handleCancelEditComment}
-                              className="px-2.5 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-200 rounded-lg cursor-pointer"
+                              className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer"
                             >
                               Cancelar
                             </button>
@@ -1856,7 +2375,7 @@ export default function TaskDetailDrawer({
                               type="button"
                               onClick={() => handleSaveEditComment(cmt.id)}
                               disabled={savingCommentId === cmt.id || !editingCommentText.trim()}
-                              className="inline-flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg shadow-2xs disabled:opacity-50 cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-2xs disabled:opacity-50 cursor-pointer"
                             >
                               {savingCommentId === cmt.id && <Loader2 className="w-3 h-3 animate-spin" />}
                               Salvar
@@ -1865,7 +2384,7 @@ export default function TaskDetailDrawer({
                         </div>
                       ) : (
                         <p
-                          className={`text-xs whitespace-pre-wrap leading-relaxed ${isAudit ? 'text-emerald-950 font-medium' : 'text-slate-700'
+                          className={`text-sm whitespace-pre-wrap leading-relaxed ${isAudit ? 'text-emerald-950 font-medium' : 'text-slate-700'
                             }`}
                         >
                           {cmt.text}
@@ -1879,6 +2398,85 @@ export default function TaskDetailDrawer({
           </div>
         </div>
       </div>
+
+      {/* Modal de Exclusão de Tarefa com Subtarefas (P2: A) */}
+      {subtaskDeleteModalOpen && (
+        <div className="fixed inset-0 z-60 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-100 text-rose-600 shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Excluir Tarefa com Subtarefas
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  A tarefa {stage?.code ? `[${stage.code}] ` : ''}<strong>&quot;{stage?.name}&quot;</strong> possui <strong>{subtasks.length} subtarefa(s) vinculada(s)</strong>. Como deseja prosseguir?
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80 max-h-36 overflow-y-auto space-y-1.5 text-xs text-slate-600">
+              <span className="font-bold text-slate-700 block mb-1">Subtarefas vinculadas:</span>
+              {subtasks.map((s) => (
+                <div key={s.id} className="flex items-center gap-1.5 truncate">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                  {s.code && <span className="font-mono text-[10px] text-slate-400 font-semibold">{s.code}</span>}
+                  <span className="truncate font-medium text-slate-800">{s.name}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => handleConfirmDeleteWithSubtasks('cascade')}
+                disabled={deletingStage}
+                className="w-full p-3 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-left transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-rose-700 flex items-center gap-1.5">
+                    <Trash2 className="w-4 h-4 text-rose-600" /> Excluir Tudo (Tarefa e {subtasks.length} Subtarefas)
+                  </span>
+                  {deletingStage && <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />}
+                </div>
+                <p className="text-[11px] text-rose-600/80 mt-1">
+                  Move a tarefa principal e todas as suas subtarefas filhas para o histórico de tarefas excluídas.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleConfirmDeleteWithSubtasks('unlink')}
+                disabled={deletingStage}
+                className="w-full p-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-left transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-blue-700 flex items-center gap-1.5">
+                    <Unlink className="w-4 h-4 text-blue-600" /> Desvincular e Manter Subtarefas
+                  </span>
+                  {deletingStage && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />}
+                </div>
+                <p className="text-[11px] text-blue-600/80 mt-1">
+                  Exclui apenas a tarefa principal. As subtarefas tornam-se tarefas independentes de primeiro nível no projeto.
+                </p>
+              </button>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSubtaskDeleteModalOpen(false)}
+                disabled={deletingStage}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

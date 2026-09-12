@@ -190,14 +190,14 @@ export default function ClientsManagerClient({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nome, CPF/CNPJ, e-mail, telefone ou cidade..."
-              className="w-full text-xs font-semibold pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800"
+              className="w-full text-sm font-medium pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-800"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 outline-hidden focus:border-blue-500 cursor-pointer shrink-0"
+            className="text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 outline-hidden focus:border-blue-500 cursor-pointer shrink-0"
           >
             <option value="all">Status: Todos</option>
             <option value="ativo">Ativos</option>
@@ -207,7 +207,7 @@ export default function ClientsManagerClient({
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as any)}
-            className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 outline-hidden focus:border-blue-500 cursor-pointer shrink-0"
+            className="text-sm font-semibold bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-700 outline-hidden focus:border-blue-500 cursor-pointer shrink-0"
           >
             <option value="all">Tipo: Todos</option>
             <option value="PF">Pessoa Física (PF)</option>
@@ -218,7 +218,7 @@ export default function ClientsManagerClient({
         <button
           type="button"
           onClick={handleOpenCreate}
-          className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
+          className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
         >
           <UserPlus className="w-4 h-4" /> Novo Cliente
         </button>
@@ -227,8 +227,8 @@ export default function ClientsManagerClient({
       {/* 3. CLIENTS TABLE */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
               <tr>
                 <th className="py-3.5 px-4">Cliente / Razão Social</th>
                 <th className="py-3.5 px-4">Documento</th>
@@ -244,8 +244,8 @@ export default function ClientsManagerClient({
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400">
                     <Users className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-                    <p className="text-sm font-semibold text-slate-600">Nenhum cliente encontrado.</p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-base font-bold text-slate-700">Nenhum cliente encontrado.</p>
+                    <p className="text-sm text-slate-500 mt-1">
                       {search || statusFilter !== 'all' || typeFilter !== 'all'
                         ? 'Tente ajustar os filtros ou o termo de busca.'
                         : 'Cadastre seu primeiro cliente para vincular aos projetos.'}
@@ -253,9 +253,9 @@ export default function ClientsManagerClient({
                     <button
                       type="button"
                       onClick={handleOpenCreate}
-                      className="mt-3.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all cursor-pointer"
+                      className="mt-3.5 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all cursor-pointer"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Cadastrar Cliente
+                      <Plus className="w-4 h-4" /> Cadastrar Cliente
                     </button>
                   </td>
                 </tr>
@@ -276,11 +276,11 @@ export default function ClientsManagerClient({
                     }}
                   >
                     {/* Nome & Avatar */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-xl font-bold text-xs flex items-center justify-center shrink-0 ${
+                        <div className={`w-8.5 h-8.5 rounded-xl font-bold text-xs flex items-center justify-center shrink-0 ${
                           client.person_type === 'PJ'
-                            ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
                             : 'bg-blue-100 text-blue-700 border border-blue-200'
                         }`}>
                           {client.person_type === 'PJ' ? <Building className="w-4 h-4" /> : getInitials(client.name)}
@@ -289,7 +289,7 @@ export default function ClientsManagerClient({
                           <span className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors block">
                             {client.name}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-semibold uppercase">
+                          <span className="text-xs text-slate-500 font-medium">
                             {client.person_type === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física'}
                           </span>
                         </div>
@@ -297,7 +297,7 @@ export default function ClientsManagerClient({
                     </td>
 
                     {/* Documento (CPF / CNPJ) */}
-                    <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
+                    <td className="py-4 px-4 font-mono text-sm text-slate-600">
                       {client.document_number ? (
                         maskCPFOrCNPJ(client.document_number, client.person_type)
                       ) : (
@@ -306,11 +306,11 @@ export default function ClientsManagerClient({
                     </td>
 
                     {/* Contatos */}
-                    <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-4 px-4" onClick={(e) => e.stopPropagation()}>
                       <div className="space-y-1">
                         {client.phone && (
-                          <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-700">
-                            <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                          <div className="flex items-center gap-1.5 text-xs font-mono text-slate-700">
+                            <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             {whatsappUrl ? (
                               <a
                                 href={whatsappUrl}
@@ -327,27 +327,27 @@ export default function ClientsManagerClient({
                           </div>
                         )}
                         {client.email && (
-                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                            <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                          <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                            <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             <a
                               href={`mailto:${client.email}`}
-                              className="hover:text-blue-600 hover:underline truncate max-w-[180px] block"
+                              className="hover:text-blue-600 hover:underline truncate max-w-[200px] block"
                             >
                               {client.email}
                             </a>
                           </div>
                         )}
                         {!client.phone && !client.email && (
-                          <span className="text-slate-300 italic text-[11px]">Sem contatos</span>
+                          <span className="text-slate-300 italic text-xs">Sem contatos</span>
                         )}
                       </div>
                     </td>
 
                     {/* Localização */}
-                    <td className="py-3.5 px-4 text-slate-600 text-[11px]">
+                    <td className="py-4 px-4 text-slate-600 text-sm">
                       {client.city || client.state ? (
                         <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>
                             {client.city ? `${client.city}` : ''}
                             {client.city && client.state ? ' - ' : ''}
@@ -360,20 +360,20 @@ export default function ClientsManagerClient({
                     </td>
 
                     {/* Projetos Vinculados */}
-                    <td className="py-3.5 px-4 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold font-mono border ${
+                    <td className="py-4 px-4 text-center">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-sm font-bold font-mono border ${
                         (client.projects_count || 0) > 0
                           ? 'bg-blue-50 text-blue-700 border-blue-200'
                           : 'bg-slate-50 text-slate-400 border-slate-200'
                       }`}>
-                        <FolderGit2 className="w-3.5 h-3.5" />
+                        <FolderGit2 className="w-4 h-4" />
                         {client.projects_count || 0}
                       </span>
                     </td>
 
                     {/* Status */}
-                    <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                    <td className="py-4 px-4">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                         client.status === 'ativo'
                           ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                           : 'bg-slate-100 text-slate-600 border-slate-200'
@@ -386,8 +386,8 @@ export default function ClientsManagerClient({
                     </td>
 
                     {/* Ações */}
-                    <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
+                    <td className="py-4 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1.5">
                         <Link
                           href={`/app/projetos/novo?clientId=${client.id}`}
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"

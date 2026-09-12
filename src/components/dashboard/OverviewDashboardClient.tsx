@@ -296,7 +296,7 @@ export default function OverviewDashboardClient({
               {officeName}
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1">
             Olá, <strong>{userDisplayName}</strong>. Acompanhe os projetos, aprovações de clientes e finanças em tempo real.
           </p>
         </div>
@@ -318,25 +318,25 @@ export default function OverviewDashboardClient({
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
                     </span>
-                    <h3 className="text-xs font-extrabold text-amber-950 uppercase tracking-wider">
+                    <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wider">
                       Aguardando Aprovação do Cliente ({projectMetrics.stagesAwaitingApproval.length})
                     </h3>
                   </div>
-                  <span className="text-[11px] font-semibold text-amber-700">Ação requerida do cliente</span>
+                  <span className="text-xs font-semibold text-amber-700">Ação requerida do cliente</span>
                 </div>
 
                 <div className="space-y-2 mt-2 max-h-48 overflow-y-auto pr-1">
                   {projectMetrics.stagesAwaitingApproval.slice(0, 3).map((item) => (
                     <div
                       key={item.stageId}
-                      className="p-2.5 rounded-xl bg-white/90 border border-amber-200/60 flex items-center justify-between gap-3"
+                      className="p-3 rounded-xl bg-white/90 border border-amber-200/60 flex items-center justify-between gap-3"
                     >
                       <div className="truncate">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 truncate">
-                          <span className="font-mono text-slate-500 text-[11px]">[{item.projectCode}]</span>
+                        <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800 truncate">
+                          <span className="font-mono text-slate-500 text-xs">[{item.projectCode}]</span>
                           <span className="truncate">{item.projectTitle}</span>
                         </div>
-                        <p className="text-[11px] text-amber-800 truncate mt-0.5">
+                        <p className="text-xs text-amber-800 truncate mt-0.5">
                           Etapa: <strong>{item.stageName}</strong> • Cliente: {item.clientName}
                         </p>
                       </div>
@@ -349,23 +349,23 @@ export default function OverviewDashboardClient({
                             className="p-1.5 rounded-lg text-slate-500 hover:text-amber-800 hover:bg-amber-100 transition-colors cursor-pointer"
                           >
                             {copiedProjectId === item.projectId ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <Check className="w-4 h-4 text-emerald-600" />
                             ) : (
-                              <Copy className="w-3.5 h-3.5" />
+                              <Copy className="w-4 h-4" />
                             )}
                           </button>
                         )}
                         <Link
                           href={`/app/projetos/${item.projectId}`}
-                          className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 transition-colors inline-flex items-center gap-1 cursor-pointer"
                         >
-                          Ver detalhes <ChevronRight className="w-3 h-3" />
+                          Ver detalhes <ChevronRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
                     </div>
                   ))}
                   {projectMetrics.stagesAwaitingApproval.length > 3 && (
-                    <p className="text-[11px] text-amber-700 text-center font-medium pt-1">
+                    <p className="text-xs text-amber-700 text-center font-medium pt-1">
                       + {projectMetrics.stagesAwaitingApproval.length - 3} outra(s) etapa(s) aguardando
                     </p>
                   )}
@@ -381,40 +381,40 @@ export default function OverviewDashboardClient({
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-rose-600" />
-                    <h3 className="text-xs font-extrabold text-rose-950 uppercase tracking-wider">
+                    <h3 className="text-xs font-bold text-rose-950 uppercase tracking-wider">
                       Atenção aos Prazos ({projectMetrics.criticalDeadlines.length})
                     </h3>
                   </div>
-                  <span className="text-[11px] font-semibold text-rose-700">Entregas imediatas</span>
+                  <span className="text-xs font-semibold text-rose-700">Entregas imediatas</span>
                 </div>
 
                 <div className="space-y-2 mt-2 max-h-48 overflow-y-auto pr-1">
                   {projectMetrics.criticalDeadlines.slice(0, 3).map((item, idx) => (
                     <div
                       key={`${item.projectId}-${idx}`}
-                      className="p-2.5 rounded-xl bg-white/90 border border-rose-200/60 flex items-center justify-between gap-3"
+                      className="p-3 rounded-xl bg-white/90 border border-rose-200/60 flex items-center justify-between gap-3"
                     >
                       <div className="truncate">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 truncate">
-                          <span className="font-mono text-slate-500 text-[11px]">[{item.projectCode}]</span>
+                        <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800 truncate">
+                          <span className="font-mono text-slate-500 text-xs">[{item.projectCode}]</span>
                           <span className="truncate">{item.projectTitle}</span>
                         </div>
-                        <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
                           {item.stageName} • Prazo: {formatDateBR(item.dueDate)}
                         </p>
                       </div>
 
                       <div className="shrink-0">
                         {item.isOverdue ? (
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
                             Atrasado ({Math.abs(item.daysLeft)}d)
                           </span>
                         ) : item.daysLeft === 0 ? (
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                             Vence hoje!
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
                             Em {item.daysLeft}d
                           </span>
                         )}
@@ -422,7 +422,7 @@ export default function OverviewDashboardClient({
                     </div>
                   ))}
                   {projectMetrics.criticalDeadlines.length > 3 && (
-                    <p className="text-[11px] text-rose-700 text-center font-medium pt-1">
+                    <p className="text-xs text-rose-700 text-center font-medium pt-1">
                       + {projectMetrics.criticalDeadlines.length - 3} outro(s) prazo(s) nesta semana
                     </p>
                   )}
@@ -446,10 +446,10 @@ export default function OverviewDashboardClient({
           <div className="text-3xl font-black text-slate-900 font-mono tracking-tight">
             {projectMetrics.active}
           </div>
-          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
             <span>{projectMetrics.total} projetos no total</span>
             <Link href="/app/projetos" className="text-blue-600 hover:text-blue-700 font-bold inline-flex items-center">
-              Ver lista <ChevronRight className="w-3 h-3" />
+              Ver lista <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
@@ -465,7 +465,7 @@ export default function OverviewDashboardClient({
           <div className="text-3xl font-black text-slate-900 font-mono tracking-tight">
             {projectMetrics.totalArea > 0 ? `${projectMetrics.totalArea.toLocaleString('pt-BR')} m²` : '—'}
           </div>
-          <p className="text-[11px] text-slate-500 pt-1">Somatório de metragem ativa</p>
+          <p className="text-xs text-slate-500 pt-1">Somatório de metragem ativa</p>
         </div>
 
         {/* KPI 3: Aprovações Pendentes */}
@@ -484,7 +484,7 @@ export default function OverviewDashboardClient({
               </span>
             )}
           </div>
-          <p className="text-[11px] text-slate-500 pt-1">
+          <p className="text-xs text-slate-500 pt-1">
             {projectMetrics.stagesAwaitingApproval.length === 1 ? '1 etapa em análise externa' : `${projectMetrics.stagesAwaitingApproval.length} etapas em análise`}
           </p>
         </div>
@@ -500,14 +500,14 @@ export default function OverviewDashboardClient({
           <div className="text-2xl font-black text-slate-900 font-mono tracking-tight">
             {financialSummary ? formatMoney(financialSummary.pendingIncome) : 'R$ 0,00'}
           </div>
-          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+          <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
             <span>Entradas a compensar</span>
             <button
               onClick={toggleFinancials}
               className="text-slate-400 hover:text-slate-600 cursor-pointer p-0.5"
               title={showFinancials ? 'Ocultar valores' : 'Mostrar valores'}
             >
-              {showFinancials ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              {showFinancials ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -521,25 +521,25 @@ export default function OverviewDashboardClient({
               <CircleDollarSign className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 Resumo do Fluxo Financeiro
                 <button
                   onClick={toggleFinancials}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
                   title={showFinancials ? 'Ocultar valores da tela' : 'Mostrar valores'}
                 >
                   {showFinancials ? (
                     <>
-                      <EyeOff className="w-3 h-3" /> Ocultar
+                      <EyeOff className="w-3.5 h-3.5" /> Ocultar
                     </>
                   ) : (
                     <>
-                      <Eye className="w-3 h-3" /> Mostrar
+                      <Eye className="w-3.5 h-3.5" /> Mostrar
                     </>
                   )}
                 </button>
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 Honorários, faturamento e despesas operacionais do escritório.
               </p>
             </div>
@@ -547,66 +547,66 @@ export default function OverviewDashboardClient({
 
           <Link
             href="/app/financeiro"
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 group self-start sm:self-auto cursor-pointer"
+            className="text-sm font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 group self-start sm:self-auto cursor-pointer"
           >
-            Abrir Financeiro <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            Abrir Financeiro <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </div>
 
         {financialSummary ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Receitas Realizadas */}
-            <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-1">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                 Entradas Realizadas
               </span>
-              <div className="text-lg font-black text-emerald-600 font-mono">
+              <div className="text-xl font-black text-emerald-600 font-mono">
                 {formatMoney(financialSummary.realizedIncome)}
               </div>
-              <p className="text-[11px] text-slate-400">Recebidos no período</p>
+              <p className="text-xs text-slate-500">Recebidos no período</p>
             </div>
 
             {/* Honorários a Receber */}
-            <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-1">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                 A Receber (Honorários)
               </span>
-              <div className="text-lg font-black text-blue-600 font-mono">
+              <div className="text-xl font-black text-blue-600 font-mono">
                 {formatMoney(financialSummary.pendingIncome)}
               </div>
-              <p className="text-[11px] text-slate-400">Parcelas futuras de clientes</p>
+              <p className="text-xs text-slate-500">Parcelas futuras de clientes</p>
             </div>
 
             {/* Despesas a Pagar */}
-            <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-1">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                 Contas a Pagar
               </span>
-              <div className="text-lg font-black text-rose-600 font-mono">
+              <div className="text-xl font-black text-rose-600 font-mono">
                 {formatMoney(financialSummary.pendingExpense)}
               </div>
-              <p className="text-[11px] text-slate-400">Fornecedores e custos fixos</p>
+              <p className="text-xs text-slate-500">Fornecedores e custos fixos</p>
             </div>
 
             {/* Saldo Líquido Realizado */}
-            <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-1">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/60 space-y-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
                 Saldo em Caixa
               </span>
-              <div className={`text-lg font-black font-mono ${financialSummary.realizedBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
+              <div className={`text-xl font-black font-mono ${financialSummary.realizedBalance >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
                 {formatMoney(financialSummary.realizedBalance)}
               </div>
-              <p className="text-[11px] text-slate-400">Realizado até o momento</p>
+              <p className="text-xs text-slate-500">Realizado até o momento</p>
             </div>
           </div>
         ) : (
-          <div className="p-6 text-center text-slate-500 text-xs">
+          <div className="p-6 text-center text-slate-500 text-sm">
             Nenhum dado financeiro encontrado para esta organização.
           </div>
         )}
 
         {financialSummary && financialSummary.overdueCount > 0 && (
-          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200/70 flex items-center justify-between text-xs text-amber-900">
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/70 flex items-center justify-between text-sm text-amber-900">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
               <span>
@@ -625,13 +625,13 @@ export default function OverviewDashboardClient({
         {/* Header da Seção de Projetos */}
         <div className="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               Projetos
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                 {filteredProjects.length}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-sm text-slate-500 mt-0.5">
               Etapa ativa, progresso em percentual e status de aprovação de cada cliente.
             </p>
           </div>
@@ -640,21 +640,21 @@ export default function OverviewDashboardClient({
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
             {/* Input de Busca */}
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Buscar projeto, código, cliente..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50/50"
+                className="pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50/50 text-slate-800 font-medium"
               />
             </div>
 
             {/* Abas de Filtro */}
-            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl text-xs font-semibold text-slate-600">
+            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl text-sm font-semibold text-slate-600">
               <button
                 onClick={() => setFilterTab('all')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${filterTab === 'all'
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${filterTab === 'all'
                   ? 'bg-white text-slate-900 shadow-xs font-bold'
                   : 'hover:text-slate-900'
                   }`}
@@ -663,7 +663,7 @@ export default function OverviewDashboardClient({
               </button>
               <button
                 onClick={() => setFilterTab('in_progress')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${filterTab === 'in_progress'
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${filterTab === 'in_progress'
                   ? 'bg-white text-slate-900 shadow-xs font-bold'
                   : 'hover:text-slate-900'
                   }`}
@@ -672,19 +672,19 @@ export default function OverviewDashboardClient({
               </button>
               <button
                 onClick={() => setFilterTab('awaiting_approval')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${filterTab === 'awaiting_approval'
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${filterTab === 'awaiting_approval'
                   ? 'bg-white text-amber-900 shadow-xs font-bold'
                   : 'hover:text-slate-900'
                   }`}
               >
                 Aguardando Cliente
                 {projectMetrics.stagesAwaitingApproval.length > 0 && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  <span className="h-2 w-2 rounded-full bg-amber-500" />
                 )}
               </button>
               <button
                 onClick={() => setFilterTab('completed')}
-                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${filterTab === 'completed'
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${filterTab === 'completed'
                   ? 'bg-white text-slate-900 shadow-xs font-bold'
                   : 'hover:text-slate-900'
                   }`}
@@ -702,12 +702,12 @@ export default function OverviewDashboardClient({
               <FolderGit2 className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-sm font-bold text-slate-800">
+              <h3 className="text-base font-bold text-slate-800">
                 {searchQuery || filterTab !== 'all'
                   ? 'Nenhum projeto encontrado com os filtros atuais'
                   : 'Nenhum projeto cadastrado ainda'}
               </h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">
                 {searchQuery || filterTab !== 'all'
                   ? 'Tente ajustar os termos de busca ou mudar a aba selecionada.'
                   : 'Cadastre seu primeiro projeto para gerenciar etapas, prazos e portal do cliente de forma integrada.'}
@@ -716,7 +716,7 @@ export default function OverviewDashboardClient({
             {!searchQuery && filterTab === 'all' && (
               <Link
                 href="/app/projetos/novo"
-                className="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 py-2.5 px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Cadastrar Primeiro Projeto
               </Link>
@@ -730,35 +730,35 @@ export default function OverviewDashboardClient({
               return (
                 <div
                   key={project.id}
-                  className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                  className="py-4.5 px-5 hover:bg-slate-50/80 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-4"
                 >
                   {/* Bloco 1: Identificação do Projeto */}
-                  <div className="space-y-1 min-w-[280px] lg:max-w-[320px]">
+                  <div className="space-y-1 min-w-[280px] lg:max-w-[340px]">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-bold shrink-0">
+                      <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-bold shrink-0">
                         {project.code}
                       </span>
                       <Link
                         href={`/app/projetos/${project.id}`}
-                        className="text-sm font-extrabold text-slate-900 hover:text-blue-600 transition-colors cursor-pointer truncate"
+                        className="text-base font-bold text-slate-900 hover:text-blue-600 transition-colors cursor-pointer truncate"
                       >
                         {project.title}
                       </Link>
                     </div>
 
-                    <p className="text-xs text-slate-500 truncate">
-                      Cliente: <strong>{project.client_name}</strong> • {project.typology || 'Residencial'}
+                    <p className="text-sm text-slate-500 truncate">
+                      Cliente: <strong className="text-slate-700">{project.client_name}</strong> • {project.typology || 'Residencial'}
                       {project.area_sqm ? ` • ${project.area_sqm} m²` : ''}
                     </p>
                   </div>
 
                   {/* Bloco 2: Fase Atual & Barra de Progresso */}
                   <div className="space-y-1.5 min-w-[220px] lg:flex-1 max-w-sm">
-                    <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center justify-between text-sm">
                       <span className="font-semibold text-slate-700 truncate">
                         {info.currentStage ? info.currentStage.name : 'Sem etapas'}
                       </span>
-                      <span className="font-mono text-[11px] font-bold text-slate-500">
+                      <span className="font-mono text-xs font-bold text-slate-600">
                         {info.percent}%
                       </span>
                     </div>
@@ -776,7 +776,7 @@ export default function OverviewDashboardClient({
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-400">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
                       <span>
                         {info.completedStages} de {info.totalStages} etapas concluídas
                       </span>
@@ -789,17 +789,17 @@ export default function OverviewDashboardClient({
                   {/* Bloco 3: Status com o Cliente */}
                   <div className="flex items-center gap-2 shrink-0">
                     {info.hasStageInApproval ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/80 shadow-2xs">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/80 shadow-2xs">
                         <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                         Aguardando Cliente
                       </span>
                     ) : info.percent === 100 || project.status === 'concluido' ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Concluído
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                        <CheckCircle2 className="w-4 h-4" /> Concluído
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/70">
-                        <Layers className="w-3.5 h-3.5" /> Em Produção
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/70">
+                        <Layers className="w-4 h-4" /> Em Produção
                       </span>
                     )}
                   </div>
@@ -810,17 +810,17 @@ export default function OverviewDashboardClient({
                       <button
                         onClick={() => handleCopyPortalLink(project.id, project.portalToken)}
                         title="Copiar link do Portal do Cliente"
-                        className="py-1.5 px-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200/70 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        className="py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200/70 text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
                       >
                         {copiedProjectId === project.id ? (
                           <>
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            <span className="text-emerald-700 text-[11px]">Copiado</span>
+                            <Check className="w-4 h-4 text-emerald-600" />
+                            <span className="text-emerald-700 text-xs">Copiado</span>
                           </>
                         ) : (
                           <>
-                            <Copy className="w-3.5 h-3.5 text-slate-400" />
-                            <span className="hidden sm:inline text-[11px]">Portal</span>
+                            <Copy className="w-4 h-4 text-slate-400" />
+                            <span className="hidden sm:inline text-xs">Portal</span>
                           </>
                         )}
                       </button>
@@ -828,9 +828,9 @@ export default function OverviewDashboardClient({
 
                     <Link
                       href={`/app/projetos/${project.id}`}
-                      className="py-1.5 px-3.5 rounded-xl bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white text-xs font-bold transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                      className="py-2 px-4 rounded-xl bg-slate-100 hover:bg-blue-600 text-slate-700 hover:text-white text-sm font-semibold transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1.5"
                     >
-                      Ver detalhes <ArrowRight className="w-3.5 h-3.5" />
+                      Ver detalhes <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
                 </div>

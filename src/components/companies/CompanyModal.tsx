@@ -492,7 +492,7 @@ export default function CompanyModal({
                     : 'Editar Empresa'
                   : 'Nova Empresa ou Prestador de Serviço'}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {isEditing
                   ? 'Atualize contatos, escopos e termos de comissionamento'
                   : 'Cadastre fornecedores para vincular a projetos e controlar comissões'}
@@ -513,36 +513,36 @@ export default function CompanyModal({
           <button
             type="button"
             onClick={() => setActiveTab('geral')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${activeTab === 'geral'
+            className={`flex items-center gap-2 pb-3 px-3.5 text-sm font-semibold border-b-2 transition-all cursor-pointer ${activeTab === 'geral'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
-            <Building2 className="w-3.5 h-3.5" />
+            <Building2 className="w-4 h-4" />
             Dados Principais & Categorias
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('contato')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${activeTab === 'contato'
+            className={`flex items-center gap-2 pb-3 px-3.5 text-sm font-semibold border-b-2 transition-all cursor-pointer ${activeTab === 'contato'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
-            <Phone className="w-3.5 h-3.5" />
+            <Phone className="w-4 h-4" />
             Contatos & Localização
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('comissao')}
-            className={`flex items-center gap-2 pb-3 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${activeTab === 'comissao'
+            className={`flex items-center gap-2 pb-3 px-3.5 text-sm font-semibold border-b-2 transition-all cursor-pointer ${activeTab === 'comissao'
               ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
-            <Percent className="w-3.5 h-3.5" />
+            <Percent className="w-4 h-4" />
             Regras de Comissão & Prazos
           </button>
         </div>
@@ -562,7 +562,7 @@ export default function CompanyModal({
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                       Nome Fantasia / Nome Comercial
                     </label>
                     <input
@@ -570,12 +570,12 @@ export default function CompanyModal({
                       placeholder="Ex: Dicasa"
                       value={tradeName}
                       onChange={(e) => setTradeName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                       Razão Social / Nome Oficial <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -584,7 +584,7 @@ export default function CompanyModal({
                       placeholder="Ex: Dicasa Comercio de Materiais de Construcao LTDA."
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     />
                   </div>
                 </div>
@@ -592,7 +592,7 @@ export default function CompanyModal({
                 {/* Tipo de Pessoa & Documento */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                       Tipo de Pessoa
                     </label>
                     <select
@@ -602,7 +602,7 @@ export default function CompanyModal({
                         setPersonType(val)
                         setDocumentNumber(maskCPFOrCNPJ(documentNumber, val))
                       }}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     >
                       <option value="PJ">Pessoa Jurídica (CNPJ)</option>
                       <option value="PF">Pessoa Física (CPF / Profissional Autônomo)</option>
@@ -610,7 +610,7 @@ export default function CompanyModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                       {personType === 'PJ' ? 'CNPJ' : 'CPF'}
                     </label>
                     <input
@@ -618,22 +618,22 @@ export default function CompanyModal({
                       placeholder={personType === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'}
                       value={documentNumber}
                       onChange={(e) => setDocumentNumber(maskCPFOrCNPJ(e.target.value, personType))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Avaliação & Pontualidade */}
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-500">
                       <Star className="w-4 h-4 fill-amber-500" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-slate-800 block">
+                      <span className="text-sm font-bold text-slate-800 block">
                         Avaliação de Atendimento & Qualidade
                       </span>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-xs text-slate-500">
                         Classifique a pontualidade e satisfação com este fornecedor
                       </span>
                     </div>
@@ -655,7 +655,7 @@ export default function CompanyModal({
                         />
                       </button>
                     ))}
-                    <span className="text-xs font-bold text-slate-700 ml-2">
+                    <span className="text-sm font-bold text-slate-700 ml-2">
                       {rating}.0 estrelas
                     </span>
                   </div>
@@ -665,14 +665,14 @@ export default function CompanyModal({
                 <div className="pt-2 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
                     <div>
-                      <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-indigo-600" />
+                      <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <User className="w-4 h-4 text-indigo-600" />
                         Contato comercial
-                        <span className="text-[11px] font-semibold text-slate-500 ml-1">
+                        <span className="text-xs font-semibold text-slate-500 ml-1">
                           ({contacts.length === 0 ? 'Nenhum' : `${contacts.length} ${contacts.length === 1 ? 'cadastrado' : 'cadastrados'}`})
                         </span>
                       </label>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Adicione o contato comercial com a empresa ou prestador de serviço.
                       </p>
                     </div>
@@ -680,7 +680,7 @@ export default function CompanyModal({
                     <button
                       type="button"
                       onClick={handleAddContact}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 transition-all cursor-pointer shadow-2xs self-start sm:self-auto"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 transition-all cursor-pointer shadow-2xs self-start sm:self-auto"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Adicionar
@@ -692,7 +692,7 @@ export default function CompanyModal({
                       <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
                         <User className="w-4 h-4" />
                       </div>
-                      <p className="text-xs text-slate-500 font-medium">
+                      <p className="text-sm text-slate-500 font-medium">
                         Nenhum contato cadastrado no momento.
                       </p>
                     </div>
@@ -705,14 +705,14 @@ export default function CompanyModal({
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-700 text-[10px] font-extrabold flex items-center justify-center">
+                              <span className="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-700 text-xs font-extrabold flex items-center justify-center">
                                 {index + 1}
                               </span>
-                              <span className="text-xs font-bold text-slate-800">
+                              <span className="text-sm font-bold text-slate-800">
                                 {contact.name.trim() || `Representante ${index + 1}`}
                               </span>
                               {contact.is_primary && (
-                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold rounded-md">
+                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold rounded-md">
                                   ★ Principal
                                 </span>
                               )}
@@ -723,7 +723,7 @@ export default function CompanyModal({
                                 <button
                                   type="button"
                                   onClick={() => handleSetPrimaryContact(contact.id)}
-                                  className="px-2 py-1 text-[11px] font-bold text-slate-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                                  className="px-2.5 py-1 text-xs font-bold text-slate-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                                   title="Definir como contato principal desta empresa"
                                 >
                                   Tornar Principal
@@ -743,7 +743,7 @@ export default function CompanyModal({
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">
                                 Nome do Contato <span className="text-red-500">*</span>
                               </label>
                               <input
@@ -751,12 +751,12 @@ export default function CompanyModal({
                                 placeholder="Ex: Carlos Oliveira"
                                 value={contact.name}
                                 onChange={(e) => handleUpdateContact(contact.id, 'name', e.target.value)}
-                                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">
                                 Cargo / Função
                               </label>
                               <input
@@ -764,12 +764,12 @@ export default function CompanyModal({
                                 placeholder="Ex: Consultor Comercial"
                                 value={contact.role || ''}
                                 onChange={(e) => handleUpdateContact(contact.id, 'role', e.target.value)}
-                                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">
                                 WhatsApp / Celular
                               </label>
                               <input
@@ -777,12 +777,12 @@ export default function CompanyModal({
                                 placeholder="(00) 00000-0000"
                                 value={contact.phone || ''}
                                 onChange={(e) => handleUpdateContact(contact.id, 'phone', maskPhone(e.target.value))}
-                                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                               />
                             </div>
 
                             <div>
-                              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                              <label className="block text-xs font-semibold text-slate-600 mb-1">
                                 E-mail
                               </label>
                               <input
@@ -790,7 +790,7 @@ export default function CompanyModal({
                                 placeholder="carlos@empresa.com.br"
                                 value={contact.email || ''}
                                 onChange={(e) => handleUpdateContact(contact.id, 'email', e.target.value)}
-                                className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                               />
                             </div>
                           </div>
@@ -804,10 +804,10 @@ export default function CompanyModal({
                 <div className="pt-2 space-y-2.5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                         Categorias de Serviços
                       </label>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Selecione as áreas atendidas por este fornecedor ou adicione/edite novas opções:
                       </p>
                     </div>
@@ -816,22 +816,22 @@ export default function CompanyModal({
                       <button
                         type="button"
                         onClick={() => setIsAddingCategory((prev) => !prev)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 transition-all cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 transition-all cursor-pointer shadow-2xs"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3.5 h-3.5" />
                         Adicionar
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setIsManageMode((prev) => !prev)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-all cursor-pointer shadow-2xs ${isManageMode
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-2xs ${isManageMode
                           ? 'bg-amber-50 text-amber-800 border-amber-300'
                           : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'
                           }`}
                         title="Modo de edição/exclusão de categorias"
                       >
-                        <Settings2 className="w-3 h-3" />
+                        <Settings2 className="w-3.5 h-3.5" />
                         {isManageMode ? 'Concluir Edição' : 'Gerenciar'}
                       </button>
                     </div>
@@ -856,7 +856,7 @@ export default function CompanyModal({
                               setNewCategoryName('')
                             }
                           }}
-                          className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                         />
                       </div>
 
@@ -864,7 +864,7 @@ export default function CompanyModal({
                         type="button"
                         onClick={handleAddCategory}
                         disabled={loadingCategoryAction || !newCategoryName.trim()}
-                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1 shadow-2xs"
+                        className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5 shadow-2xs"
                       >
                         {loadingCategoryAction ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -917,7 +917,7 @@ export default function CompanyModal({
                                   setEditingCategory(null)
                                 }
                               }}
-                              className="px-2 py-0.5 text-xs font-bold text-slate-800 focus:outline-none w-36 bg-transparent"
+                              className="px-2 py-0.5 text-sm font-bold text-slate-800 focus:outline-none w-36 bg-transparent"
                             />
                             <button
                               type="button"
@@ -943,7 +943,7 @@ export default function CompanyModal({
                       return (
                         <div
                           key={cat.name}
-                          className={`group relative inline-flex items-center rounded-xl text-xs font-semibold transition-all select-none ${isSelected
+                          className={`group relative inline-flex items-center rounded-xl text-sm font-medium transition-all select-none ${isSelected
                             ? 'bg-indigo-600 text-white shadow-xs'
                             : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                             }`}
@@ -953,7 +953,7 @@ export default function CompanyModal({
                             onClick={() => toggleCategory(cat.name)}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 cursor-pointer"
                           >
-                            {isSelected && <Check className="w-3 h-3" />}
+                            {isSelected && <Check className="w-3.5 h-3.5" />}
                             <span>{cat.name}</span>
                           </button>
 
@@ -995,13 +995,12 @@ export default function CompanyModal({
                 </div>
               </div>
             )}
-
             {/* TAB 2: CONTATO & LOCALIZAÇÃO */}
             {activeTab === 'contato' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                       <Phone className="w-3.5 h-3.5 text-emerald-600" />
                       WhatsApp / Telefone Principal
                     </label>
@@ -1010,12 +1009,12 @@ export default function CompanyModal({
                       placeholder="(00) 00000-0000"
                       value={phone}
                       onChange={(e) => setPhone(maskPhone(e.target.value))}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                       <Mail className="w-3.5 h-3.5 text-blue-600" />
                       E-mail
                     </label>
@@ -1024,14 +1023,14 @@ export default function CompanyModal({
                       placeholder="orcamentos@empresa.com.br"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                       <InstagramIcon className="w-3.5 h-3.5 text-pink-600" />
                       Instagram
                     </label>
@@ -1040,12 +1039,12 @@ export default function CompanyModal({
                       placeholder="@empresa_arquitetura"
                       value={instagram}
                       onChange={(e) => setInstagram(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                       <Globe className="w-3.5 h-3.5 text-slate-500" />
                       Website
                     </label>
@@ -1054,7 +1053,7 @@ export default function CompanyModal({
                       placeholder="https://www.empresa.com.br"
                       value={website}
                       onChange={(e) => setWebsite(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     />
                   </div>
                 </div>
@@ -1062,7 +1061,7 @@ export default function CompanyModal({
                 <div className="pt-2 border-t border-slate-100">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
                         CEP
                       </label>
@@ -1073,7 +1072,7 @@ export default function CompanyModal({
                           value={zipCode}
                           onChange={(e) => setZipCode(maskCEP(e.target.value))}
                           onBlur={handleCepBlur}
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                         />
                         {loadingCep && (
                           <Loader2 className="w-4 h-4 animate-spin text-indigo-600 absolute right-3 top-3" />
@@ -1082,7 +1081,7 @@ export default function CompanyModal({
                     </div>
 
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                         Endereço Completo (Rua, Número, Bairro)
                       </label>
                       <input
@@ -1090,29 +1089,29 @@ export default function CompanyModal({
                         placeholder="Ex: Av. Brasil, 1500 - Sala 402"
                         value={address}
                         onChange={(e) => setAddress(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Cidade</label>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Cidade</label>
                       <input
                         type="text"
                         placeholder="Ex: São Paulo"
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1.5">Estado (UF)</label>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Estado (UF)</label>
                       <select
                         value={state}
                         onChange={(e) => setState(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                       >
                         <option value="">Selecione o Estado...</option>
                         {ESTADOS_BRASIL.map((uf) => (
@@ -1133,7 +1132,7 @@ export default function CompanyModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                       Modelo de Comissão Padrão
                     </label>
                     <select
@@ -1141,7 +1140,7 @@ export default function CompanyModal({
                       onChange={(e) =>
                         setCommissionType(e.target.value as 'percent' | 'fixed' | 'none' | 'negotiable')
                       }
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     >
                       <option value="percent">Porcentagem sobre o Valor Total (%)</option>
                       <option value="fixed">Valor Fixo por Contrato (R$)</option>
@@ -1151,7 +1150,7 @@ export default function CompanyModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                       {commissionType === 'percent'
                         ? 'Percentual Padrão (%)'
                         : commissionType === 'fixed'
@@ -1165,7 +1164,7 @@ export default function CompanyModal({
                         placeholder={commissionType === 'percent' ? '10' : '1500,00'}
                         value={commissionRate}
                         onChange={(e) => setCommissionRate(e.target.value)}
-                        className="w-full px-3.5 py-2.5 pl-9 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50"
+                        className="w-full px-3.5 py-2.5 pl-9 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50"
                       />
                       <div className="absolute left-3 top-2.5 text-slate-400">
                         {commissionType === 'percent' ? (
@@ -1180,14 +1179,14 @@ export default function CompanyModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                       <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
                       Forma de Pagamento Praticada
                     </label>
                     <select
                       value={commissionPaymentMethod}
                       onChange={(e) => setCommissionPaymentMethod(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     >
                       <option value="PIX">PIX Direto</option>
                       <option value="TED">Transferência Bancária (TED/DOC)</option>
@@ -1199,7 +1198,7 @@ export default function CompanyModal({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-indigo-600" />
                       Prazo / Gatilho de Pagamento
                     </label>
@@ -1208,13 +1207,13 @@ export default function CompanyModal({
                       placeholder="Ex: 30 dias após emissão da NF"
                       value={commissionPaymentTerms}
                       onChange={(e) => setCommissionPaymentTerms(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-slate-400" />
                     Notas Internas, Histórico ou Condições Especiais
                   </label>
@@ -1223,7 +1222,7 @@ export default function CompanyModal({
                     placeholder="Descreva observações como: prazo de fabricação médio, facilidade de negociação, regras de comissionamento escalonado, etc."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none"
                   />
                 </div>
               </div>
@@ -1235,7 +1234,7 @@ export default function CompanyModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors"
+              className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -1245,7 +1244,7 @@ export default function CompanyModal({
                 <button
                   type="button"
                   onClick={() => setActiveTab(activeTab === 'geral' ? 'contato' : 'comissao')}
-                  className="px-4 py-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all"
+                  className="px-4 py-2.5 text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all cursor-pointer"
                 >
                   Próxima Etapa →
                 </button>
@@ -1254,7 +1253,7 @@ export default function CompanyModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shadow-indigo-500/20 disabled:opacity-50"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-xs shadow-indigo-500/20 disabled:opacity-50 cursor-pointer"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isEditing ? 'Salvar Alterações' : 'Cadastrar'}

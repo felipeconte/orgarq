@@ -142,17 +142,17 @@ export default function ProjectCompaniesClient({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <Link
             href={`/app/projetos/${project.id}/financeiro`}
-            className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-emerald-600 hover:bg-slate-50 text-xs font-bold transition-all shadow-xs"
+            className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-emerald-600 hover:bg-slate-50 text-sm font-semibold transition-all shadow-xs"
           >
-            <DollarSign className="w-3.5 h-3.5 text-emerald-600" /> Financeiro do Projeto
+            <DollarSign className="w-4 h-4 text-emerald-600" /> Financeiro do Projeto
           </Link>
 
           <button
             onClick={handleOpenAdd}
-            className="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs shadow-indigo-500/20 cursor-pointer"
+            className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-xs shadow-indigo-500/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Adicionar Fornecedor
           </button>
@@ -163,11 +163,11 @@ export default function ProjectCompaniesClient({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Total de Fornecedores</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Total de Fornecedores</span>
             <span className="text-2xl font-black text-slate-900 mt-1 block">
               {items.length}
             </span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5 block">
+            <span className="text-xs font-medium text-slate-400 mt-1 block">
               empresas alocadas nesta obra
             </span>
           </div>
@@ -178,11 +178,11 @@ export default function ProjectCompaniesClient({
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Volume Contratado</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Volume Contratado</span>
             <span className="text-xl font-black text-slate-800 mt-1 block">
               {formatCurrency(totalContract)}
             </span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5 block">
+            <span className="text-xs font-medium text-slate-400 mt-1 block">
               total de orçamentos e serviços
             </span>
           </div>
@@ -193,12 +193,12 @@ export default function ProjectCompaniesClient({
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Comissões Recebidas (RT)</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Comissões Recebidas (RT)</span>
             <span className="text-xl font-black text-emerald-600 mt-1 block">
               {formatCurrency(totalReceived)}
             </span>
-            <span className="text-[11px] font-medium text-emerald-700/80 mt-0.5 block flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Já pago pelos parceiros
+            <span className="text-xs font-medium text-emerald-700/80 mt-1 block flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Já pago pelos parceiros
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-2xs">
@@ -208,12 +208,12 @@ export default function ProjectCompaniesClient({
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Comissões a Receber</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Comissões a Receber</span>
             <span className="text-xl font-black text-amber-600 mt-1 block">
               {formatCurrency(totalPending)}
             </span>
-            <span className="text-[11px] font-medium text-amber-700/80 mt-0.5 block flex items-center gap-1">
-              <Clock className="w-3 h-3" /> Previsão de recebimento
+            <span className="text-xs font-medium text-amber-700/80 mt-1 block flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> Previsão de recebimento
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-2xs">
@@ -232,9 +232,9 @@ export default function ProjectCompaniesClient({
 
           <button
             onClick={handleOpenAdd}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-xl transition-all cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> Adicionar Serviço
+            <Plus className="w-4 h-4" /> Adicionar Serviço
           </button>
         </div>
 
@@ -286,9 +286,9 @@ export default function ProjectCompaniesClient({
                         )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-1">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 mt-1">
                         {item.category && (
-                          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-md border border-indigo-100">
+                          <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md border border-indigo-100">
                             {item.category}
                           </span>
                         )}
@@ -303,7 +303,7 @@ export default function ProjectCompaniesClient({
 
                     <div className="flex items-center gap-2 shrink-0">
                       {/* Service Status */}
-                      <span className="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl">
+                      <span className="px-3 py-1 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl">
                         {item.service_status === 'cotacao'
                           ? 'Em Cotação'
                           : item.service_status === 'contratado'
@@ -317,7 +317,7 @@ export default function ProjectCompaniesClient({
 
                       {/* Commission Status */}
                       <span
-                        className={`px-2.5 py-1 text-xs font-bold rounded-xl border ${
+                        className={`px-3 py-1 text-xs font-bold rounded-xl border ${
                           isPaid
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : isPartial
@@ -338,7 +338,7 @@ export default function ProjectCompaniesClient({
 
                   {/* Scope description */}
                   {item.service_description && (
-                    <p className="text-xs text-slate-600 bg-white p-3 rounded-xl border border-slate-100">
+                    <p className="text-sm text-slate-600 bg-white p-3 rounded-xl border border-slate-100">
                       {item.service_description}
                     </p>
                   )}
@@ -346,19 +346,19 @@ export default function ProjectCompaniesClient({
                   {/* Financial Breakdown Cards */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
                     <div className="bg-white p-3 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-semibold block">
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                         Valor Contratado
                       </span>
-                      <span className="font-bold text-slate-900 block mt-0.5">
+                      <span className="font-bold text-slate-900 text-sm block mt-1">
                         {formatCurrency(item.contract_value)}
                       </span>
                     </div>
 
                     <div className="bg-white p-3 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-semibold block">
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                         Taxa de Comissão (RT)
                       </span>
-                      <span className="font-bold text-indigo-600 block mt-0.5">
+                      <span className="font-bold text-indigo-600 text-sm block mt-1">
                         {item.commission_type === 'percent'
                           ? `${item.commission_rate}%`
                           : formatCurrency(item.commission_rate)}
@@ -366,27 +366,27 @@ export default function ProjectCompaniesClient({
                     </div>
 
                     <div className="bg-white p-3 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-semibold block">
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                         Comissão Prevista
                       </span>
-                      <span className="font-bold text-slate-900 block mt-0.5">
+                      <span className="font-bold text-slate-900 text-sm block mt-1">
                         {formatCurrency(item.expected_commission_amount)}
                       </span>
                     </div>
 
                     <div className="bg-white p-3 rounded-xl border border-slate-100">
-                      <span className="text-[10px] text-slate-400 font-semibold block">
+                      <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                         Valor Já Recebido
                       </span>
-                      <span className="font-bold text-emerald-600 block mt-0.5">
+                      <span className="font-bold text-emerald-600 text-sm block mt-1">
                         {formatCurrency(item.received_commission_amount)}
                       </span>
                     </div>
                   </div>
 
                   {/* Footer Bar */}
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs">
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                  <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60 text-xs">
+                    <div className="flex items-center gap-3 text-xs text-slate-500 font-medium">
                       {item.commission_payment_method && (
                         <span>Forma: <strong>{item.commission_payment_method}</strong></span>
                       )}
@@ -404,7 +404,7 @@ export default function ProjectCompaniesClient({
                           className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
                           title="WhatsApp do Fornecedor"
                         >
-                          <Phone className="w-3.5 h-3.5" />
+                          <Phone className="w-4 h-4" />
                         </a>
                       )}
 
@@ -412,9 +412,9 @@ export default function ProjectCompaniesClient({
                         <button
                           onClick={() => handleMarkAsPaid(item.id)}
                           disabled={loadingActionId === item.id}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] rounded-lg border border-emerald-200 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-lg border border-emerald-200 transition-all cursor-pointer"
                         >
-                          <Check className="w-3 h-3" /> Marcar RT como Paga
+                          <Check className="w-3.5 h-3.5" /> Marcar RT como Paga
                         </button>
                       )}
 
@@ -423,7 +423,7 @@ export default function ProjectCompaniesClient({
                         className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                         title="Editar Valores / Escopo"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-4 h-4" />
                       </button>
 
                       <button
@@ -432,7 +432,7 @@ export default function ProjectCompaniesClient({
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                         title="Desvincular do Projeto"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
 
                       <Link
@@ -440,7 +440,7 @@ export default function ProjectCompaniesClient({
                         className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                         title="Ver Perfil da Empresa"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-4 h-4" />
                       </Link>
                     </div>
                   </div>

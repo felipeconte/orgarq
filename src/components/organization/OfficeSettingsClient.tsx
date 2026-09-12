@@ -70,7 +70,7 @@ export interface OfficeSettingsClientProps {
 
 const ROLE_LABELS: Record<string, { label: string; bg: string; text: string; border: string }> = {
   owner: { label: 'Proprietário', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
-  admin: { label: 'Administrador', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+  admin: { label: 'Administrador', bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200' },
   architect: { label: 'Arquiteto', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
   intern: { label: 'Estagiário / Assistente', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
 }
@@ -364,7 +364,7 @@ export default function OfficeSettingsClient({
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
             <Building2 className="w-6 h-6 text-blue-600" /> Perfil do Escritório
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-500 mt-1">
             Gerencie os dados cadastrais da empresa de arquitetura e controle os membros com acesso ao sistema.
           </p>
         </div>
@@ -383,9 +383,9 @@ export default function OfficeSettingsClient({
               })
               setIsEditing(true)
             }}
-            className="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 text-xs font-bold transition-all shadow-xs cursor-pointer shrink-0"
+            className="inline-flex items-center gap-1.5 py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 text-sm font-semibold transition-all shadow-xs cursor-pointer shrink-0"
           >
-            <Edit2 className="w-3.5 h-3.5" /> Editar Informações
+            <Edit2 className="w-4 h-4" /> Editar Informações
           </button>
         )}
       </div>
@@ -412,8 +412,8 @@ export default function OfficeSettingsClient({
                   )}
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-800 block">Logomarca do Escritório</span>
-                  <p className="text-[11px] text-slate-500">
+                  <span className="text-sm font-bold text-slate-800 block">Logomarca do Escritório</span>
+                  <p className="text-xs text-slate-500 mt-0.5">
                     A imagem será exibida na barra lateral e no Portal do Cliente.
                   </p>
                 </div>
@@ -423,7 +423,7 @@ export default function OfficeSettingsClient({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 text-slate-700 text-sm font-semibold transition-all shadow-2xs cursor-pointer"
                 >
                   <UploadCloud className="w-4 h-4 text-blue-600" />
                   {formData.logo_url ? 'Trocar Imagem' : 'Anexar Imagem'}
@@ -444,48 +444,48 @@ export default function OfficeSettingsClient({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Nome do Escritório *</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Nome do Escritório *</label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="Ex: Studio Arquitetura & Interiores"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Identificador / Slug *</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Identificador / Slug *</label>
                 <input
                   type="text"
                   required
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
                   placeholder="Ex: studio-arquitetura"
-                  className="w-full text-xs font-mono border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm font-mono border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Registro CAU / CAUBR</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Registro CAU / CAUBR</label>
                 <input
                   type="text"
                   value={formData.cau_caubr}
                   onChange={(e) => setFormData({ ...formData, cau_caubr: e.target.value })}
                   placeholder="Ex: A123456-7"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-slate-700">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
                     CPF ou CNPJ do Escritório
                   </label>
                   {docStatus && (
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-all ${
+                      className={`text-xs font-bold px-2 py-0.5 rounded-md transition-all ${
                         docStatus.type === 'valid'
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : docStatus.type === 'invalid'
@@ -507,7 +507,7 @@ export default function OfficeSettingsClient({
                     })
                   }
                   placeholder="000.000.000-00 ou 00.000.000/0001-90"
-                  className={`w-full text-xs border rounded-xl p-2.5 outline-hidden transition-all ${
+                  className={`w-full text-sm border rounded-xl p-3 outline-hidden transition-all bg-white ${
                     docStatus?.type === 'invalid'
                       ? 'border-rose-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/10'
                       : docStatus?.type === 'valid'
@@ -518,24 +518,24 @@ export default function OfficeSettingsClient({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">E-mail Institucional</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">E-mail Institucional</label>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="contato@escritorio.com"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Telefone / WhatsApp</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Telefone / WhatsApp</label>
                 <input
                   type="text"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: maskPhone(e.target.value) })}
                   placeholder="(11) 98765-4321"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
             </div>
@@ -555,14 +555,14 @@ export default function OfficeSettingsClient({
                   })
                   setIsEditing(false)
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={savingOrg || !formData.name.trim() || !formData.slug.trim()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 {savingOrg && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {savingOrg ? 'Salvando...' : 'Salvar Alterações'}
@@ -582,19 +582,19 @@ export default function OfficeSettingsClient({
                 )}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">{org.name}</h3>
+                <h3 className="text-xl font-bold text-slate-900">{org.name}</h3>
                 <span className="font-mono text-xs font-bold text-blue-600">{org.slug}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">Registro CAU / CAUBR</span>
-                <span className="text-slate-800 font-medium block">{org.cau_caubr || 'Não informado'}</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Registro CAU / CAUBR</span>
+                <span className="text-sm text-slate-800 font-medium block">{org.cau_caubr || 'Não informado'}</span>
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">
                   {(() => {
                     const digits = cleanDigits(org.cnpj)
                     if (digits.length === 11) return 'CPF do Escritório'
@@ -602,24 +602,24 @@ export default function OfficeSettingsClient({
                     return 'CPF / CNPJ'
                   })()}
                 </span>
-                <span className="text-slate-800 font-medium block">
+                <span className="text-sm text-slate-800 font-medium block">
                   {org.cnpj ? maskCPFOrCNPJ(org.cnpj) : 'Não informado'}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">E-mail de Contato</span>
-                <span className="text-slate-800 font-medium block">{org.email || currentUserEmail}</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">E-mail de Contato</span>
+                <span className="text-sm text-slate-800 font-medium block">{org.email || currentUserEmail}</span>
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">Telefone / WhatsApp</span>
-                <span className="text-slate-800 font-medium block">{org.phone || 'Não informado'}</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Telefone / WhatsApp</span>
+                <span className="text-sm text-slate-800 font-medium block">{org.phone || 'Não informado'}</span>
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">Status da Logomarca</span>
-                <span className="text-slate-800 font-medium block">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Status da Logomarca</span>
+                <span className="text-sm text-slate-800 font-medium block">
                   {org.logo_url ? 'Logomarca ativa' : 'Nenhuma logomarca cadastrada'}
                 </span>
               </div>
@@ -635,7 +635,7 @@ export default function OfficeSettingsClient({
             <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600" /> Membros e Colaboradores
             </h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-sm text-slate-500 mt-0.5">
               Controle quem tem acesso aos projetos e atribuição de tarefas do escritório.
             </p>
           </div>
@@ -646,14 +646,14 @@ export default function OfficeSettingsClient({
               setNewMemberEmail('')
               setShowAddMemberModal(true)
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-xs cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> Adicionar Membro
+            <Plus className="w-4 h-4" /> Adicionar Membro
           </button>
         </div>
 
         {members.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 text-xs">
+          <div className="py-8 text-center text-slate-400 text-sm">
             Nenhum membro vinculado além do proprietário.
           </div>
         ) : (
@@ -674,17 +674,17 @@ export default function OfficeSettingsClient({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900">
+                        <span className="text-sm font-bold text-slate-900">
                           {memberDisplayName}
                         </span>
                         {isOwner && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          <span className="px-2 py-0.5 rounded text-xs font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
                             Owner
                           </span>
                         )}
                       </div>
                       {!isCurrentUser && m.email && m.fullName && (
-                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                        <span className="text-xs text-slate-500 block mt-0.5">
                           {m.email}
                         </span>
                       )}
@@ -696,7 +696,7 @@ export default function OfficeSettingsClient({
                       value={m.role}
                       disabled={isOwner}
                       onChange={(e) => handleUpdateRole(m.id, e.target.value as any)}
-                      className={`text-xs font-bold px-2.5 py-1 rounded-lg border outline-hidden cursor-pointer ${roleConfig.bg} ${roleConfig.text} ${roleConfig.border} disabled:opacity-80`}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-lg border outline-hidden cursor-pointer ${roleConfig.bg} ${roleConfig.text} ${roleConfig.border} disabled:opacity-80`}
                     >
                       <option value="owner">Proprietário</option>
                       <option value="admin">Administrador</option>
@@ -710,7 +710,7 @@ export default function OfficeSettingsClient({
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                         title="Remover membro"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                   </div>
@@ -731,13 +731,13 @@ export default function OfficeSettingsClient({
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl z-10 space-y-4 border border-slate-200 animate-in zoom-in-95">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-600" /> Adicionar Membro à Equipe
+                <Users className="w-5 h-5 text-blue-600" /> Adicionar Membro à Equipe
               </h3>
               <button
                 onClick={() => setShowAddMemberModal(false)}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -749,9 +749,9 @@ export default function OfficeSettingsClient({
               </div>
             )}
 
-            <form onSubmit={handleAddMember} className="space-y-3.5 text-xs">
+            <form onSubmit={handleAddMember} className="space-y-4 text-sm">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   E-mail do Usuário Cadastrado *
                 </label>
                 <div className="relative">
@@ -764,21 +764,21 @@ export default function OfficeSettingsClient({
                       if (memberModalError) setMemberModalError(null)
                     }}
                     placeholder="usuario@arquiteto.com"
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 pl-8 outline-hidden focus:border-blue-500"
+                    className="w-full text-sm border border-slate-200 rounded-xl p-3 pl-9 outline-hidden focus:border-blue-500 bg-white"
                   />
-                  <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-xs text-slate-500 mt-1.5">
                   O colaborador precisa possuir uma conta cadastrada na plataforma Orgarq com este e-mail.
                 </p>
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Função / Nível de Acesso</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Função / Nível de Acesso</label>
                 <select
                   value={newMemberRole}
                   onChange={(e) => setNewMemberRole(e.target.value as any)}
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500 bg-white"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white cursor-pointer"
                 >
                   <option value="architect">Arquiteto (Pode gerenciar tarefas e projetos)</option>
                   <option value="admin">Administrador (Controle total das configurações)</option>
@@ -790,14 +790,14 @@ export default function OfficeSettingsClient({
                 <button
                   type="button"
                   onClick={() => setShowAddMemberModal(false)}
-                  className="px-3.5 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingMember || !newMemberEmail.trim()}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   {savingMember && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {savingMember ? 'Verificando...' : 'Adicionar Membro'}

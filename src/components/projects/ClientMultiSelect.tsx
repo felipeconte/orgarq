@@ -112,13 +112,13 @@ export default function ClientMultiSelect({
         <button
           type="button"
           onClick={() => setIsClientModalOpen(true)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 rounded-xl transition-colors cursor-pointer"
         >
-          <Plus className="w-3.5 h-3.5" /> Cadastrar Novo Cliente
+          <Plus className="w-4 h-4" /> Cadastrar Novo Cliente
         </button>
       </div>
 
-      <p className="text-xs text-slate-500">
+      <p className="text-sm text-slate-500">
         Selecione um ou mais clientes cadastrados. Se houver mais de um cliente, todos deverão aprovar as tarefas marcadas para validação do cliente.
       </p>
 
@@ -134,7 +134,7 @@ export default function ClientMultiSelect({
               >
                 <div className="flex items-start gap-2.5 min-w-0">
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
                       isPJ ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'
                     }`}
                   >
@@ -143,30 +143,30 @@ export default function ClientMultiSelect({
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <h4 className="text-xs font-bold text-slate-900 truncate">
+                      <h4 className="text-sm font-bold text-slate-900 truncate">
                         {client.name}
                       </h4>
-                      <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
                         {isPJ ? 'PJ' : 'PF'}
                       </span>
                     </div>
 
                     {client.document_number && (
-                      <p className="text-[11px] font-mono text-slate-500 truncate mt-0.5">
+                      <p className="text-xs font-mono text-slate-500 truncate mt-0.5">
                         {client.document_number}
                       </p>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500 mt-1">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500 mt-1">
                       {client.email && (
                         <span className="flex items-center gap-1 truncate">
-                          <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                          <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           {client.email}
                         </span>
                       )}
                       {client.phone && (
                         <span className="flex items-center gap-1">
-                          <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                          <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           {client.phone}
                         </span>
                       )}
@@ -177,7 +177,7 @@ export default function ClientMultiSelect({
                 <button
                   type="button"
                   onClick={() => handleRemoveClient(client.id)}
-                  className="text-slate-400 hover:text-rose-600 p-1 rounded-md hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                  className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
                   title="Remover cliente deste projeto"
                 >
                   <X className="w-4 h-4" />
@@ -193,10 +193,10 @@ export default function ClientMultiSelect({
           }`}
         >
           <Users className="w-6 h-6 text-slate-400 mx-auto mb-1.5" />
-          <p className="text-xs font-semibold text-slate-700">
+          <p className="text-sm font-semibold text-slate-700">
             Nenhum cliente selecionado
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Busque e selecione abaixo os clientes que fazem parte deste projeto.
           </p>
         </div>
@@ -228,7 +228,7 @@ export default function ClientMultiSelect({
                 ? 'Buscar mais clientes para vincular (por Nome, CPF/CNPJ, E-mail)...'
                 : 'Buscar cliente para vincular ao projeto (por Nome, CPF/CNPJ, E-mail)...'
             }
-            className="w-full text-xs text-slate-900 placeholder-slate-400 bg-transparent outline-none"
+            className="w-full text-sm text-slate-900 placeholder-slate-400 bg-transparent outline-none"
           />
           <button
             type="button"
@@ -236,7 +236,7 @@ export default function ClientMultiSelect({
               e.stopPropagation()
               setIsOpen(!isOpen)
             }}
-            className="text-slate-400 hover:text-slate-600 p-0.5"
+            className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
           >
             <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -261,15 +261,15 @@ export default function ClientMultiSelect({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`w-6 h-6 rounded flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                        className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
                           isPJ ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
                         }`}
                       >
                         {isPJ ? 'PJ' : 'PF'}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-bold truncate">{client.name}</p>
-                        <p className="text-[11px] text-slate-500 truncate">
+                        <p className="text-sm font-bold truncate">{client.name}</p>
+                        <p className="text-xs text-slate-500 truncate">
                           {[client.document_number, client.email, client.phone].filter(Boolean).join(' • ')}
                         </p>
                       </div>
@@ -289,7 +289,7 @@ export default function ClientMultiSelect({
               })
             ) : (
               <div className="p-4 text-center">
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-sm text-slate-500 font-medium">
                   Nenhum cliente encontrado para &quot;{searchQuery}&quot;
                 </p>
                 <button
@@ -298,7 +298,7 @@ export default function ClientMultiSelect({
                     setIsOpen(false)
                     setIsClientModalOpen(true)
                   }}
-                  className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                  className="mt-2 text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
                 >
                   + Cadastrar &quot;{searchQuery}&quot; como novo cliente
                 </button>

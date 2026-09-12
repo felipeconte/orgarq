@@ -195,35 +195,35 @@ export default function CompanyDetailClient({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           {waUrl && (
             <a
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs shadow-emerald-500/20"
+              className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-all shadow-xs shadow-emerald-500/20"
             >
-              <Phone className="w-3.5 h-3.5" /> WhatsApp
+              <Phone className="w-4 h-4" /> WhatsApp
             </a>
           )}
 
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:bg-slate-50 text-xs font-bold transition-all shadow-xs"
+            className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:bg-slate-50 text-sm font-semibold transition-all shadow-xs cursor-pointer"
           >
-            <Edit2 className="w-3.5 h-3.5" /> Editar Cadastro
+            <Edit2 className="w-4 h-4" /> Editar Cadastro
           </button>
 
           <button
             onClick={handleOpenNewLink}
-            className="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs shadow-indigo-500/20"
+            className="inline-flex items-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all shadow-xs shadow-indigo-500/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Alocar em Projeto
           </button>
 
           <button
             onClick={handleDeleteCompany}
-            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+            className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
             title="Excluir Empresa"
           >
             <Trash2 className="w-4 h-4" />
@@ -235,11 +235,11 @@ export default function CompanyDetailClient({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Projetos Atendidos</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Projetos Atendidos</span>
             <span className="text-2xl font-black text-slate-900 mt-1 block">
               {projects.length}
             </span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5 block">
+            <span className="text-xs font-medium text-slate-400 mt-1 block">
               {projects.filter((p) => p.service_status === 'em_andamento' || p.service_status === 'contratado').length} em andamento
             </span>
           </div>
@@ -250,11 +250,11 @@ export default function CompanyDetailClient({
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Volume Total em Serviços</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Volume Total em Serviços</span>
             <span className="text-xl font-black text-slate-800 mt-1 block">
               {formatCurrency(totalContract)}
             </span>
-            <span className="text-[11px] font-medium text-slate-400 mt-0.5 block">
+            <span className="text-xs font-medium text-slate-400 mt-1 block">
               contratados pelos clientes
             </span>
           </div>
@@ -265,12 +265,12 @@ export default function CompanyDetailClient({
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Comissões Recebidas (RT)</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Comissões Recebidas (RT)</span>
             <span className="text-xl font-black text-emerald-600 mt-1 block">
               {formatCurrency(totalReceived)}
             </span>
-            <span className="text-[11px] font-medium text-emerald-700/80 mt-0.5 block flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Faturado pelo escritório
+            <span className="text-xs font-medium text-emerald-700/80 mt-1 block flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Faturado pelo escritório
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-2xs">
@@ -280,12 +280,12 @@ export default function CompanyDetailClient({
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold text-slate-500 block">Comissões a Receber</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Comissões a Receber</span>
             <span className="text-xl font-black text-amber-600 mt-1 block">
               {formatCurrency(totalPending)}
             </span>
-            <span className="text-[11px] font-medium text-amber-700/80 mt-0.5 block flex items-center gap-1">
-              <Clock className="w-3 h-3" /> Previsão de repasse
+            <span className="text-xs font-medium text-amber-700/80 mt-1 block flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> Previsão de repasse
             </span>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-2xs">
@@ -313,13 +313,13 @@ export default function CompanyDetailClient({
               </div>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-3.5 text-sm">
               {company.trade_name && (
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs">
                     Razão Social Oficial:
                   </span>
-                  <span className="text-slate-700 font-bold">
+                  <span className="text-slate-800 font-bold text-sm block mt-0.5">
                     {company.name}
                   </span>
                 </div>
@@ -327,22 +327,22 @@ export default function CompanyDetailClient({
 
               {company.document_number && (
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs">
                     {company.person_type === 'PJ' ? 'CNPJ' : 'CPF'}:
                   </span>
-                  <span className="font-mono text-slate-700 font-bold">
+                  <span className="font-mono text-slate-800 font-bold text-sm block mt-0.5">
                     {maskCPFOrCNPJ(company.document_number, company.person_type)}
                   </span>
                 </div>
               )}
 
               {/* Vendedores & Representantes Comerciais */}
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-2.5 border-t border-slate-100">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-slate-400 font-semibold block text-[11px]">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs">
                     Vendedores & Representantes:
                   </span>
-                  <span className="text-[10px] font-bold text-slate-500">
+                  <span className="text-xs font-bold text-slate-500">
                     {company.contacts && company.contacts.length > 0
                       ? `${company.contacts.length} ${company.contacts.length === 1 ? 'cadastrado' : 'cadastrados'}`
                       : 'Nenhum'}
@@ -358,27 +358,27 @@ export default function CompanyDetailClient({
                       return (
                         <div
                           key={contact.id}
-                          className="p-2.5 bg-slate-50/80 hover:bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5 transition-colors"
+                          className="p-3 bg-slate-50/80 hover:bg-slate-50 rounded-2xl border border-slate-100 space-y-2 transition-colors"
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
-                              <User className="w-3.5 h-3.5 text-indigo-600" />
-                              <span className="font-bold text-slate-900 text-xs">{contact.name}</span>
+                              <User className="w-4 h-4 text-indigo-600" />
+                              <span className="font-bold text-slate-900 text-sm">{contact.name}</span>
                               {contact.role && (
-                                <span className="text-[10px] text-slate-500 font-medium">({contact.role})</span>
+                                <span className="text-xs text-slate-500 font-medium">({contact.role})</span>
                               )}
                             </div>
                             {contact.is_primary && (
-                              <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold rounded-md">
+                              <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold rounded-md">
                                 ★ Principal
                               </span>
                             )}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 pt-0.5">
+                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-0.5">
                             {contact.phone && (
                               <div className="flex items-center gap-1">
-                                <Phone className="w-3 h-3 text-emerald-600" />
+                                <Phone className="w-3.5 h-3.5 text-emerald-600" />
                                 <span>{maskPhone(contact.phone)}</span>
                                 {contactWaUrl && (
                                   <a
@@ -410,28 +410,28 @@ export default function CompanyDetailClient({
                     })}
                   </div>
                 ) : company.contact_name ? (
-                  <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-indigo-600" />
-                      <span className="font-bold text-slate-800 text-xs">{company.contact_name}</span>
+                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-indigo-600" />
+                      <span className="font-bold text-slate-800 text-sm">{company.contact_name}</span>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 italic">Nenhum vendedor ou representante cadastrado.</p>
+                  <p className="text-sm text-slate-400 italic">Nenhum vendedor ou representante cadastrado.</p>
                 )}
               </div>
 
               {company.phone && (
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">Telefone Geral da Empresa:</span>
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs">Telefone Geral da Empresa:</span>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-slate-800 font-bold">{maskPhone(company.phone)}</span>
+                    <span className="text-slate-800 font-bold text-sm">{maskPhone(company.phone)}</span>
                     {waUrl && (
                       <a
                         href={waUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-emerald-600 font-bold hover:underline inline-flex items-center gap-1"
+                        className="text-emerald-600 font-bold text-sm hover:underline inline-flex items-center gap-1"
                       >
                         Abrir WhatsApp →
                       </a>
@@ -442,10 +442,10 @@ export default function CompanyDetailClient({
 
               {company.email && (
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">E-mail Geral da Empresa:</span>
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs">E-mail Geral da Empresa:</span>
                   <a
                     href={`mailto:${company.email}`}
-                    className="text-indigo-600 font-bold hover:underline block mt-0.5 truncate"
+                    className="text-indigo-600 font-bold text-sm hover:underline block mt-0.5 truncate"
                   >
                     {company.email}
                   </a>
@@ -454,8 +454,8 @@ export default function CompanyDetailClient({
 
               {(company.city || company.address) && (
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">Endereço:</span>
-                  <span className="text-slate-700 font-medium block mt-0.5">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs">Endereço:</span>
+                  <span className="text-slate-700 font-medium text-sm block mt-0.5">
                     {company.address ? `${company.address}, ` : ''}
                     {company.city || ''} {company.state ? `- ${company.state}` : ''}
                     {company.zip_code ? ` (CEP: ${maskCEP(company.zip_code)})` : ''}
@@ -464,15 +464,15 @@ export default function CompanyDetailClient({
               )}
 
               {(company.website || company.instagram) && (
-                <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2">
+                <div className="pt-2.5 border-t border-slate-100 flex flex-wrap gap-2">
                   {company.website && (
                     <a
                       href={company.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-100"
                     >
-                      <Globe className="w-3 h-3" /> Website
+                      <Globe className="w-3.5 h-3.5" /> Website
                     </a>
                   )}
 
@@ -481,20 +481,20 @@ export default function CompanyDetailClient({
                       href={`https://instagram.com/${company.instagram.replace('@', '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-pink-50 border border-pink-200 text-pink-700 rounded-lg text-[11px] font-semibold hover:bg-pink-100"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-50 border border-pink-200 text-pink-700 rounded-lg text-xs font-semibold hover:bg-pink-100"
                     >
-                      <InstagramIcon className="w-3 h-3" /> {company.instagram}
+                      <InstagramIcon className="w-3.5 h-3.5" /> {company.instagram}
                     </a>
                   )}
                 </div>
               )}
 
               {/* Categorias */}
-              <div className="pt-2 border-t border-slate-100">
-                <span className="text-slate-400 font-semibold block text-[11px] mb-1.5">
+              <div className="pt-2.5 border-t border-slate-100">
+                <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs mb-1.5">
                   Especialidades Homologadas:
                 </span>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {Array.isArray(company.categories) && company.categories.length > 0 ? (
                     company.categories.map((cat) => (
                       <span
@@ -519,14 +519,14 @@ export default function CompanyDetailClient({
                 <Percent className="w-4 h-4 text-indigo-600" />
                 Política de Comissão / RT Padrão
               </h3>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 mt-1">
                 Regras comerciais acordadas com este parceiro
               </p>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div className="p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 flex items-center justify-between">
-                <span className="text-indigo-900 font-bold text-xs">Taxa / Percentual:</span>
+            <div className="space-y-3.5 text-sm">
+              <div className="p-3.5 bg-indigo-50/70 rounded-2xl border border-indigo-100 flex items-center justify-between">
+                <span className="text-indigo-900 font-bold text-xs uppercase tracking-wider">Taxa / Percentual:</span>
                 <span className="text-indigo-700 font-black text-sm">
                   {company.commission_type === 'percent'
                     ? `${company.commission_rate}% sobre o contrato`
@@ -540,11 +540,11 @@ export default function CompanyDetailClient({
 
               {company.commission_payment_method && (
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs">
                     Forma de Pagamento Praticada:
                   </span>
-                  <span className="font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
-                    <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
+                  <span className="font-bold text-slate-800 text-sm flex items-center gap-1.5 mt-0.5">
+                    <CreditCard className="w-4 h-4 text-indigo-600" />
                     {company.commission_payment_method}
                   </span>
                 </div>
@@ -552,22 +552,22 @@ export default function CompanyDetailClient({
 
               {company.commission_payment_terms && (
                 <div>
-                  <span className="text-slate-400 font-semibold block text-[11px]">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs">
                     Prazo / Gatilho de Pagamento:
                   </span>
-                  <span className="font-bold text-slate-800 flex items-center gap-1.5 mt-0.5">
-                    <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                  <span className="font-bold text-slate-800 text-sm flex items-center gap-1.5 mt-0.5">
+                    <Clock className="w-4 h-4 text-indigo-600" />
                     {company.commission_payment_terms}
                   </span>
                 </div>
               )}
 
               {company.notes && (
-                <div className="pt-2 border-t border-slate-100">
-                  <span className="text-slate-400 font-semibold block text-[11px] mb-1">
+                <div className="pt-2.5 border-t border-slate-100">
+                  <span className="text-slate-400 font-bold uppercase tracking-wider block text-xs mb-1.5">
                     Notas Internas & Histórico:
                   </span>
-                  <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap">
+                  <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100 whitespace-pre-wrap">
                     {company.notes}
                   </p>
                 </div>
@@ -585,14 +585,14 @@ export default function CompanyDetailClient({
                   <FolderGit2 className="w-5 h-5 text-indigo-600" />
                   Projetos em que esta Empresa Atua
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-sm text-slate-500 mt-0.5">
                   Histórico de serviços alocados, valores orçados e repasses de comissão
                 </p>
               </div>
 
               <button
                 onClick={handleOpenNewLink}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs shadow-indigo-500/20 cursor-pointer self-start sm:self-auto"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition-all shadow-xs shadow-indigo-500/20 cursor-pointer self-start sm:self-auto"
               >
                 <Plus className="w-4 h-4" /> Alocar em Outro Projeto
               </button>
@@ -607,7 +607,7 @@ export default function CompanyDetailClient({
                 <h4 className="text-sm font-bold text-slate-800">
                   Nenhum projeto vinculado a esta empresa ainda
                 </h4>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
                   Clique no botão acima para associar esta empresa a um projeto de arquitetura, registrar o escopo e controlar o repasse da RT.
                 </p>
               </div>
@@ -620,9 +620,9 @@ export default function CompanyDetailClient({
                   return (
                     <div
                       key={link.id}
-                      className="p-4 rounded-2xl border border-slate-200/80 hover:border-indigo-200 bg-slate-50/40 hover:bg-white transition-all shadow-2xs space-y-3"
+                      className="p-5 rounded-2xl border border-slate-200/80 hover:border-indigo-200 bg-slate-50/40 hover:bg-white transition-all shadow-2xs space-y-3.5"
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <Link
@@ -631,18 +631,18 @@ export default function CompanyDetailClient({
                             >
                               {link.project_title}
                             </Link>
-                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-mono font-bold rounded-md">
+                            <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-mono font-bold rounded-md">
                               {link.project_code}
                             </span>
                           </div>
-                          <span className="text-xs text-slate-500 block mt-0.5">
+                          <span className="text-sm text-slate-500 block mt-1">
                             Cliente: <strong className="text-slate-700">{link.client_name}</strong>
                           </span>
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
                           {/* Service Status Badge */}
-                          <span className="px-2.5 py-1 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl">
+                          <span className="px-3 py-1 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl">
                             {link.service_status === 'cotacao'
                               ? 'Em Cotação'
                               : link.service_status === 'contratado'
@@ -656,7 +656,7 @@ export default function CompanyDetailClient({
 
                           {/* Commission Status Badge */}
                           <span
-                            className={`px-2.5 py-1 text-xs font-bold rounded-xl border ${
+                            className={`px-3 py-1 text-xs font-bold rounded-xl border ${
                               isPaid
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                 : isPartial
@@ -677,55 +677,55 @@ export default function CompanyDetailClient({
 
                       {/* Service Scope Description */}
                       {link.service_description && (
-                        <p className="text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100">
+                        <p className="text-sm text-slate-600 bg-white p-3 rounded-xl border border-slate-100">
                           {link.service_description}
                         </p>
                       )}
 
                       {/* Financials & Commission Breakdown */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 font-semibold block">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
+                        <div className="bg-white p-3 rounded-xl border border-slate-100">
+                          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                             Valor do Contrato
                           </span>
-                          <span className="font-bold text-slate-800 block mt-0.5">
+                          <span className="font-bold text-slate-800 text-sm block mt-1">
                             {formatCurrency(link.contract_value)}
                           </span>
                         </div>
 
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 font-semibold block">
+                        <div className="bg-white p-3 rounded-xl border border-slate-100">
+                          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                             Taxa de Comissão
                           </span>
-                          <span className="font-bold text-indigo-600 block mt-0.5">
+                          <span className="font-bold text-indigo-600 text-sm block mt-1">
                             {link.commission_type === 'percent'
                               ? `${link.commission_rate}%`
                               : formatCurrency(link.commission_rate)}
                           </span>
                         </div>
 
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 font-semibold block">
+                        <div className="bg-white p-3 rounded-xl border border-slate-100">
+                          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                             Comissão Prevista
                           </span>
-                          <span className="font-bold text-slate-800 block mt-0.5">
+                          <span className="font-bold text-slate-800 text-sm block mt-1">
                             {formatCurrency(link.expected_commission_amount)}
                           </span>
                         </div>
 
-                        <div className="bg-white p-2.5 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 font-semibold block">
+                        <div className="bg-white p-3 rounded-xl border border-slate-100">
+                          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider block">
                             Valor Já Recebido
                           </span>
-                          <span className="font-bold text-emerald-600 block mt-0.5">
+                          <span className="font-bold text-emerald-600 text-sm block mt-1">
                             {formatCurrency(link.received_commission_amount)}
                           </span>
                         </div>
                       </div>
 
                       {/* Footer Actions */}
-                      <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs">
-                        <div className="text-[11px] text-slate-400">
+                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60 text-xs">
+                        <div className="text-xs text-slate-500 font-medium">
                           {link.commission_payment_terms && (
                             <span>Prazo: {link.commission_payment_terms}</span>
                           )}
@@ -736,9 +736,9 @@ export default function CompanyDetailClient({
                             <button
                               onClick={() => handleMarkAsPaid(link.id)}
                               disabled={loadingActionId === link.id}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] rounded-lg border border-emerald-200 transition-all cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-lg border border-emerald-200 transition-all cursor-pointer"
                             >
-                              <Check className="w-3 h-3" /> Marcar RT como Paga
+                              <Check className="w-3.5 h-3.5" /> Marcar RT como Paga
                             </button>
                           )}
 
@@ -747,7 +747,7 @@ export default function CompanyDetailClient({
                             className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                             title="Editar Valores / Escopo"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-4 h-4" />
                           </button>
 
                           <button
@@ -756,7 +756,7 @@ export default function CompanyDetailClient({
                             className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                             title="Desvincular do Projeto"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
 
                           <Link
@@ -764,7 +764,7 @@ export default function CompanyDetailClient({
                             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="Ver Painel do Projeto"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <ExternalLink className="w-4 h-4" />
                           </Link>
                         </div>
                       </div>

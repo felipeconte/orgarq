@@ -116,7 +116,7 @@ export default function ClientDetailClient({
 
   return (
     <div className="space-y-6 antialiased max-w-7xl mx-auto">
-      {/* 1. TOP BREADCRUMB & ACTIONS */}
+      {/* 1. TOP HEADER & ACTIONS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <BackButton fallbackHref="/app/clientes" />
@@ -132,7 +132,7 @@ export default function ClientDetailClient({
                 {client.status === 'ativo' ? 'Ativo' : 'Inativo'}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               {client.person_type === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física'} • {projects.length} projeto(s) vinculado(s)
             </p>
           </div>
@@ -142,14 +142,14 @@ export default function ClientDetailClient({
           <button
             type="button"
             onClick={() => setIsEditModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 text-sm font-semibold transition-all shadow-xs cursor-pointer"
           >
-            <Edit2 className="w-3.5 h-3.5" /> Editar Cadastro
+            <Edit2 className="w-4 h-4" /> Editar Cadastro
           </button>
 
           <Link
             href={`/app/projetos/novo?clientId=${client.id}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-sm shadow-blue-500/20 cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Novo Projeto para este Cliente
           </Link>
@@ -162,16 +162,16 @@ export default function ClientDetailClient({
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center gap-3">
             <div className={`w-12 h-12 rounded-2xl font-extrabold text-base flex items-center justify-center shrink-0 ${client.person_type === 'PJ'
-                ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                ? 'bg-amber-100 text-amber-700 border border-amber-200'
                 : 'bg-blue-100 text-blue-700 border border-blue-200'
               }`}>
               {client.person_type === 'PJ' ? <Building className="w-6 h-6" /> : getInitials(client.name)}
             </div>
             <div className="min-w-0 flex-1">
-              <span className="font-extrabold text-slate-900 text-sm block truncate">
+              <span className="font-extrabold text-slate-900 text-base block truncate">
                 {client.name}
               </span>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs text-slate-500 font-mono">
                 {client.document_number
                   ? `${client.person_type === 'PJ' ? 'CNPJ: ' : 'CPF: '}${maskCPFOrCNPJ(client.document_number, client.person_type)}`
                   : 'Documento não informado'}
@@ -179,13 +179,13 @@ export default function ClientDetailClient({
             </div>
           </div>
 
-          <div className="space-y-2 pt-3 border-t border-slate-100 text-xs">
+          <div className="space-y-2 pt-3 border-t border-slate-100 text-sm">
             <div className="flex items-center justify-between text-slate-500">
-              <span>Tipo de Pessoa:</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Tipo de Pessoa:</span>
               <strong className="text-slate-800">{client.person_type === 'PJ' ? 'Jurídica (PJ)' : 'Física (PF)'}</strong>
             </div>
             <div className="flex items-center justify-between text-slate-500">
-              <span>Status:</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Status:</span>
               <strong className={client.status === 'ativo' ? 'text-emerald-700' : 'text-slate-600'}>
                 {client.status === 'ativo' ? 'Ativo' : 'Inativo'}
               </strong>
@@ -195,15 +195,15 @@ export default function ClientDetailClient({
 
         {/* Canais de Contato */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
             Canais de Contato
           </span>
 
-          <div className="space-y-2.5 text-xs">
+          <div className="space-y-2.5 text-sm">
             {client.phone ? (
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <div className="flex items-center gap-2 text-slate-700 font-mono font-bold">
-                  <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <Phone className="w-4 h-4 text-blue-600 shrink-0" />
                   <span>{maskPhone(client.phone)}</span>
                 </div>
                 {whatsappUrl && (
@@ -211,31 +211,31 @@ export default function ClientDetailClient({
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 py-1 px-2.5 rounded-lg bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-[11px] font-bold transition-all"
+                    className="inline-flex items-center gap-1 py-1 px-2.5 rounded-lg bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-xs font-bold transition-all"
                   >
-                    <MessageCircle className="w-3 h-3 text-emerald-700" /> WhatsApp
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-700" /> WhatsApp
                   </a>
                 )}
               </div>
             ) : (
-              <p className="text-slate-400 italic text-xs">Telefone não cadastrado</p>
+              <p className="text-slate-400 italic text-sm">Telefone não cadastrado</p>
             )}
 
             {client.email ? (
               <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <div className="flex items-center gap-2 text-slate-700 truncate">
-                  <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <Mail className="w-4 h-4 text-blue-600 shrink-0" />
                   <span className="truncate">{client.email}</span>
                 </div>
                 <a
                   href={`mailto:${client.email}`}
-                  className="text-blue-600 hover:underline text-[11px] font-bold shrink-0 ml-2"
+                  className="text-blue-600 hover:underline text-xs font-bold shrink-0 ml-2"
                 >
                   Enviar E-mail
                 </a>
               </div>
             ) : (
-              <p className="text-slate-400 italic text-xs">E-mail não cadastrado</p>
+              <p className="text-slate-400 italic text-sm">E-mail não cadastrado</p>
             )}
 
             {/* Acesso ao Portal do Cliente */}
@@ -244,15 +244,15 @@ export default function ClientDetailClient({
                 type="button"
                 onClick={handleResendAccess}
                 disabled={resendingAccess}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200/80 hover:border-blue-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200/80 hover:border-blue-300 text-sm font-semibold transition-all cursor-pointer disabled:opacity-50"
               >
                 {resendingAccess ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando Acesso...
+                    <Loader2 className="w-4 h-4 animate-spin" /> Enviando Acesso...
                   </>
                 ) : (
                   <>
-                    <KeyRound className="w-3.5 h-3.5 text-blue-600" /> Reenviar Acesso ao Portal
+                    <KeyRound className="w-4 h-4 text-blue-600" /> Reenviar Acesso ao Portal
                   </>
                 )}
               </button>
@@ -262,18 +262,18 @@ export default function ClientDetailClient({
 
         {/* Endereço e Localização */}
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
             Endereço & Localização
           </span>
 
-          <div className="space-y-1.5 text-xs text-slate-600">
+          <div className="space-y-1.5 text-sm text-slate-600">
             {client.address ? (
               <p className="font-semibold text-slate-800">{client.address}</p>
             ) : null}
 
             {client.city || client.state ? (
               <p className="flex items-center gap-1.5 text-slate-600">
-                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
                   {client.city ? `${client.city}` : ''}
                   {client.city && client.state ? ' - ' : ''}
@@ -286,13 +286,13 @@ export default function ClientDetailClient({
             ) : null}
 
             {!client.address && !client.city && !client.state && (
-              <p className="text-slate-400 italic text-xs">Endereço não informado</p>
+              <p className="text-slate-400 italic text-sm">Endereço não informado</p>
             )}
 
             {client.notes && (
               <div className="mt-2 pt-2 border-t border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase">Notas Internas:</span>
-                <p className="text-[11px] text-slate-600 mt-0.5 line-clamp-2">{client.notes}</p>
+                <span className="text-xs font-bold text-slate-400 block uppercase">Notas Internas:</span>
+                <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">{client.notes}</p>
               </div>
             )}
           </div>
@@ -310,7 +310,7 @@ export default function ClientDetailClient({
               <h3 className="text-base font-extrabold text-slate-900">
                 Projetos Vinculados ({projects.length})
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 Todos os projetos vinculados a este cliente.
               </p>
             </div>
@@ -318,9 +318,9 @@ export default function ClientDetailClient({
 
           <Link
             href={`/app/projetos/novo?clientId=${client.id}`}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold transition-all cursor-pointer w-fit"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-semibold transition-all cursor-pointer w-fit"
           >
-            <Plus className="w-3.5 h-3.5" /> Adicionar Projeto
+            <Plus className="w-4 h-4" /> Adicionar Projeto
           </Link>
         </div>
 
@@ -333,7 +333,7 @@ export default function ClientDetailClient({
             </p>
             <Link
               href={`/app/projetos/novo?clientId=${client.id}`}
-              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all cursor-pointer"
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Criar Primeiro Projeto
             </Link>
@@ -349,10 +349,10 @@ export default function ClientDetailClient({
                   className="p-5 rounded-2xl border border-slate-200/80 bg-slate-50/40 hover:bg-white hover:border-blue-300 hover:shadow-md transition-all group space-y-3 block"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200">
                       {proj.code}
                     </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${proj.status === 'concluido'
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${proj.status === 'concluido'
                         ? 'bg-emerald-100 text-emerald-800'
                         : proj.status === 'pausado'
                           ? 'bg-amber-100 text-amber-800'
@@ -363,21 +363,21 @@ export default function ClientDetailClient({
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-sm">
+                    <h4 className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors text-base">
                       {proj.title}
                     </h4>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-1">
                       {proj.typology || 'Residencial'} {proj.area_sqm ? `• ${proj.area_sqm} m²` : ''}
                     </p>
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px]">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-400 font-medium">Progresso</span>
                       <span className="font-mono font-bold text-blue-600">{prog}%</span>
                     </div>
-                    <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                       <div
                         className="bg-blue-600 h-full rounded-full transition-all duration-300"
                         style={{ width: `${prog}%` }}

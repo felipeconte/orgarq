@@ -303,7 +303,7 @@ export default function UserProfileSettingsClient({
         <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2.5">
           <User className="w-6 h-6 text-blue-600" /> Meu Perfil
         </h1>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-sm text-slate-500 mt-1">
           Gerencie suas informações pessoais, foto de exibição e credenciais de segurança.
         </p>
       </div>
@@ -330,9 +330,9 @@ export default function UserProfileSettingsClient({
                 })
                 setIsEditing(true)
               }}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:bg-slate-50 text-sm font-semibold transition-all shadow-2xs cursor-pointer"
             >
-              <Edit2 className="w-3.5 h-3.5" /> Editar Informações
+              <Edit2 className="w-4 h-4" /> Editar Informações
             </button>
           )}
         </div>
@@ -353,8 +353,8 @@ export default function UserProfileSettingsClient({
                   )}
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-800 block">Foto de Perfil</span>
-                  <p className="text-[11px] text-slate-500">
+                  <span className="text-sm font-bold text-slate-800 block">Foto de Perfil</span>
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Sua foto aparecerá nos comentários, histórico de tarefas e no menu da barra lateral.
                   </p>
                 </div>
@@ -364,7 +364,7 @@ export default function UserProfileSettingsClient({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 text-slate-700 text-sm font-semibold transition-all shadow-2xs cursor-pointer"
                 >
                   <UploadCloud className="w-4 h-4 text-blue-600" />
                   {formData.avatarUrl ? 'Trocar Foto' : 'Anexar Foto'}
@@ -386,7 +386,7 @@ export default function UserProfileSettingsClient({
             {/* Form Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   Nome Completo (será exibido no sistema) *
                 </label>
                 <input
@@ -395,12 +395,12 @@ export default function UserProfileSettingsClient({
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   placeholder="Ex: Arq. Felipe Conte"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
                   E-mail de Acesso (Login) *
                 </label>
                 <div className="relative">
@@ -410,56 +410,56 @@ export default function UserProfileSettingsClient({
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="seu.email@exemplo.com"
-                    className="w-full text-xs border border-slate-200 rounded-xl p-2.5 pl-8 outline-hidden focus:border-blue-500"
+                    className="w-full text-sm border border-slate-200 rounded-xl p-3 pl-9 outline-hidden focus:border-blue-500 bg-white"
                   />
-                  <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1.5">
                   Alterar este e-mail atualizará suas credenciais de login no sistema.
                 </p>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Cargo / Especialidade</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Cargo / Especialidade</label>
                 <input
                   type="text"
                   value={formData.jobRole}
                   onChange={(e) => setFormData({ ...formData, jobRole: e.target.value })}
                   placeholder="Ex: Arquiteto Titular, Coordenador de Projetos"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Registro CAU Pessoal</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Registro CAU Pessoal</label>
                 <input
                   type="text"
                   value={formData.cau}
                   onChange={(e) => setFormData({ ...formData, cau: e.target.value })}
                   placeholder="Ex: A123456-7"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-slate-700 block mb-1">Telefone / WhatsApp</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Telefone / WhatsApp</label>
                 <input
                   type="text"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: maskPhone(e.target.value) })}
                   placeholder="(11) 98765-4321"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 bg-white"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-xs font-bold text-slate-700 block mb-1">Mini Bio / Especialidades</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Mini Bio / Especialidades</label>
                 <textarea
                   rows={3}
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   placeholder="Breve descrição sobre sua trajetória e foco de atuação..."
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 outline-hidden focus:border-blue-500 resize-none"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 outline-hidden focus:border-blue-500 resize-none bg-white leading-relaxed"
                 />
               </div>
             </div>
@@ -480,7 +480,7 @@ export default function UserProfileSettingsClient({
                   })
                   setIsEditing(false)
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
                 Cancelar
               </button>
@@ -488,7 +488,7 @@ export default function UserProfileSettingsClient({
               <button
                 type="submit"
                 disabled={savingProfile || !formData.fullName.trim() || !formData.email.trim()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 {savingProfile && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {savingProfile ? 'Salvando...' : 'Salvar Alterações'}
@@ -510,12 +510,12 @@ export default function UserProfileSettingsClient({
                 )}
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">{profile.fullName}</h3>
-                <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                  <span className="text-xs text-slate-500 font-medium">
+                <h3 className="text-xl font-bold text-slate-900">{profile.fullName}</h3>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <span className="text-sm text-slate-500 font-medium">
                     {profile.jobRole || 'Membro da Equipe'}
                   </span>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 capitalize">
                     {role}
                   </span>
                 </div>
@@ -523,39 +523,39 @@ export default function UserProfileSettingsClient({
             </div>
 
             {/* Read-Only Information Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">E-mail de Acesso (Login)</span>
-                <span className="text-slate-800 font-medium block flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">E-mail de Acesso (Login)</span>
+                <span className="text-sm text-slate-800 font-medium block flex items-center gap-1.5">
+                  <Mail className="w-4 h-4 text-slate-400" />
                   {profile.email}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">Cargo / Especialidade</span>
-                <span className="text-slate-800 font-medium block">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Cargo / Especialidade</span>
+                <span className="text-sm text-slate-800 font-medium block">
                   {profile.jobRole || 'Não informado'}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">Registro CAU Pessoal</span>
-                <span className="text-slate-800 font-medium block">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Registro CAU Pessoal</span>
+                <span className="text-sm text-slate-800 font-medium block">
                   {profile.cau || 'Não informado'}
                 </span>
               </div>
 
               <div className="space-y-1">
-                <span className="font-semibold text-slate-400 block">Telefone / WhatsApp</span>
-                <span className="text-slate-800 font-medium block">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Telefone / WhatsApp</span>
+                <span className="text-sm text-slate-800 font-medium block">
                   {profile.phone ? maskPhone(profile.phone) : 'Não informado'}
                 </span>
               </div>
 
               <div className="sm:col-span-2 space-y-1">
-                <span className="font-semibold text-slate-400 block">Mini Bio / Especialidades</span>
-                <p className="text-slate-700 font-normal leading-relaxed">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block">Mini Bio / Especialidades</span>
+                <p className="text-sm text-slate-700 font-normal leading-relaxed">
                   {profile.bio || 'Nenhuma biografia informada.'}
                 </p>
               </div>
@@ -570,7 +570,7 @@ export default function UserProfileSettingsClient({
           <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
             <Shield className="w-4 h-4 text-blue-600" /> Segurança & Troca de Senha
           </h2>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-500 mt-1">
             Atualize sua senha informando sua senha atual ou solicite um link de redefinição por e-mail.
           </p>
         </div>
@@ -579,7 +579,7 @@ export default function UserProfileSettingsClient({
         <form onSubmit={handleSavePassword} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Senha Atual *</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Senha Atual *</label>
               <div className="relative">
                 <input
                   type="password"
@@ -587,14 +587,14 @@ export default function UserProfileSettingsClient({
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                   placeholder="Sua senha atual"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 pl-8 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 pl-9 outline-hidden focus:border-blue-500 bg-white"
                 />
-                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Nova Senha *</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Nova Senha *</label>
               <div className="relative">
                 <input
                   type="password"
@@ -602,14 +602,14 @@ export default function UserProfileSettingsClient({
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                   placeholder="Mínimo 6 caracteres"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 pl-8 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 pl-9 outline-hidden focus:border-blue-500 bg-white"
                 />
-                <Key className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Key className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1">Confirmar Nova Senha *</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">Confirmar Nova Senha *</label>
               <div className="relative">
                 <input
                   type="password"
@@ -617,9 +617,9 @@ export default function UserProfileSettingsClient({
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                   placeholder="Repita a nova senha"
-                  className="w-full text-xs border border-slate-200 rounded-xl p-2.5 pl-8 outline-hidden focus:border-blue-500"
+                  className="w-full text-sm border border-slate-200 rounded-xl p-3 pl-9 outline-hidden focus:border-blue-500 bg-white"
                 />
-                <Key className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Key className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
             </div>
           </div>
@@ -628,7 +628,7 @@ export default function UserProfileSettingsClient({
             <button
               type="submit"
               disabled={savingPassword || !passwordData.currentPassword || !passwordData.newPassword}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {savingPassword && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {savingPassword ? 'Validando e Alterando...' : 'Alterar Senha'}
@@ -643,10 +643,10 @@ export default function UserProfileSettingsClient({
               <Mail className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold text-slate-800 block">
+              <span className="text-sm font-bold text-slate-800 block">
                 Esqueceu sua senha atual?
               </span>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Você pode solicitar um link de redefinição de senha oficial do Supabase Auth para o seu e-mail cadastrado ({profile.email}).
               </p>
             </div>
@@ -656,7 +656,7 @@ export default function UserProfileSettingsClient({
             type="button"
             onClick={handleSendResetEmail}
             disabled={sendingResetEmail}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 text-slate-700 text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0 disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600 text-slate-700 text-sm font-semibold transition-all shadow-2xs cursor-pointer shrink-0 disabled:opacity-50"
           >
             {sendingResetEmail ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />

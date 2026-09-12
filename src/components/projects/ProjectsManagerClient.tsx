@@ -528,32 +528,32 @@ export default function ProjectsManagerClient({
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Search Box */}
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por código, nome do projeto, cliente, tipologia ou cidade..."
-            className="w-full pl-9 pr-4 py-2 text-xs border border-slate-200 rounded-xl outline-hidden focus:border-blue-500 bg-slate-50/50 focus:bg-white transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-blue-500 bg-slate-50/50 focus:bg-white transition-all text-slate-800 font-medium"
           />
           {search && (
             <button
               onClick={() => setSearch('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
         {/* Status Dropdown & View Mode Toggle */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+            <SlidersHorizontal className="w-4 h-4 text-slate-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="text-xs font-semibold text-slate-700 bg-transparent outline-hidden cursor-pointer"
+              className="text-sm font-semibold text-slate-700 bg-transparent outline-hidden cursor-pointer"
             >
               <option value="todos">Todos os Status</option>
               <option value="ativo">Ativos</option>
@@ -567,7 +567,7 @@ export default function ProjectsManagerClient({
           <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              className={`p-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               title="Visualização em Cards"
             >
@@ -575,7 +575,7 @@ export default function ProjectsManagerClient({
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              className={`p-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${viewMode === 'table' ? 'bg-white text-blue-600 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               title="Visualização em Lista / Tabela"
             >
@@ -595,7 +595,7 @@ export default function ProjectsManagerClient({
             <h3 className="text-base font-bold text-slate-800">
               {search || statusFilter !== 'todos' ? 'Nenhum projeto encontrado' : 'Nenhum projeto cadastrado'}
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-sm text-slate-500 max-w-sm mx-auto">
               {search || statusFilter !== 'todos'
                 ? 'Tente limpar a busca ou os filtros para ver todos os projetos.'
                 : 'Cadastre seu primeiro projeto e as 10 etapas da arquitetura serão clonadas automaticamente!'}
@@ -607,14 +607,14 @@ export default function ProjectsManagerClient({
                 setSearch('')
                 setStatusFilter('todos')
               }}
-              className="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-2.5 px-4 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200 transition-all cursor-pointer"
             >
               Limpar Filtros
             </button>
           ) : (
             <Link
               href="/app/projetos/novo"
-              className="inline-flex items-center gap-1.5 py-2 px-4 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-2.5 px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold shadow-xs hover:bg-blue-700 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Cadastrar Projeto Agora
             </Link>
@@ -640,7 +640,7 @@ export default function ProjectsManagerClient({
 
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                       >
                         {statusConfig.label}
                       </span>
@@ -651,7 +651,7 @@ export default function ProjectsManagerClient({
                         className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                         title="Editar Informações do Projeto"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <Edit2 className="w-4 h-4" />
                       </button>
 
                       <button
@@ -659,7 +659,7 @@ export default function ProjectsManagerClient({
                         className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                         title="Excluir Projeto"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -672,8 +672,8 @@ export default function ProjectsManagerClient({
                     >
                       {proj.title}
                     </Link>
-                    <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-1">
-                      <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
+                      <User className="w-4 h-4 text-slate-400 shrink-0" />
                       <span className="truncate">
                         Cliente: <strong className="text-slate-700">{proj.client_name}</strong>
                       </span>
@@ -681,13 +681,13 @@ export default function ProjectsManagerClient({
                   </div>
 
                   {/* Metadata Chips */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-sm text-slate-600">
                     <div className="flex items-center gap-1.5 truncate">
-                      <Compass className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <Compass className="w-4 h-4 text-slate-400 shrink-0" />
                       <span>{proj.area_sqm ? `${proj.area_sqm} m²` : 'Área não def.'}</span>
                     </div>
                     <div className="flex items-center gap-1.5 truncate">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
                       <span>{proj.deadline ? proj.deadline : 'Sem prazo'}</span>
                     </div>
                   </div>
@@ -695,15 +695,15 @@ export default function ProjectsManagerClient({
 
                 {/* Bottom Action: Open Project Hub */}
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-slate-400">
+                  <span className="text-xs font-semibold text-slate-500">
                     {proj.typology || 'Residencial'}
                   </span>
 
                   <Link
                     href={`/app/projetos/${proj.id}`}
-                    className="inline-flex items-center gap-1 py-1.5 px-3 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1.5 py-2 px-3.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white text-sm font-semibold transition-all cursor-pointer shadow-2xs"
                   >
-                    Ver detalhes <ArrowRight className="w-3.5 h-3.5" />
+                    Ver detalhes <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
@@ -714,17 +714,17 @@ export default function ProjectsManagerClient({
         /* TABLE VIEW */
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-xs">
                 <tr>
-                  <th className="py-3 px-4">Código</th>
-                  <th className="py-3 px-4">Projeto</th>
-                  <th className="py-3 px-4">Cliente</th>
-                  <th className="py-3 px-4">Tipologia</th>
-                  <th className="py-3 px-4">Área</th>
-                  <th className="py-3 px-4">Prazo</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Ações</th>
+                  <th className="py-3.5 px-4">Código</th>
+                  <th className="py-3.5 px-4">Projeto</th>
+                  <th className="py-3.5 px-4">Cliente</th>
+                  <th className="py-3.5 px-4">Tipologia</th>
+                  <th className="py-3.5 px-4">Área</th>
+                  <th className="py-3.5 px-4">Prazo</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -733,10 +733,10 @@ export default function ProjectsManagerClient({
 
                   return (
                     <tr key={proj.id} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                      <td className="py-4 px-4 font-mono font-bold text-slate-700">
                         {proj.code}
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-4">
                         <Link
                           href={`/app/projetos/${proj.id}`}
                           className="font-bold text-slate-900 hover:text-blue-600 transition-colors cursor-pointer"
@@ -744,49 +744,49 @@ export default function ProjectsManagerClient({
                           {proj.title}
                         </Link>
                         {proj.address && (
-                          <p className="text-[11px] text-slate-400 truncate max-w-xs">{proj.address}</p>
+                          <p className="text-xs text-slate-500 truncate max-w-xs">{proj.address}</p>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700 font-medium">
+                      <td className="py-4 px-4 text-slate-700 font-medium">
                         {proj.client_name}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-500">
+                      <td className="py-4 px-4 text-slate-500">
                         {proj.typology || 'Residencial'}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 font-mono">
+                      <td className="py-4 px-4 text-slate-600 font-mono">
                         {proj.area_sqm ? `${proj.area_sqm} m²` : '—'}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600">
+                      <td className="py-4 px-4 text-slate-600">
                         {proj.deadline || '—'}
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-4 px-4">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
                         >
                           {statusConfig.label}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right space-x-1.5 shrink-0">
+                      <td className="py-4 px-4 text-right space-x-1.5 shrink-0">
                         <Link
                           href={`/app/projetos/${proj.id}`}
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg inline-flex items-center transition-colors cursor-pointer"
                           title="Ver detalhes"
                         >
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          <ArrowRight className="w-4 h-4" />
                         </Link>
                         <button
                           onClick={() => handleOpenEdit(proj)}
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg inline-flex items-center transition-colors cursor-pointer"
                           title="Editar"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setDeletingProject(proj)}
                           className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg inline-flex items-center transition-colors cursor-pointer"
                           title="Excluir"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -829,8 +829,8 @@ export default function ProjectsManagerClient({
                     )}
                   </button>
                 </div>
-                <h3 className="text-lg font-extrabold text-slate-900 tracking-tight">Editar Dados do Projeto</h3>
-                <p className="text-xs text-slate-500">Atualize as informações cadastrais, contato do cliente e localização da obra.</p>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Editar Dados do Projeto</h3>
+                <p className="text-sm text-slate-500">Atualize as informações cadastrais, contato do cliente e localização da obra.</p>
               </div>
 
               <button
@@ -851,7 +851,7 @@ export default function ProjectsManagerClient({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Título do Projeto *
                     </label>
                     <input
@@ -860,18 +860,18 @@ export default function ProjectsManagerClient({
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       placeholder="Ex: Residência Alphaville ou Escritório Advocacia"
-                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Status do Projeto
                     </label>
                     <select
                       value={editStatus}
                       onChange={(e) => setEditStatus(e.target.value)}
-                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
                     >
                       <option value="ativo">🟢 Ativo</option>
                       <option value="em_producao">⚡ Em Andamento</option>
@@ -884,13 +884,13 @@ export default function ProjectsManagerClient({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Tipologia
                     </label>
                     <select
                       value={editTypology}
                       onChange={(e) => setEditTypology(e.target.value)}
-                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
                     >
                       <option value="Residencial Unifamiliar">Residencial Unifamiliar</option>
                       <option value="Residencial Multifamiliar">Residencial Multifamiliar</option>
@@ -902,37 +902,37 @@ export default function ProjectsManagerClient({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Área do Projeto (m²)
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <Compass className="w-3.5 h-3.5" />
+                        <Compass className="w-4 h-4" />
                       </div>
                       <input
                         type="text"
                         value={editAreaInput}
                         onChange={(e) => handleAreaChange(e.target.value)}
                         placeholder="Ex: 350 m²"
-                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Orçamento Estimado (R$)
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                        <DollarSign className="w-3.5 h-3.5" />
+                        <DollarSign className="w-4 h-4" />
                       </div>
                       <input
                         type="text"
                         value={editBudgetInput}
                         onChange={(e) => handleBudgetChange(e.target.value)}
                         placeholder="R$ 850.000,00"
-                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
                   </div>
@@ -962,26 +962,26 @@ export default function ProjectsManagerClient({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Data de Início
                     </label>
                     <input
                       type="date"
                       value={editStartDate}
                       onChange={(e) => setEditStartDate(e.target.value)}
-                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Prazo Final Estimado
                     </label>
                     <input
                       type="date"
                       value={editDeadline}
                       onChange={(e) => setEditDeadline(e.target.value)}
-                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -989,15 +989,15 @@ export default function ProjectsManagerClient({
                 {/* Busca Global de Endereço */}
                 <div className="space-y-3">
                   <div ref={searchContainerRef} className="relative">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Buscar Endereço
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                         {isSearchingAddress ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
                         ) : (
-                          <Search className="w-3.5 h-3.5" />
+                          <Search className="w-4 h-4" />
                         )}
                       </div>
                       <input
@@ -1008,7 +1008,7 @@ export default function ProjectsManagerClient({
                           if (addressSuggestions.length > 0) setShowSuggestions(true)
                         }}
                         placeholder="Digite rua, avenida, condomínio ou cidade para autocompletar..."
-                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
 
@@ -1023,10 +1023,10 @@ export default function ProjectsManagerClient({
                           >
                             <MapPin className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                             <div className="truncate">
-                              <span className="text-xs font-semibold text-slate-800 block truncate">
+                              <span className="text-sm font-semibold text-slate-800 block truncate">
                                 {place.display_name}
                               </span>
-                              <span className="text-[10px] text-slate-400 block">
+                              <span className="text-xs text-slate-400 block">
                                 Lat: {parseFloat(place.lat).toFixed(4)}, Long: {parseFloat(place.lon).toFixed(4)}
                               </span>
                             </div>
@@ -1039,7 +1039,7 @@ export default function ProjectsManagerClient({
                   {/* Campos de Logradouro, Número e Complemento separados */}
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         Logradouro
                       </label>
                       <input
@@ -1047,12 +1047,12 @@ export default function ProjectsManagerClient({
                         value={addressRoad}
                         onChange={(e) => setAddressRoad(e.target.value)}
                         placeholder="Rua Oscar Freire"
-                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         Número
                       </label>
                       <input
@@ -1060,12 +1060,12 @@ export default function ProjectsManagerClient({
                         value={addressNumber}
                         onChange={(e) => setAddressNumber(e.target.value)}
                         placeholder="1000"
-                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         Complemento <span className="text-slate-400 font-normal lowercase">(opcional)</span>
                       </label>
                       <input
@@ -1073,7 +1073,7 @@ export default function ProjectsManagerClient({
                         value={addressComplement}
                         onChange={(e) => setAddressComplement(e.target.value)}
                         placeholder="Apto 52, Bloco B"
-                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
                   </div>
@@ -1081,7 +1081,7 @@ export default function ProjectsManagerClient({
                   {/* Campos de Bairro, Cidade, Estado e CEP separados */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         Bairro
                       </label>
                       <input
@@ -1089,12 +1089,12 @@ export default function ProjectsManagerClient({
                         value={addressNeighborhood}
                         onChange={(e) => setAddressNeighborhood(e.target.value)}
                         placeholder="Bela Vista ou Jardins"
-                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         Cidade
                       </label>
                       <input
@@ -1102,12 +1102,12 @@ export default function ProjectsManagerClient({
                         value={addressCity}
                         onChange={(e) => setAddressCity(e.target.value)}
                         placeholder="São Paulo"
-                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         Estado / UF
                       </label>
                       <input
@@ -1115,12 +1115,12 @@ export default function ProjectsManagerClient({
                         value={addressState}
                         onChange={(e) => setAddressState(e.target.value)}
                         placeholder="SP"
-                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                         CEP
                       </label>
                       <input
@@ -1128,7 +1128,7 @@ export default function ProjectsManagerClient({
                         value={addressPostalCode}
                         onChange={(e) => setAddressPostalCode(e.target.value)}
                         placeholder="01310-100"
-                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
                     </div>
                   </div>
@@ -1149,7 +1149,7 @@ export default function ProjectsManagerClient({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                     Descrição ou Observações do Projeto
                   </label>
                   <textarea
@@ -1157,7 +1157,7 @@ export default function ProjectsManagerClient({
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
                     placeholder="Detalhes adicionais sobre o terreno, expectativas de programa ou condicionantes..."
-                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 resize-none"
+                    className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 resize-none"
                   />
                 </div>
               </div>
@@ -1167,14 +1167,14 @@ export default function ProjectsManagerClient({
                 <button
                   type="button"
                   onClick={() => setEditingProject(null)}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading || !editTitle.trim() || editClientIds.length === 0}
-                  className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-50 inline-flex items-center gap-2 shadow-xs hover:shadow-md transition-all cursor-pointer"
+                  className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 inline-flex items-center gap-2 shadow-xs hover:shadow-md transition-all cursor-pointer"
                 >
                   {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                   {loading ? 'Salvando Alterações...' : 'Salvar Alterações'}
@@ -1196,11 +1196,11 @@ export default function ProjectsManagerClient({
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-900">Excluir Projeto</h3>
-                <p className="text-xs text-slate-500">Esta ação não pode ser desfeita.</p>
+                <p className="text-sm text-slate-500">Esta ação não pode ser desfeita.</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
               Tem certeza que deseja excluir o projeto{' '}
               <strong className="text-slate-900 font-bold">{deletingProject.title}</strong> ({deletingProject.code})?
               Todas as etapas, comentários, anexos e fichas vinculadas serão excluídos permanentemente.
@@ -1210,7 +1210,7 @@ export default function ProjectsManagerClient({
               <button
                 type="button"
                 onClick={() => setDeletingProject(null)}
-                className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl"
               >
                 Cancelar
               </button>
@@ -1218,9 +1218,9 @@ export default function ProjectsManagerClient({
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={loading}
-                className="px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-semibold hover:bg-rose-700 disabled:opacity-50 inline-flex items-center gap-1.5"
               >
-                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                 {loading ? 'Excluindo...' : 'Sim, Excluir Projeto'}
               </button>
             </div>

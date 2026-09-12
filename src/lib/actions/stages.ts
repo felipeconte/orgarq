@@ -204,6 +204,7 @@ export async function updateStageFullDetailsAction(
     due_date?: string | null
     status?: string
     is_client_approval_required?: boolean
+    parent_stage_id?: string | null
   }
 ) {
   const { supabase, user } = await requireProjectAccess(projectId)
@@ -290,6 +291,31 @@ export async function updateStageFullDetailsAction(
     updatePayload.status = data.status
   }
 
+  if (data.parent_stage_id !== undefined) {
+    if (data.parent_stage_id === stageId) {
+      return { error: 'Uma tarefa não pode ser subtarefa de si mesma.' }
+    }
+    if (data.parent_stage_id) {
+      // Previne ciclos de dependência verificando os ancestrais
+      let currentCheckId: string | null = data.parent_stage_id
+      const visited = new Set<string>([stageId])
+      while (currentCheckId) {
+        if (visited.has(currentCheckId)) {
+          return { error: 'Vínculo circular detectado: a tarefa selecionada já depende desta tarefa.' }
+        }
+        visited.add(currentCheckId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parentRes: any = await (supabase
+          .from('project_stages') as any)
+          .select('parent_stage_id')
+          .eq('id', currentCheckId)
+          .single()
+        currentCheckId = parentRes?.data?.parent_stage_id || null
+      }
+    }
+    updatePayload.parent_stage_id = data.parent_stage_id || null
+  }
+
   const { error } = await supabase
     .from('project_stages')
     .update(updatePayload as any)
@@ -338,6 +364,7 @@ export async function createStageAction(
     due_date?: string | null
     status?: string
     is_client_approval_required?: boolean
+    parent_stage_id?: string | null
   }
 ) {
   const { supabase } = await requireProjectAccess(projectId)
@@ -372,6 +399,7 @@ export async function createStageAction(
       checklist: [],
       comments: [],
       attachments: [],
+      parent_stage_id: data.parent_stage_id || null,
     } as any)
     .select()
     .single()
@@ -384,15 +412,151 @@ export async function createStageAction(
   return { success: true, stage: newStage }
 }
 
+export interface DeletedStageInfo {
+  id: string
+  name: string
+  code: string | null
+  deleted_at: string
+  deleted_by: string | null
+  deleted_by_name?: string | null
+  created_at: string
+  status?: string
+}
+
 export async function deleteStageAction(
+  projectId: string,
+  stageId: string,
+  subtaskMode: 'cascade' | 'unlink' = 'cascade'
+) {
+  const { supabase, user } = await requireProjectAccess(projectId)
+  const now = new Date().toISOString()
+
+  // Se o modo for 'unlink', desvincula as subtarefas filhas transformando-as em tarefas independentes
+  if (subtaskMode === 'unlink') {
+    const { error: unlinkError } = await (supabase
+      .from('project_stages') as any)
+      .update({ parent_stage_id: null })
+      .eq('parent_stage_id', stageId)
+      .eq('project_id', projectId)
+
+    if (unlinkError) {
+      return { error: unlinkError.message }
+    }
+  } else if (subtaskMode === 'cascade') {
+    // Em modo cascata, aplica soft delete também nas subtarefas filhas
+    const { error: cascadeError } = await (supabase
+      .from('project_stages') as any)
+      .update({
+        deleted_at: now,
+        deleted_by: user.id,
+      })
+      .eq('parent_stage_id', stageId)
+      .eq('project_id', projectId)
+
+    if (cascadeError) {
+      return { error: cascadeError.message }
+    }
+  }
+
+  // Soft delete na tarefa selecionada
+  const { error } = await (supabase
+    .from('project_stages') as any)
+    .update({
+      deleted_at: now,
+      deleted_by: user.id,
+    })
+    .eq('id', stageId)
+    .eq('project_id', projectId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/app/projetos/${projectId}`)
+  return { success: true }
+}
+
+export async function getDeletedStagesAction(projectId: string): Promise<{
+  success: boolean
+  deletedStages?: DeletedStageInfo[]
+  error?: string
+}> {
+  const { supabase } = await requireProjectAccess(projectId)
+
+  const { data, error } = await (supabase
+    .from('project_stages') as any)
+    .select('id, name, code, deleted_at, deleted_by, created_at, status')
+    .eq('project_id', projectId)
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  if (!data || data.length === 0) {
+    return { success: true, deletedStages: [] }
+  }
+
+  // Buscar nomes de perfis dos responsáveis pelas exclusões
+  const userIds = Array.from(new Set(data.map((d: any) => d.deleted_by).filter(Boolean))) as string[]
+  const profileMap = new Map<string, string>()
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await (supabase
+      .from('user_profiles') as any)
+      .select('user_id, display_name, full_name')
+      .in('user_id', userIds)
+
+    profiles?.forEach((p: any) => {
+      const name = p.display_name || p.full_name
+      if (name) profileMap.set(p.user_id, name)
+    })
+  }
+
+  const formatted: DeletedStageInfo[] = data.map((d: any) => ({
+    id: d.id,
+    name: d.name,
+    code: d.code,
+    deleted_at: d.deleted_at,
+    deleted_by: d.deleted_by,
+    deleted_by_name: d.deleted_by ? (profileMap.get(d.deleted_by) || 'Membro da equipe') : 'Sistema',
+    created_at: d.created_at,
+    status: d.status,
+  }))
+
+  return { success: true, deletedStages: formatted }
+}
+
+export async function restoreStageAction(projectId: string, stageId: string) {
+  const { supabase } = await requireProjectAccess(projectId)
+
+  const { error } = await (supabase
+    .from('project_stages') as any)
+    .update({
+      deleted_at: null,
+      deleted_by: null,
+    })
+    .eq('id', stageId)
+    .eq('project_id', projectId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/app/projetos/${projectId}`)
+  return { success: true }
+}
+
+export async function unlinkSubtaskAction(
   projectId: string,
   stageId: string
 ) {
   const { supabase } = await requireProjectAccess(projectId)
 
-  const { error } = await supabase
-    .from('project_stages')
-    .delete()
+  const { error } = await (supabase
+    .from('project_stages') as any)
+    .update({ parent_stage_id: null })
     .eq('id', stageId)
     .eq('project_id', projectId)
 

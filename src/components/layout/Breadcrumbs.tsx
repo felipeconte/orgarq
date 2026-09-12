@@ -14,7 +14,7 @@ export function Breadcrumbs() {
   return (
     <nav
       aria-label="Navegação estrutural"
-      className="flex items-center gap-2 text-xs font-semibold text-slate-500 min-w-0"
+      className="flex items-center gap-2 text-sm font-medium text-slate-500 min-w-0"
     >
       {breadcrumbs.map((item, index) => {
         const isLast = index === breadcrumbs.length - 1

@@ -352,6 +352,10 @@ export type Database = {
           checklist: any
           comments: any
           attachments: any
+          code: string | null
+          parent_stage_id: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           created_at: string
           updated_at: string
         }
@@ -371,6 +375,10 @@ export type Database = {
           checklist?: any
           comments?: any
           attachments?: any
+          code?: string | null
+          parent_stage_id?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -390,6 +398,10 @@ export type Database = {
           checklist?: any
           comments?: any
           attachments?: any
+          code?: string | null
+          parent_stage_id?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           created_at?: string
           updated_at?: string
         }
