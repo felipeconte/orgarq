@@ -28,6 +28,8 @@ import {
 import { createProjectAction } from '@/lib/actions/projects'
 import { ClientData } from '@/lib/actions/clients'
 import ClientMultiSelect from '@/components/projects/ClientMultiSelect'
+import TypologySelect from '@/components/projects/TypologySelect'
+import { formatAreaOnlyNumbers } from '@/lib/formatters-and-validators'
 
 // Carregamento dinâmico do mapa para evitar SSR issues com Leaflet
 const ProjectLocationMap = dynamic(
@@ -142,6 +144,9 @@ export default function NewProjectForm({
   const [projectCode, setProjectCode] = useState<string>('')
   const [copiedCode, setCopiedCode] = useState(false)
 
+  // 1.1 Tipologia do Projeto
+  const [typology, setTypology] = useState<string>('Residencial')
+
   // 2. Área e Orçamento
   const [areaInput, setAreaInput] = useState<string>('')
   const [areaRaw, setAreaRaw] = useState<number | null>(null)
@@ -211,20 +216,9 @@ export default function NewProjectForm({
 
   // Formatação de Área
   const handleAreaChange = (val: string) => {
-    // Remove sufixo 'm²' antes de processar
-    const rawVal = val.replace(/\s*m²\s*/gi, '').trim()
-    if (!rawVal) {
-      setAreaInput('')
-      setAreaRaw(null)
-      return
-    }
-    const parsed = parseFloat(rawVal.replace(',', '.'))
-    if (!isNaN(parsed)) {
-      setAreaRaw(parsed)
-      setAreaInput(`${rawVal} m²`)
-    } else {
-      setAreaInput(rawVal)
-    }
+    const { display, raw } = formatAreaOnlyNumbers(val, areaInput)
+    setAreaInput(display)
+    setAreaRaw(raw)
   }
 
   // Copiar código
@@ -509,24 +503,18 @@ export default function NewProjectForm({
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Tipologia
                 </label>
-                <select
+                <TypologySelect
+                  value={typology}
+                  onChange={setTypology}
+                  organizationId={organizationId}
                   name="typology"
-                  defaultValue="Residencial Unifamiliar"
-                  className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-                >
-                  <option value="Residencial Unifamiliar">Residencial Unifamiliar</option>
-                  <option value="Residencial Multifamiliar">Residencial Multifamiliar</option>
-                  <option value="Interiores">Interiores / Reforma</option>
-                  <option value="Comercial">Comercial / Varejo</option>
-                  <option value="Corporativo">Corporativo / Escritórios</option>
-                  <option value="Institucional">Institucional</option>
-                </select>
+                />
               </div>
 
               {/* Ponto 2: Área do Projeto formatada como medida */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Área do Projeto (m²)
+                  Área do Projeto
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -534,12 +522,23 @@ export default function NewProjectForm({
                   </div>
                   <input
                     type="text"
+                    inputMode="decimal"
                     name="areaSqmDisplay"
                     value={areaInput}
                     onChange={(e) => handleAreaChange(e.target.value)}
-                    placeholder="Ex: 350 m²"
-                    className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                    onBlur={() => {
+                      if (areaInput.endsWith(',')) {
+                        setAreaInput(areaInput.slice(0, -1))
+                      }
+                    }}
+                    placeholder="0"
+                    className="block w-full pl-9 pr-12 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-xs font-bold text-slate-400 select-none bg-slate-100/80 px-2 py-0.5 rounded-md">
+                      m²
+                    </span>
+                  </div>
                 </div>
               </div>
 

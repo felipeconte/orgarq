@@ -6,7 +6,7 @@ import ProjectCompaniesClient from '@/components/projects/ProjectCompaniesClient
 import { BreadcrumbSetter } from '@/contexts/BreadcrumbContext'
 
 export const metadata = {
-  title: 'Fornecedores & Serviços do Projeto | Orgarq',
+  title: 'Empresas e Serviços do Projeto | Orgarq',
   description: 'Controle de empresas parceiras, escopos de serviços e comissões/RT alocadas neste projeto',
 }
 

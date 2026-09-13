@@ -98,7 +98,7 @@ export async function createProjectAction(formData: FormData): Promise<{ success
 
   let finalClientName = clientName
   if (linkedClients.length > 0) {
-    finalClientName = linkedClients.map((c) => c.name).join(' & ')
+    finalClientName = linkedClients.map((c) => c.name).join(', ')
   } else if (!finalClientName && clientIds.length > 0) {
     finalClientName = 'Cliente do Projeto'
   }
@@ -285,7 +285,7 @@ export async function updateProjectAction(projectId: string, formData: FormData)
     }
 
     if (linkedClients.length > 0) {
-      updatePayload.client_name = linkedClients.map((c) => c.name).join(' & ')
+      updatePayload.client_name = linkedClients.map((c) => c.name).join(', ')
       ;(updatePayload as any).client_id = linkedClients[0].id
       updatePayload.client_email = linkedClients[0].email
       updatePayload.client_phone = linkedClients[0].phone

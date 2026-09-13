@@ -39,6 +39,7 @@ import {
 } from '@/lib/actions/financial'
 import TransactionModal from '@/components/financial/TransactionModal'
 import BackButton from '@/components/ui/BackButton'
+import { formatProjectClientDisplay } from '@/lib/formatters-and-validators'
 
 interface ProjectFinancialClientProps {
   project: {
@@ -238,9 +239,14 @@ export default function ProjectFinancialClient({
                 {project.code}
               </span>
             </div>
-            <p className="text-sm text-slate-500 mt-1">
-              Cliente: <strong className="text-slate-700">{project.client_name}</strong> • Controle de entradas, comissões de parceiros e despesas alocadas
-            </p>
+            {(() => {
+              const { label, names } = formatProjectClientDisplay(project.client_name)
+              return (
+                <p className="text-sm text-slate-500 mt-1">
+                  {label}: <strong className="text-slate-700">{names}</strong> • Controle de entradas, comissões de parceiros e despesas alocadas
+                </p>
+              )
+            })()}
           </div>
         </div>
 

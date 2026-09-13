@@ -44,6 +44,7 @@ import {
   createStageAction,
   deleteStageAction,
   reorderStagesAction,
+  reorderKanbanStagesAction,
   toggleStageClientApprovalAction,
   DeletedStageInfo,
   restoreStageAction
@@ -278,7 +279,6 @@ export default function ProjectHubClient({
       isExpanded: boolean
       childrenCount: number
       completedChildrenCount: number
-      isLastChild: boolean
       ancestors: TaskDetailData[]
     }
 
@@ -288,7 +288,6 @@ export default function ProjectHubClient({
     function traverse(
       st: TaskDetailData,
       level: number,
-      isLast: boolean,
       ancestors: TaskDetailData[]
     ) {
       if (visited.has(st.id)) return // Proteção contra ciclos
@@ -312,20 +311,19 @@ export default function ProjectHubClient({
         isExpanded,
         childrenCount: directChildren.length,
         completedChildrenCount,
-        isLastChild: isLast,
         ancestors,
       })
 
       if (hasChildren && isExpanded) {
         const visibleChildren = directChildren.filter(matchesSearch)
-        visibleChildren.forEach((child, idx) => {
-          traverse(child, level + 1, idx === visibleChildren.length - 1, [...ancestors, st])
+        visibleChildren.forEach((child) => {
+          traverse(child, level + 1, [...ancestors, st])
         })
       }
     }
 
-    rootStages.forEach((root, idx) => {
-      traverse(root, 0, idx === rootStages.length - 1, [])
+    rootStages.forEach((root) => {
+      traverse(root, 0, [])
     })
 
     return result
@@ -694,6 +692,8 @@ export default function ProjectHubClient({
 
   // Drag and Drop State - KANBAN
   const [draggingKanbanId, setDraggingKanbanId] = useState<string | null>(null)
+  const [dragOverKanbanCardId, setDragOverKanbanCardId] = useState<string | null>(null)
+  const [dropKanbanPosition, setDropKanbanPosition] = useState<'before' | 'after' | null>(null)
   const [activeDropCol, setActiveDropCol] = useState<string | null>(null)
 
   const handleCopyLink = () => {
@@ -1216,25 +1216,32 @@ export default function ProjectHubClient({
     setDraggingKanbanId(id)
   }
 
-  const handleKanbanCardDrop = async (
+  const handleKanbanCardDragOver = (
     e: React.DragEvent,
-    targetStage: TaskDetailData,
-    targetColStatus: string
+    targetCardId: string,
+    colStatus: string
   ) => {
     e.preventDefault()
     e.stopPropagation()
+    if (!draggingKanbanId || draggingKanbanId === targetCardId) return
 
-    if (!draggingKanbanId) return
-    const stageId = draggingKanbanId
+    const rect = e.currentTarget.getBoundingClientRect()
+    const offset = e.clientY - rect.top
+    const position = offset < rect.height / 2 ? 'before' : 'after'
 
-    setDraggingKanbanId(null)
-    setActiveDropCol(null)
+    setDragOverKanbanCardId(targetCardId)
+    setDropKanbanPosition(position)
+    if (activeDropCol !== colStatus) {
+      setActiveDropCol(colStatus)
+    }
+  }
 
-    const stage = stages.find((s) => s.id === stageId)
-    if (!stage || stage.status === targetColStatus) return
-
-    // Mantém a ordenação definida na lista e apenas altera a etapa
-    await handleStatusChange(stageId, targetColStatus)
+  const handleKanbanCardDragLeave = (e: React.DragEvent, targetCardId: string) => {
+    e.stopPropagation()
+    if (dragOverKanbanCardId === targetCardId) {
+      setDragOverKanbanCardId(null)
+      setDropKanbanPosition(null)
+    }
   }
 
   const handleKanbanColumnDragOver = (e: React.DragEvent, colStatus: string) => {
@@ -1244,26 +1251,297 @@ export default function ProjectHubClient({
     }
   }
 
-  const handleKanbanColumnDragLeave = () => {
+  const handleKanbanColumnDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget === e.target) {
+      setActiveDropCol(null)
+    }
+  }
+
+  const handleKanbanCardDrop = async (
+    e: React.DragEvent,
+    targetStage: TaskDetailData,
+    targetColStatus: string
+  ) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const draggedId = draggingKanbanId
+    const overCardId = targetStage.id
+    const position = dropKanbanPosition || 'after'
+
+    setDraggingKanbanId(null)
+    setDragOverKanbanCardId(null)
+    setDropKanbanPosition(null)
     setActiveDropCol(null)
+
+    if (!draggedId || draggedId === overCardId) return
+
+    const draggedCard = stages.find((s) => s.id === draggedId)
+    if (!draggedCard) return
+
+    const isStatusChange = draggedCard.status !== targetColStatus
+
+    if (isStatusChange) {
+      const targetStageCfg = workflowStages.find((s) => s.id === targetColStatus)
+      if (targetStageCfg?.is_final_stage) {
+        const check = canMoveToFinalStage(draggedCard, workflowStages)
+        if (!check.allowed) {
+          await showAlert({
+            title: 'Etapa Conclusiva Bloqueada',
+            message: 'Esta tarefa não pode ser movida para a etapa finalizada:',
+            description: check.reasons.join('\n'),
+            variant: 'warning',
+          })
+          return
+        }
+      }
+
+      const isApprovedStage = Boolean(
+        targetStageCfg?.is_approved_stage ||
+        targetStageCfg?.name?.toLowerCase().includes('aprovad') ||
+        targetColStatus === 'concluido'
+      )
+
+      if (isApprovedStage) {
+        const stageName = draggedCard.name || 'esta tarefa'
+        const targetStageName = targetStageCfg?.name || 'Aprovado'
+        const confirmed = await confirm({
+          title: 'Confirmar Aprovação da Tarefa',
+          message: `Deseja marcar a tarefa "${stageName}" como "${targetStageName}"?`,
+          description:
+            'Atenção: Ao realizar esta ação manualmente, você será registrado como o responsável pela aprovação no histórico de auditoria do projeto.',
+          confirmText: 'Confirmar e Aprovar',
+          cancelText: 'Cancelar',
+          variant: 'primary',
+        })
+        if (!confirmed) return
+      }
+    }
+
+    // Ordenar tarefas existentes na coluna de destino (excluindo a tarefa arrastada caso já estivesse nela)
+    const colCards = stages
+      .filter((s) => s.status === targetColStatus && s.id !== draggedId)
+      .sort(
+        (a, b) =>
+          (a.kanban_order ?? a.stage_order ?? 0) - (b.kanban_order ?? b.stage_order ?? 0) ||
+          a.stage_order - b.stage_order
+      )
+
+    const targetIndex = colCards.findIndex((s) => s.id === overCardId)
+    const insertIndex =
+      targetIndex === -1
+        ? colCards.length
+        : position === 'before'
+          ? targetIndex
+          : targetIndex + 1
+
+    const updatedDraggedCard: TaskDetailData = {
+      ...draggedCard,
+      status: targetColStatus,
+      progress_percent:
+        targetColStatus === 'concluido'
+          ? 100
+          : targetColStatus === 'a_iniciar'
+            ? 0
+            : draggedCard.progress_percent || 0,
+    }
+
+    colCards.splice(insertIndex, 0, updatedDraggedCard)
+
+    // Atribui novo kanban_order sequencial aos cartões desta coluna
+    const kanbanUpdates: { id: string; kanban_order: number; status?: string }[] = []
+    const updatedMap = new Map<string, { kanban_order: number; status?: string }>()
+
+    colCards.forEach((c, idx) => {
+      const newOrder = (idx + 1) * 10
+      const statusUpdate = c.id === draggedId && isStatusChange ? targetColStatus : undefined
+      updatedMap.set(c.id, { kanban_order: newOrder, status: statusUpdate })
+      kanbanUpdates.push({
+        id: c.id,
+        kanban_order: newOrder,
+        status: statusUpdate,
+      })
+    })
+
+    // Atualização otimista do estado stages (mantendo stage_order 100% intacto)
+    setStages((prev) =>
+      prev.map((s) => {
+        const update = updatedMap.get(s.id)
+        if (update) {
+          return {
+            ...s,
+            kanban_order: update.kanban_order,
+            status: update.status || s.status,
+            progress_percent:
+              update.status === 'concluido'
+                ? 100
+                : update.status === 'a_iniciar'
+                  ? 0
+                  : s.progress_percent,
+          }
+        }
+        return s
+      })
+    )
+
+    if (selectedTask && selectedTask.id === draggedId && isStatusChange) {
+      setSelectedTask((prev) =>
+        prev
+          ? {
+            ...prev,
+            status: targetColStatus,
+            progress_percent:
+              targetColStatus === 'concluido'
+                ? 100
+                : targetColStatus === 'a_iniciar'
+                  ? 0
+                  : prev.progress_percent,
+          }
+          : null
+      )
+    }
+
+    // Persistência independente no backend
+    const res = await reorderKanbanStagesAction(projectId, kanbanUpdates)
+    if (res?.error) {
+      console.error('Erro ao salvar ordenação no Kanban:', res.error)
+    }
   }
 
   const handleKanbanColumnDrop = async (
     e: React.DragEvent,
-    targetStatus: string
+    targetColStatus: string
   ) => {
     e.preventDefault()
-    if (!draggingKanbanId) return
 
-    const stageId = draggingKanbanId
+    const draggedId = draggingKanbanId
     setDraggingKanbanId(null)
+    setDragOverKanbanCardId(null)
+    setDropKanbanPosition(null)
     setActiveDropCol(null)
 
-    const stage = stages.find((s) => s.id === stageId)
-    if (!stage || stage.status === targetStatus) return
+    if (!draggedId) return
 
-    // Mantém a ordenação definida na lista e apenas altera a etapa
-    await handleStatusChange(stageId, targetStatus)
+    const draggedCard = stages.find((s) => s.id === draggedId)
+    if (!draggedCard) return
+
+    const isStatusChange = draggedCard.status !== targetColStatus
+
+    if (isStatusChange) {
+      const targetStageCfg = workflowStages.find((s) => s.id === targetColStatus)
+      if (targetStageCfg?.is_final_stage) {
+        const check = canMoveToFinalStage(draggedCard, workflowStages)
+        if (!check.allowed) {
+          await showAlert({
+            title: 'Etapa Conclusiva Bloqueada',
+            message: 'Esta tarefa não pode ser movida para a etapa finalizada:',
+            description: check.reasons.join('\n'),
+            variant: 'warning',
+          })
+          return
+        }
+      }
+
+      const isApprovedStage = Boolean(
+        targetStageCfg?.is_approved_stage ||
+        targetStageCfg?.name?.toLowerCase().includes('aprovad') ||
+        targetColStatus === 'concluido'
+      )
+
+      if (isApprovedStage) {
+        const stageName = draggedCard.name || 'esta tarefa'
+        const targetStageName = targetStageCfg?.name || 'Aprovado'
+        const confirmed = await confirm({
+          title: 'Confirmar Aprovação da Tarefa',
+          message: `Deseja marcar a tarefa "${stageName}" como "${targetStageName}"?`,
+          description:
+            'Atenção: Ao realizar esta ação manualmente, você será registrado como o responsável pela aprovação no histórico de auditoria do projeto.',
+          confirmText: 'Confirmar e Aprovar',
+          cancelText: 'Cancelar',
+          variant: 'primary',
+        })
+        if (!confirmed) return
+      }
+    }
+
+    // Tarefas existentes na coluna de destino (sem a tarefa arrastada)
+    const colCards = stages
+      .filter((s) => s.status === targetColStatus && s.id !== draggedId)
+      .sort(
+        (a, b) =>
+          (a.kanban_order ?? a.stage_order ?? 0) - (b.kanban_order ?? b.stage_order ?? 0) ||
+          a.stage_order - b.stage_order
+      )
+
+    // Insere no final da coluna
+    const updatedDraggedCard: TaskDetailData = {
+      ...draggedCard,
+      status: targetColStatus,
+      progress_percent:
+        targetColStatus === 'concluido'
+          ? 100
+          : targetColStatus === 'a_iniciar'
+            ? 0
+            : draggedCard.progress_percent || 0,
+    }
+    colCards.push(updatedDraggedCard)
+
+    const kanbanUpdates: { id: string; kanban_order: number; status?: string }[] = []
+    const updatedMap = new Map<string, { kanban_order: number; status?: string }>()
+
+    colCards.forEach((c, idx) => {
+      const newOrder = (idx + 1) * 10
+      const statusUpdate = c.id === draggedId && isStatusChange ? targetColStatus : undefined
+      updatedMap.set(c.id, { kanban_order: newOrder, status: statusUpdate })
+      kanbanUpdates.push({
+        id: c.id,
+        kanban_order: newOrder,
+        status: statusUpdate,
+      })
+    })
+
+    // Atualização otimista
+    setStages((prev) =>
+      prev.map((s) => {
+        const update = updatedMap.get(s.id)
+        if (update) {
+          return {
+            ...s,
+            kanban_order: update.kanban_order,
+            status: update.status || s.status,
+            progress_percent:
+              update.status === 'concluido'
+                ? 100
+                : update.status === 'a_iniciar'
+                  ? 0
+                  : s.progress_percent,
+          }
+        }
+        return s
+      })
+    )
+
+    if (selectedTask && selectedTask.id === draggedId && isStatusChange) {
+      setSelectedTask((prev) =>
+        prev
+          ? {
+            ...prev,
+            status: targetColStatus,
+            progress_percent:
+              targetColStatus === 'concluido'
+                ? 100
+                : targetColStatus === 'a_iniciar'
+                  ? 0
+                  : prev.progress_percent,
+          }
+          : null
+      )
+    }
+
+    const res = await reorderKanbanStagesAction(projectId, kanbanUpdates)
+    if (res?.error) {
+      console.error('Erro ao salvar ordenação no Kanban:', res.error)
+    }
   }
 
   // ==========================================
@@ -1600,21 +1878,6 @@ export default function ProjectHubClient({
               </div>
             )}
 
-            {/* Saúde Geral do Cronograma */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold">
-              {timelinePanorama.healthStatus === 'concluido' && (
-                <span className="text-emerald-700 flex items-center gap-1">🏆 100% Concluído</span>
-              )}
-              {timelinePanorama.healthStatus === 'atrasado' && (
-                <span className="text-rose-700 flex items-center gap-1">🚨 Prazos Críticos</span>
-              )}
-              {timelinePanorama.healthStatus === 'atencao' && (
-                <span className="text-amber-700 flex items-center gap-1">⚠️ Atenção aos Prazos</span>
-              )}
-              {timelinePanorama.healthStatus === 'em_dia' && (
-                <span className="text-blue-700 flex items-center gap-1">✨ Cronograma em Dia</span>
-              )}
-            </div>
           </div>
         </div>
       </div>
@@ -1622,8 +1885,30 @@ export default function ProjectHubClient({
       {/* Navigation Views Switcher + Actions */}
       {/* Navigation Views Switcher + Search + Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Seletor de Visões */}
+        {/* Esquerda: Campo de Busca Rápida por Código ou Nome */}
+        <div className="relative w-full sm:w-64 md:w-72 shrink-0">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar código ou nome (ex: 1/2026)..."
+            className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 transition-all outline-none"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 cursor-pointer"
+              title="Limpar busca"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Centro: Seletor de Visões */}
+        <div className="flex items-center justify-start lg:justify-center lg:flex-1">
           <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200">
             <button
               onClick={() => handleSelectView('lista')}
@@ -1656,31 +1941,9 @@ export default function ProjectHubClient({
               Gantt
             </button>
           </div>
-
-          {/* Campo de Busca Rápida por Código ou Nome */}
-          <div className="relative w-full sm:w-64 md:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar código ou nome (ex: 1/2026)..."
-              className="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 hover:border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 transition-all outline-none"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 cursor-pointer"
-                title="Limpar busca"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
           {/* Botão de Histórico de Tarefas Excluídas */}
           <button
             type="button"
@@ -1713,10 +1976,6 @@ export default function ProjectHubClient({
               )}
             </button>
           )}
-
-          <span className="hidden xl:flex text-xs text-slate-500 font-medium items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Arraste para reordenar
-          </span>
 
           <button
             onClick={() => handleOpenCreateModal()}
@@ -1781,14 +2040,14 @@ export default function ProjectHubClient({
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200 uppercase tracking-wider text-xs">
                 <tr>
-                  <th className="py-4 px-3 w-28 text-left pl-3.5">Código</th>
-                  <th className="py-4 px-4">Nome da Tarefa</th>
-                  <th className="py-4 px-4">Responsável</th>
-                  <th className="py-4 px-4">Datas (DD/MM/AAAA)</th>
-                  <th className="py-4 px-4">Tempo / Prazo</th>
-                  <th className="py-4 px-4">Checklist / Anexos</th>
-                  <th className="py-4 px-4">Status</th>
-                  <th className="py-4 px-4 text-right">Ações</th>
+                  <th className="py-4 px-3 w-28 text-center">Código</th>
+                  <th className="py-4 px-4 text-center">Nome da Tarefa</th>
+                  <th className="py-4 px-4 text-center">Responsável</th>
+                  <th className="py-4 px-4 text-center">Datas</th>
+                  <th className="py-4 px-4 text-center">Tempo / Prazo</th>
+                  <th className="py-4 px-4 text-center">Checklist / Anexos</th>
+                  <th className="py-4 px-4 text-center">Status</th>
+                  <th className="py-4 px-4 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 font-medium text-sm">
@@ -1826,302 +2085,270 @@ export default function ProjectHubClient({
                         onDragLeave={handleListDragLeave}
                         onDrop={(e) => item.level === 0 && handleListDrop(e, st.id)}
                         onClick={() => setSelectedTask(st)}
-                        className={`transition-all cursor-pointer group select-none relative ${
-                          item.level > 0
-                            ? 'bg-slate-50/50 hover:bg-blue-50/50 border-l-3 border-l-indigo-400'
-                            : 'hover:bg-blue-50/40'
-                        } ${isDragging ? 'opacity-30 bg-slate-100' : ''
-                        } ${isOver && dropListPosition === 'before' ? 'border-t-2 border-t-blue-500' : ''
-                        } ${isOver && dropListPosition === 'after' ? 'border-b-2 border-b-blue-500' : ''
-                        }`}
+                        className={`transition-all cursor-pointer group select-none relative ${item.level > 0
+                          ? 'bg-slate-50/50 hover:bg-blue-50/50 border-l-3 border-l-indigo-400'
+                          : 'hover:bg-blue-50/40'
+                          } ${isDragging ? 'opacity-30 bg-slate-100' : ''
+                          } ${isOver && dropListPosition === 'before' ? 'border-t-2 border-t-blue-500' : ''
+                          } ${isOver && dropListPosition === 'after' ? 'border-b-2 border-b-blue-500' : ''
+                          }`}
                       >
-                      {/* Drag Handle & Código */}
-                      <td className="py-4 px-3 text-left pl-3.5" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center gap-1.5 text-slate-400">
-                          {/* Reordenar via Drag só para tarefas raiz */}
-                          {item.level === 0 ? (
-                            <span title="Arraste para reordenar" className="inline-flex items-center shrink-0">
-                              <GripVertical className="w-4 h-4 cursor-grab active:cursor-grabbing text-slate-300 group-hover:text-blue-500 transition-colors" />
+                        {/* Drag Handle & Código */}
+                        <td className="py-4 px-3 text-left pl-3.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-1.5 text-slate-400">
+                            {/* Reordenar via Drag só para tarefas raiz */}
+                            {item.level === 0 ? (
+                              <span title="Arraste para reordenar" className="inline-flex items-center shrink-0">
+                                <GripVertical className="w-4 h-4 cursor-grab active:cursor-grabbing text-slate-300 group-hover:text-blue-500 transition-colors" />
+                              </span>
+                            ) : (
+                              <span className="w-4 shrink-0" />
+                            )}
+
+                            {/* Botão de Expandir / Recolher Subtarefas */}
+                            {item.hasChildren ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleExpandStage(st.id)
+                                }}
+                                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer shrink-0"
+                                title={item.isExpanded ? 'Recolher subtarefas' : 'Expandir subtarefas'}
+                              >
+                                {item.isExpanded ? (
+                                  <ChevronDown className="w-4 h-4 text-blue-600" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4 text-slate-500" />
+                                )}
+                              </button>
+                            ) : (
+                              <span className="w-4 shrink-0" />
+                            )}
+
+                            <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50/80 border border-blue-200/80 px-2 py-0.5 rounded-md shadow-2xs shrink-0 whitespace-nowrap">
+                              {st.code || `#${st.stage_order}`}
                             </span>
-                          ) : (
-                            <span className="w-4 shrink-0" />
+
+                            {item.level === 0 && (
+                              <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity ml-0.5">
+                                <button
+                                  type="button"
+                                  disabled={index === 0}
+                                  onClick={() => handleMoveStage(st.id, 'up')}
+                                  className="text-slate-400 hover:text-blue-600 disabled:opacity-20 cursor-pointer"
+                                  title="Subir posição"
+                                >
+                                  <ChevronUp className="w-3 h-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={index === stages.length - 1}
+                                  onClick={() => handleMoveStage(st.id, 'down')}
+                                  className="text-slate-400 hover:text-blue-600 disabled:opacity-20 cursor-pointer"
+                                  title="Descer posição"
+                                >
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+
+                        {/* Nome da Tarefa com recuo hierárquico e guias visuais */}
+                        <td
+                          className="py-4 px-4"
+                          style={{ paddingLeft: item.level > 0 ? `${16 + item.level * 28}px` : '16px' }}
+                        >
+                          {item.level > 0 && (
+                            <div className="flex items-center gap-1.5 text-indigo-600 mb-1 font-medium text-[11px]">
+                              <span className="font-mono text-indigo-300 select-none">└──</span>
+                              <GitFork className="w-3 h-3 rotate-180 text-indigo-500 shrink-0" />
+                              <span className="text-slate-500 font-normal">subtarefa de</span>
+                              <span className="font-semibold text-slate-700 max-w-[160px] truncate">
+                                {item.ancestors[item.ancestors.length - 1]?.name}
+                              </span>
+                            </div>
                           )}
 
-                          {/* Botão de Expandir / Recolher Subtarefas */}
-                          {item.hasChildren ? (
+                          <div className={`text-sm flex items-center gap-2 group-hover:text-blue-600 transition-colors ${item.level === 0 ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'
+                            }`}>
+                            {st.name}
+                            {st.is_locked_for_client && (
+                              <span className="p-1 rounded bg-slate-100 text-slate-500" title="Aprovado e bloqueado para o cliente">
+                                <Lock className="w-3 h-3" />
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Badges de Subtarefas */}
+                          {item.hasChildren && (
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 toggleExpandStage(st.id)
                               }}
-                              className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors cursor-pointer shrink-0"
-                              title={item.isExpanded ? 'Recolher subtarefas' : 'Expandir subtarefas'}
-                            >
-                              {item.isExpanded ? (
-                                <ChevronDown className="w-4 h-4 text-blue-600" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4 text-slate-500" />
-                              )}
-                            </button>
-                          ) : (
-                            <span className="w-4 shrink-0" />
-                          )}
-
-                          <span className="font-mono text-xs font-bold text-blue-700 bg-blue-50/80 border border-blue-200/80 px-2 py-0.5 rounded-md shadow-2xs shrink-0 whitespace-nowrap">
-                            {st.code || `#${st.stage_order}`}
-                          </span>
-
-                          {item.level === 0 && (
-                            <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity ml-0.5">
-                              <button
-                                type="button"
-                                disabled={index === 0}
-                                onClick={() => handleMoveStage(st.id, 'up')}
-                                className="text-slate-400 hover:text-blue-600 disabled:opacity-20 cursor-pointer"
-                                title="Subir posição"
-                              >
-                                <ChevronUp className="w-3 h-3" />
-                              </button>
-                              <button
-                                type="button"
-                                disabled={index === stages.length - 1}
-                                onClick={() => handleMoveStage(st.id, 'down')}
-                                className="text-slate-400 hover:text-blue-600 disabled:opacity-20 cursor-pointer"
-                                title="Descer posição"
-                              >
-                                <ChevronDown className="w-3 h-3" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-
-
-                      {/* Nome da Tarefa com recuo hierárquico e guias visuais */}
-                      <td
-                        className="py-4 px-4"
-                        style={{ paddingLeft: item.level > 0 ? `${16 + item.level * 28}px` : '16px' }}
-                      >
-                        {item.level > 0 && (
-                          <div className="flex items-center gap-1.5 text-indigo-600 mb-1 font-medium text-[11px]">
-                            <span className="font-mono text-indigo-300 select-none">└──</span>
-                            <GitFork className="w-3 h-3 rotate-180 text-indigo-500 shrink-0" />
-                            <span className="text-slate-500 font-normal">subtarefa de</span>
-                            <span className="font-semibold text-slate-700 max-w-[160px] truncate">
-                              {item.ancestors[item.ancestors.length - 1]?.name}
-                            </span>
-                          </div>
-                        )}
-
-                        <div className={`text-sm flex items-center gap-2 group-hover:text-blue-600 transition-colors ${
-                          item.level === 0 ? 'font-bold text-slate-900' : 'font-semibold text-slate-800'
-                        }`}>
-                          {st.name}
-                          {st.is_locked_for_client && (
-                            <span className="p-1 rounded bg-slate-100 text-slate-500" title="Aprovado e bloqueado para o cliente">
-                              <Lock className="w-3 h-3" />
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Badges de Subtarefas */}
-                        {item.hasChildren && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleExpandStage(st.id)
-                            }}
-                            className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md border mt-1 transition-colors cursor-pointer ${
-                              item.isExpanded
+                              className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md border mt-1 transition-colors cursor-pointer ${item.isExpanded
                                 ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
                                 : 'bg-slate-100 text-slate-700 border-slate-200/80 hover:bg-slate-200/70'
-                            }`}
-                            title={item.isExpanded ? 'Clique para recolher subtarefas' : 'Clique para ver subtarefas'}
-                          >
-                            <ListTree className="w-3 h-3 text-blue-600 shrink-0" />
-                            <span>↳ {item.completedChildrenCount}/{item.childrenCount} subtarefas</span>
-                            {item.isExpanded ? (
-                              <ChevronDown className="w-3 h-3 text-blue-500" />
-                            ) : (
-                              <ChevronRight className="w-3 h-3 text-slate-400" />
+                                }`}
+                              title={item.isExpanded ? 'Clique para recolher subtarefas' : 'Clique para ver subtarefas'}
+                            >
+                              <ListTree className="w-3 h-3 text-blue-600 shrink-0" />
+                              <span>↳ {item.completedChildrenCount}/{item.childrenCount} subtarefas</span>
+                              {item.isExpanded ? (
+                                <ChevronDown className="w-3 h-3 text-blue-500" />
+                              ) : (
+                                <ChevronRight className="w-3 h-3 text-slate-400" />
+                              )}
+                            </button>
+                          )}
+
+                          {st.description && (
+                            <p className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">{st.description}</p>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-4 text-slate-600">
+                          {assignedMember ? (
+                            <span className="inline-flex items-center gap-2 font-semibold text-slate-800 text-sm">
+                              {assignedMember.avatarUrl ? (
+                                <img
+                                  src={assignedMember.avatarUrl}
+                                  alt={assignedMember.name}
+                                  className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                                />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">
+                                  {assignedMember.name.slice(0, 1).toUpperCase()}
+                                </div>
+                              )}
+                              <span className="truncate max-w-[150px]">{assignedMember.name}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic text-sm">Não atribuído</span>
+                          )}
+                        </td>
+
+                        {/* Datas Formatadas no Padrão Brasileiro DD/MM/AAAA */}
+                        <td className="py-4 px-4 font-mono text-xs">
+                          {st.start_date || st.due_date ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-medium">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                              {formatDateRangeBR(st.start_date, st.due_date)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic">Sem datas</span>
+                          )}
+                        </td>
+
+                        {/* Coluna Tempo / Prazo */}
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border ${taskTimeline.badgeBg} ${taskTimeline.badgeColor} ${taskTimeline.badgeBorder} w-fit`}
+                            >
+                              {taskTimeline.type === 'extrapolou' && <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />}
+                              {taskTimeline.type === 'hoje' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                              {taskTimeline.type === 'amanha' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                              {taskTimeline.type === 'curto' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                              {taskTimeline.type === 'longo' && <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
+                              {taskTimeline.type === 'concluido' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                              {taskTimeline.shortLabel}
+                            </span>
+                            {taskTimeline.durationDays != null && (
+                              <span className="text-xs text-slate-500 font-medium">
+                                ⏱️ {taskTimeline.durationDays} {taskTimeline.durationDays === 1 ? 'dia' : 'dias'}
+                              </span>
                             )}
-                          </button>
-                        )}
+                          </div>
+                        </td>
 
-                        {st.description && (
-                          <p className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">{st.description}</p>
-                        )}
-                      </td>
-
-                      <td className="py-4 px-4 text-slate-600">
-                        {assignedMember ? (
-                          <span className="inline-flex items-center gap-2 font-semibold text-slate-800 text-sm">
-                            {assignedMember.avatarUrl ? (
-                              <img
-                                src={assignedMember.avatarUrl}
-                                alt={assignedMember.name}
-                                className="w-6 h-6 rounded-full object-cover border border-slate-200"
-                              />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">
-                                {assignedMember.name.slice(0, 1).toUpperCase()}
-                              </div>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3 text-slate-500 text-sm">
+                            {checklistCount > 0 && (
+                              <span className="flex items-center gap-1 text-slate-700 font-medium">
+                                <ListTodo className="w-4 h-4 text-blue-500" /> {checklistCount}
+                              </span>
                             )}
-                            <span className="truncate max-w-[150px]">{assignedMember.name}</span>
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic text-sm">Não atribuído</span>
-                        )}
-                      </td>
+                            {attachmentsCount > 0 && (
+                              <span className="flex items-center gap-1 text-slate-700 font-medium">
+                                <Paperclip className="w-4 h-4 text-indigo-500" /> {attachmentsCount}
+                              </span>
+                            )}
+                            {commentsCount > 0 && (
+                              <span className="flex items-center gap-1 text-slate-700 font-medium">
+                                <MessageSquare className="w-4 h-4 text-emerald-500" /> {commentsCount}
+                              </span>
+                            )}
+                            {checklistCount === 0 && attachmentsCount === 0 && commentsCount === 0 && (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </div>
+                        </td>
 
-                      {/* Datas Formatadas no Padrão Brasileiro DD/MM/AAAA */}
-                      <td className="py-4 px-4 font-mono text-xs">
-                        {st.start_date || st.due_date ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-medium">
-                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                            {formatDateRangeBR(st.start_date, st.due_date)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic">Sem datas</span>
-                        )}
-                      </td>
+                        <td className="py-4 px-4">{getStatusBadge(st)}</td>
 
-                      {/* Coluna Tempo / Prazo */}
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col gap-1">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold border ${taskTimeline.badgeBg} ${taskTimeline.badgeColor} ${taskTimeline.badgeBorder} w-fit`}
-                          >
-                            {taskTimeline.type === 'extrapolou' && <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />}
-                            {taskTimeline.type === 'hoje' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
-                            {taskTimeline.type === 'amanha' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
-                            {taskTimeline.type === 'curto' && <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
-                            {taskTimeline.type === 'longo' && <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
-                            {taskTimeline.type === 'concluido' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                            {taskTimeline.shortLabel}
-                          </span>
-                          {taskTimeline.durationDays != null && (
-                            <span className="text-xs text-slate-500 font-medium">
-                              ⏱️ {taskTimeline.durationDays} {taskTimeline.durationDays === 1 ? 'dia' : 'dias'}
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                        <td className="py-4 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Criar Subtarefa Rápida para esta Tarefa */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenCreateModal(undefined, st.id)}
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                              title={`Adicionar subtarefa a "${st.name}"`}
+                            >
+                              <GitFork className="w-4 h-4 rotate-180" />
+                            </button>
 
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3 text-slate-500 text-sm">
-                          {checklistCount > 0 && (
-                            <span className="flex items-center gap-1 text-slate-700 font-medium">
-                              <ListTodo className="w-4 h-4 text-blue-500" /> {checklistCount}
-                            </span>
-                          )}
-                          {attachmentsCount > 0 && (
-                            <span className="flex items-center gap-1 text-slate-700 font-medium">
-                              <Paperclip className="w-4 h-4 text-indigo-500" /> {attachmentsCount}
-                            </span>
-                          )}
-                          {commentsCount > 0 && (
-                            <span className="flex items-center gap-1 text-slate-700 font-medium">
-                              <MessageSquare className="w-4 h-4 text-emerald-500" /> {commentsCount}
-                            </span>
-                          )}
-                          {checklistCount === 0 && attachmentsCount === 0 && commentsCount === 0 && (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4">{getStatusBadge(st)}</td>
-
-                      <td className="py-4 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Criar Subtarefa Rápida para esta Tarefa */}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenCreateModal(undefined, st.id)}
-                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-                            title={`Adicionar subtarefa a "${st.name}"`}
-                          >
-                            <GitFork className="w-4 h-4 rotate-180" />
-                          </button>
-
-                          {/* Indicador interativo de Exigência de Aprovação do Cliente no Portal */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleToggleClientApproval(st.id, !st.is_client_approval_required)
-                            }
-                            disabled={togglingApprovalStageId === st.id}
-                            className={`py-1.5 px-2.5 rounded-lg border transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs font-bold ${
-                              st.is_client_approval_required
-                                ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 shadow-2xs'
-                                : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-slate-600 hover:bg-slate-100 opacity-60 hover:opacity-100'
-                            }`}
-                            title={
-                              st.is_client_approval_required
-                                ? 'Exige aprovação do cliente no Portal (Ativo - clique para desativar)'
-                                : 'Não exige aprovação do cliente no Portal (Inativo - clique para ativar)'
-                            }
-                          >
-                            <ShieldCheck
-                              className={`w-4 h-4 ${
-                                st.is_client_approval_required
-                                  ? 'text-blue-600'
-                                  : 'text-slate-400'
-                              }`}
-                            />
-                            <span className="hidden xl:inline text-xs">
-                              {st.is_client_approval_required ? 'Aprovação Cliente' : 'Interno'}
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => setSelectedTask(st)}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                            title="Editar / Ver detalhes da tarefa"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={loadingStageId === st.id}
-                            onClick={() => onRequestDeleteStage(st)}
-                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            title="Excluir tarefa"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-
-                      {/* Decisão 2: Linha rápida para adicionar mais uma subtarefa ao final deste grupo expandido */}
-                      {item.level > 0 && item.isLastChild && (
-                        <tr key={`add-subtask-${st.id}`} className="bg-slate-50/40 border-b border-slate-100/80">
-                          <td
-                            colSpan={8}
-                            style={{ paddingLeft: `${16 + item.level * 28}px` }}
-                            className="py-2.5 pr-4"
-                          >
+                            {/* Indicador interativo de Exigência de Aprovação do Cliente no Portal */}
                             <button
                               type="button"
                               onClick={() =>
-                                handleOpenCreateModal(
-                                  undefined,
-                                  item.ancestors[item.ancestors.length - 1]?.id
-                                )
+                                handleToggleClientApproval(st.id, !st.is_client_approval_required)
                               }
-                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50/80 px-3 py-1.5 rounded-lg transition-colors cursor-pointer border border-dashed border-indigo-200 hover:border-indigo-400"
+                              disabled={togglingApprovalStageId === st.id}
+                              className={`p-2 rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${st.is_client_approval_required
+                                ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 shadow-2xs'
+                                : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-slate-600 hover:bg-slate-100 opacity-60 hover:opacity-100'
+                                }`}
+                              title={
+                                st.is_client_approval_required
+                                  ? 'Exige aprovação do cliente no Portal (Ativo - clique para desativar)'
+                                  : 'Não exige aprovação do cliente no Portal (Inativo - clique para ativar)'
+                              }
                             >
-                              <Plus className="w-3.5 h-3.5" /> Adicionar subtarefa a &quot;{item.ancestors[item.ancestors.length - 1]?.name}&quot;
+                              <ShieldCheck
+                                className={`w-4 h-4 ${st.is_client_approval_required
+                                  ? 'text-blue-600'
+                                  : 'text-slate-400'
+                                  }`}
+                              />
                             </button>
-                          </td>
-                        </tr>
-                      )}
+
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTask(st)}
+                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                              title="Editar / Ver detalhes da tarefa"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={loadingStageId === st.id}
+                              onClick={() => onRequestDeleteStage(st)}
+                              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Excluir tarefa"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     </Fragment>
                   )
                 })}
@@ -2178,9 +2405,8 @@ export default function ProjectHubClient({
             onMouseMove={handleKanbanMouseMove}
             onMouseUp={handleKanbanMouseUp}
             onMouseLeave={handleKanbanMouseUp}
-            className={`flex items-start gap-4 overflow-x-auto pb-4 select-none ${
-              isKanbanDraggingState ? 'cursor-grabbing' : ''
-            }`}
+            className={`flex items-start gap-4 overflow-x-auto pb-4 select-none ${isKanbanDraggingState ? 'cursor-grabbing' : ''
+              }`}
           >
             {workflowStages.map((col) => {
               const columnStages = stages
@@ -2191,7 +2417,11 @@ export default function ProjectHubClient({
                   const nameMatch = s.name.toLowerCase().includes(searchLower)
                   return codeMatch || nameMatch
                 })
-                .sort((a, b) => a.stage_order - b.stage_order)
+                .sort(
+                  (a, b) =>
+                    (a.kanban_order ?? a.stage_order ?? 0) - (b.kanban_order ?? b.stage_order ?? 0) ||
+                    a.stage_order - b.stage_order
+                )
               const isColActive = activeDropCol === col.id
               const colStyle = STAGE_COLOR_CONFIG[col.color] || STAGE_COLOR_CONFIG.blue
               const isEditingThisCol = editingColId === col.id
@@ -2202,11 +2432,10 @@ export default function ProjectHubClient({
                   onDragOver={(e) => handleKanbanColumnDragOver(e, col.id)}
                   onDragLeave={handleKanbanColumnDragLeave}
                   onDrop={(e) => handleKanbanColumnDrop(e, col.id)}
-                  className={`w-72 sm:w-80 shrink-0 p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
-                    isColActive
-                      ? 'bg-blue-50/90 border-blue-400 ring-2 ring-blue-500/20 shadow-sm'
-                      : `${colStyle.kanbanBg} ${colStyle.kanbanBorder}`
-                  }`}
+                  className={`w-72 sm:w-80 shrink-0 p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${isColActive
+                    ? 'bg-blue-50/90 border-blue-400 ring-2 ring-blue-500/20 shadow-sm'
+                    : `${colStyle.kanbanBg} ${colStyle.kanbanBorder}`
+                    }`}
                 >
                   <div className="space-y-3">
                     {/* Column Header */}
@@ -2235,9 +2464,8 @@ export default function ProjectHubClient({
                                     type="button"
                                     onClick={() => setEditingColColor(c)}
                                     title={cCfg.name}
-                                    className={`w-4 h-4 rounded-md flex items-center justify-center cursor-pointer transition-all ${
-                                      isSel ? 'ring-2 ring-blue-600 scale-110' : 'opacity-70 hover:opacity-100'
-                                    }`}
+                                    className={`w-4 h-4 rounded-md flex items-center justify-center cursor-pointer transition-all ${isSel ? 'ring-2 ring-blue-600 scale-110' : 'opacity-70 hover:opacity-100'
+                                      }`}
                                     style={{ backgroundColor: cCfg.previewHex }}
                                   />
                                 );
@@ -2331,23 +2559,35 @@ export default function ProjectHubClient({
                       {columnStages.map((st) => {
                         const assignedMember = members.find((m) => m.id === st.assigned_to)
                         const isDragging = draggingKanbanId === st.id
+                        const isOverCard = dragOverKanbanCardId === st.id && !isDragging
 
                         return (
                           <div
                             key={st.id}
                             draggable={true}
                             onDragStart={(e) => handleKanbanCardDragStart(e, st.id)}
-                            onDragOver={(e) => handleKanbanColumnDragOver(e, col.id)}
+                            onDragOver={(e) => handleKanbanCardDragOver(e, st.id, col.id)}
+                            onDragLeave={(e) => handleKanbanCardDragLeave(e, st.id)}
                             onDrop={(e) => handleKanbanCardDrop(e, st, col.id)}
                             onClick={() => {
                               if (!hasDraggedKanbanBoardRef.current) {
                                 setSelectedTask(st)
                               }
                             }}
-                            className={`bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-2.5 hover:shadow-md hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing group relative ${
-                              isDragging ? 'opacity-30 border-dashed border-blue-400' : ''
-                            }`}
+                            className={`bg-white p-4 rounded-xl border shadow-xs space-y-2.5 hover:shadow-md hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing group relative ${isDragging
+                              ? 'opacity-30 border-dashed border-blue-400'
+                              : isOverCard
+                                ? 'border-blue-400 shadow-sm'
+                                : 'border-slate-200'
+                              }`}
                           >
+                            {/* Linha indicadora de drop acima ou abaixo do card */}
+                            {isOverCard && dropKanbanPosition === 'before' && (
+                              <div className="absolute -top-1.5 left-2 right-2 h-1 bg-blue-600 rounded-full shadow-sm z-20 pointer-events-none animate-in fade-in zoom-in-95 duration-100" />
+                            )}
+                            {isOverCard && dropKanbanPosition === 'after' && (
+                              <div className="absolute -bottom-1.5 left-2 right-2 h-1 bg-blue-600 rounded-full shadow-sm z-20 pointer-events-none animate-in fade-in zoom-in-95 duration-100" />
+                            )}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1 text-slate-400">
                                 <GripVertical className="w-4 h-4 text-slate-300 group-hover:text-blue-500" />
@@ -2363,11 +2603,10 @@ export default function ProjectHubClient({
                                     handleToggleClientApproval(st.id, !st.is_client_approval_required)
                                   }}
                                   disabled={togglingApprovalStageId === st.id}
-                                  className={`p-1 rounded-md transition-all cursor-pointer ${
-                                    st.is_client_approval_required
-                                      ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                                      : 'text-slate-300 hover:text-slate-500 hover:bg-slate-100 opacity-60 hover:opacity-100'
-                                  }`}
+                                  className={`p-1 rounded-md transition-all cursor-pointer ${st.is_client_approval_required
+                                    ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                                    : 'text-slate-300 hover:text-slate-500 hover:bg-slate-100 opacity-60 hover:opacity-100'
+                                    }`}
                                   title={
                                     st.is_client_approval_required
                                       ? 'Exige aprovação do cliente no Portal (Ativo - clique para desativar)'
@@ -2484,13 +2723,12 @@ export default function ProjectHubClient({
                                   {/* Mini Barra de Progresso da Tarefa */}
                                   <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                     <div
-                                      className={`h-full rounded-full transition-all duration-300 ${
-                                        taskProgress === 100
-                                          ? 'bg-emerald-500'
-                                          : taskProgress > 0
+                                      className={`h-full rounded-full transition-all duration-300 ${taskProgress === 100
+                                        ? 'bg-emerald-500'
+                                        : taskProgress > 0
                                           ? 'bg-blue-600'
                                           : 'bg-transparent'
-                                      }`}
+                                        }`}
                                       style={{ width: `${taskProgress}%` }}
                                     />
                                   </div>
@@ -2520,104 +2758,103 @@ export default function ProjectHubClient({
                     </div>
                   </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleOpenCreateModal(col.id)}
-                  className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 text-sm font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2"
-                >
-                  <Plus className="w-4 h-4" /> Adicionar Tarefa
-                </button>
-              </div>
-            )
-          })}
-
-          {/* Card / Botão de Adicionar Nova Etapa ao Kanban */}
-          <div className="w-72 sm:w-80 shrink-0">
-            {isAddingCol ? (
-              <div className="p-4 rounded-2xl bg-white border-2 border-blue-500/30 shadow-md space-y-3 animate-in fade-in zoom-in-95">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                  <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                    <Plus className="w-4 h-4 text-blue-600" /> Nova Etapa de Fluxo
-                  </span>
                   <button
                     type="button"
-                    onClick={() => setIsAddingCol(false)}
-                    className="text-slate-400 hover:text-slate-600 p-1 rounded cursor-pointer"
+                    onClick={() => handleOpenCreateModal(col.id)}
+                    className="w-full py-2.5 px-3 rounded-xl border border-dashed border-slate-300 text-slate-500 hover:text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 text-sm font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2"
                   >
-                    <X className="w-4 h-4" />
+                    <Plus className="w-4 h-4" /> Adicionar Tarefa
                   </button>
                 </div>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Nome da etapa..."
-                  value={newColName}
-                  onChange={(e) => setNewColName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCreateKanbanCol()
-                    if (e.key === 'Escape') setIsAddingCol(false)
-                  }}
-                  className="w-full text-sm font-semibold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none"
-                />
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                    Cor da Etapa
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {COLOR_OPTIONS.map((c) => {
-                      const cfg = STAGE_COLOR_CONFIG[c]
-                      const isSel = newColColor === c
-                      return (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => setNewColColor(c)}
-                          title={cfg.name}
-                          className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer transition-all ${
-                            isSel ? 'ring-2 ring-blue-600 scale-110 shadow-xs' : 'opacity-70 hover:opacity-100'
-                          }`}
-                          style={{ backgroundColor: cfg.previewHex }}
-                        >
-                          {isSel && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                        </button>
-                      )
-                    })}
+              )
+            })}
+
+            {/* Card / Botão de Adicionar Nova Etapa ao Kanban */}
+            <div className="w-72 sm:w-80 shrink-0">
+              {isAddingCol ? (
+                <div className="p-4 rounded-2xl bg-white border-2 border-blue-500/30 shadow-md space-y-3 animate-in fade-in zoom-in-95">
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                    <span className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                      <Plus className="w-4 h-4 text-blue-600" /> Nova Etapa de Fluxo
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCol(false)}
+                      className="text-slate-400 hover:text-slate-600 p-1 rounded cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Nome da etapa..."
+                    value={newColName}
+                    onChange={(e) => setNewColName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCreateKanbanCol()
+                      if (e.key === 'Escape') setIsAddingCol(false)
+                    }}
+                    className="w-full text-sm font-semibold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none"
+                  />
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                      Cor da Etapa
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {COLOR_OPTIONS.map((c) => {
+                        const cfg = STAGE_COLOR_CONFIG[c]
+                        const isSel = newColColor === c
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setNewColColor(c)}
+                            title={cfg.name}
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center cursor-pointer transition-all ${isSel ? 'ring-2 ring-blue-600 scale-110 shadow-xs' : 'opacity-70 hover:opacity-100'
+                              }`}
+                            style={{ backgroundColor: cfg.previewHex }}
+                          >
+                            {isSel && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingCol(false)}
+                      className="px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCreateKanbanCol}
+                      disabled={!newColName.trim()}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
+                    >
+                      Criar Etapa
+                    </button>
                   </div>
                 </div>
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddingCol(false)}
-                    className="px-3 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCreateKanbanCol}
-                    disabled={!newColName.trim()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 cursor-pointer shadow-xs"
-                  >
-                    Criar Etapa
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAddingCol(true)
-                  setNewColName('')
-                  setNewColColor('blue')
-                }}
-                className="w-full py-4 px-4 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-400 bg-white/60 hover:bg-blue-50/50 text-slate-500 hover:text-blue-600 text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-              >
-                <Plus className="w-4 h-4" /> Adicionar Nova Etapa
-              </button>
-            )}
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingCol(true)
+                    setNewColName('')
+                    setNewColColor('blue')
+                  }}
+                  className="w-full py-4 px-4 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-400 bg-white/60 hover:bg-blue-50/50 text-slate-500 hover:text-blue-600 text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                >
+                  <Plus className="w-4 h-4" /> Adicionar Nova Etapa
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       {/* VIEW 3: GANTT DINÂMICO BASEADO EM DATAS REAIS */}
@@ -2675,8 +2912,8 @@ export default function ProjectHubClient({
                       type="button"
                       onClick={() => setGanttViewMode(mode)}
                       className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${isActive
-                          ? 'bg-white text-blue-600 shadow-2xs font-bold'
-                          : 'hover:text-slate-900'
+                        ? 'bg-white text-blue-600 shadow-2xs font-bold'
+                        : 'hover:text-slate-900'
                         }`}
                     >
                       {labels[mode]}
@@ -2725,11 +2962,10 @@ export default function ProjectHubClient({
                         }
                       }}
                       style={{ paddingLeft: item.level > 0 ? `${12 + item.level * 20}px` : '16px' }}
-                      className={`h-14 border-b border-slate-100 flex items-center justify-between gap-2.5 pr-4 transition-colors cursor-pointer group ${
-                        item.level > 0
-                          ? 'bg-slate-50/50 hover:bg-blue-50/50 border-l-3 border-l-indigo-400'
-                          : 'hover:bg-blue-50/40'
-                      }`}
+                      className={`h-14 border-b border-slate-100 flex items-center justify-between gap-2.5 pr-4 transition-colors cursor-pointer group ${item.level > 0
+                        ? 'bg-slate-50/50 hover:bg-blue-50/50 border-l-3 border-l-indigo-400'
+                        : 'hover:bg-blue-50/40'
+                        }`}
                     >
                       <div className="flex items-center gap-2 truncate min-w-0">
                         {/* Toggle chevron se possui subtarefas */}
@@ -2759,9 +2995,8 @@ export default function ProjectHubClient({
                           {st.code || `#${st.stage_order}`}
                         </span>
                         <div className="flex flex-col truncate min-w-0">
-                          <span className={`text-xs sm:text-sm truncate group-hover:text-blue-600 transition-colors flex items-center gap-1 ${
-                            item.level === 0 ? 'font-bold text-slate-800' : 'font-medium text-slate-700'
-                          }`}>
+                          <span className={`text-xs sm:text-sm truncate group-hover:text-blue-600 transition-colors flex items-center gap-1 ${item.level === 0 ? 'font-bold text-slate-800' : 'font-medium text-slate-700'
+                            }`}>
                             {st.name}
                           </span>
                           {item.hasChildren && (
@@ -2806,10 +3041,10 @@ export default function ProjectHubClient({
                       key={col.id}
                       style={{ width: `${col.widthPct}%` }}
                       className={`flex flex-col items-center justify-center py-2 px-1 text-center border-r border-slate-200/80 shrink-0 ${col.isToday
-                          ? 'bg-blue-50/90 font-bold text-blue-700'
-                          : col.isWeekend
-                            ? 'bg-slate-100/60 text-slate-400'
-                            : 'text-slate-600'
+                        ? 'bg-blue-50/90 font-bold text-blue-700'
+                        : col.isWeekend
+                          ? 'bg-slate-100/60 text-slate-400'
+                          : 'text-slate-600'
                         }`}
                     >
                       <span className="font-mono text-xs font-bold truncate leading-tight">{col.label}</span>
@@ -2882,9 +3117,8 @@ export default function ProjectHubClient({
                             setSelectedTask(st)
                           }
                         }}
-                        className={`h-14 border-b border-slate-100 relative flex items-center hover:bg-blue-50/40 transition-colors group cursor-pointer ${
-                          item.level > 0 ? 'bg-slate-50/40' : ''
-                        }`}
+                        className={`h-14 border-b border-slate-100 relative flex items-center hover:bg-blue-50/40 transition-colors group cursor-pointer ${item.level > 0 ? 'bg-slate-50/40' : ''
+                          }`}
                       >
                         {/* Linhas Verticais Discretas de Grade */}
                         <div className="absolute inset-0 pointer-events-none flex">
@@ -2893,10 +3127,10 @@ export default function ProjectHubClient({
                               key={col.id}
                               style={{ width: `${col.widthPct}%` }}
                               className={`h-full border-r border-slate-200/50 ${col.isToday
-                                  ? 'bg-blue-500/5'
-                                  : col.isWeekend
-                                    ? 'bg-slate-100/30'
-                                    : ''
+                                ? 'bg-blue-500/5'
+                                : col.isWeekend
+                                  ? 'bg-slate-100/30'
+                                  : ''
                                 }`}
                             />
                           ))}
@@ -2935,9 +3169,8 @@ export default function ProjectHubClient({
                           ) : (
                             // Barra Normal de Tarefa ou Subtarefa
                             <div
-                              className={`absolute z-10 rounded-xl flex items-center justify-between px-3 text-xs font-bold text-white transition-all shadow-xs overflow-hidden bg-gradient-to-r ${stageStyle.ganttBar} ring-1 ring-white/20 hover:brightness-105 ${
-                                item.level > 0 ? 'h-7 rounded-lg text-[11px]' : 'h-8.5'
-                              }`}
+                              className={`absolute z-10 rounded-xl flex items-center justify-between px-3 text-xs font-bold text-white transition-all shadow-xs overflow-hidden bg-gradient-to-r ${stageStyle.ganttBar} ring-1 ring-white/20 hover:brightness-105 ${item.level > 0 ? 'h-7 rounded-lg text-[11px]' : 'h-8.5'
+                                }`}
                               style={{
                                 left: `${leftPct}%`,
                                 width: `${widthPct}%`,

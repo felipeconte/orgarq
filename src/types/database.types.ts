@@ -352,6 +352,7 @@ export type Database = {
           checklist: any
           comments: any
           attachments: any
+          kanban_order: number
           code: string | null
           parent_stage_id: string | null
           deleted_at: string | null
@@ -365,6 +366,7 @@ export type Database = {
           name: string
           description?: string | null
           stage_order?: number
+          kanban_order?: number
           status?: 'a_iniciar' | 'em_producao' | 'em_aprovacao' | 'concluido'
           progress_percent?: number
           assigned_to?: string | null
@@ -388,6 +390,7 @@ export type Database = {
           name?: string
           description?: string | null
           stage_order?: number
+          kanban_order?: number
           status?: 'a_iniciar' | 'em_producao' | 'em_aprovacao' | 'concluido'
           progress_percent?: number
           assigned_to?: string | null
@@ -993,6 +996,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "company_categories_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      project_typologies: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_typologies_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"

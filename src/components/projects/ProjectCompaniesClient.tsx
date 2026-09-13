@@ -26,7 +26,7 @@ import {
   removeProjectCompanyAction,
   quickUpdateCommissionStatusAction
 } from '@/lib/actions/project-companies'
-import { cleanDigits, maskPhone } from '@/lib/formatters-and-validators'
+import { cleanDigits, maskPhone, formatProjectClientDisplay } from '@/lib/formatters-and-validators'
 import AddProjectCompanyModal from './AddProjectCompanyModal'
 
 interface ProjectCompaniesClientProps {
@@ -130,15 +130,20 @@ export default function ProjectCompaniesClient({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Fornecedores & Serviços Contratados
+                Empresas e Serviços Contratados
               </h1>
               <span className="px-2.5 py-0.5 text-xs font-mono font-bold bg-slate-100 text-slate-700 rounded-lg">
                 {project.code}
               </span>
             </div>
-            <p className="text-sm text-slate-500 mt-1">
-              Projeto: <strong className="text-slate-800">{project.title}</strong> • Cliente: <strong className="text-slate-700">{project.client_name}</strong>
-            </p>
+            {(() => {
+              const { label, names } = formatProjectClientDisplay(project.client_name)
+              return (
+                <p className="text-sm text-slate-500 mt-1">
+                  Projeto: <strong className="text-slate-800">{project.title}</strong> • {label}: <strong className="text-slate-700">{names}</strong>
+                </p>
+              )
+            })()}
           </div>
         </div>
 
@@ -307,31 +312,30 @@ export default function ProjectCompaniesClient({
                         {item.service_status === 'cotacao'
                           ? 'Em Cotação'
                           : item.service_status === 'contratado'
-                          ? 'Contratado'
-                          : item.service_status === 'em_andamento'
-                          ? 'Em Execução'
-                          : item.service_status === 'concluido'
-                          ? 'Concluído'
-                          : 'Cancelado'}
+                            ? 'Contratado'
+                            : item.service_status === 'em_andamento'
+                              ? 'Em Execução'
+                              : item.service_status === 'concluido'
+                                ? 'Concluído'
+                                : 'Cancelado'}
                       </span>
 
                       {/* Commission Status */}
                       <span
-                        className={`px-3 py-1 text-xs font-bold rounded-xl border ${
-                          isPaid
+                        className={`px-3 py-1 text-xs font-bold rounded-xl border ${isPaid
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : isPartial
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}
                       >
                         {isPaid
                           ? 'RT Paga (100%)'
                           : isPartial
-                          ? 'RT Paga Parcial'
-                          : item.commission_status === 'previsto'
-                          ? 'RT Prevista'
-                          : 'RT Pendente'}
+                            ? 'RT Paga Parcial'
+                            : item.commission_status === 'previsto'
+                              ? 'RT Prevista'
+                              : 'RT Pendente'}
                       </span>
                     </div>
                   </div>

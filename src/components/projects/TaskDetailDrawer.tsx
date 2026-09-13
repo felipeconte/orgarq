@@ -90,6 +90,7 @@ export interface TaskDetailData {
   name: string
   description: string | null
   stage_order: number
+  kanban_order?: number
   status: string
   progress_percent: number
   assigned_to: string | null

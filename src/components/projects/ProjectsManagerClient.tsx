@@ -34,7 +34,9 @@ import {
 import { updateProjectAction, deleteProjectAction } from '@/lib/actions/projects'
 import { ClientData } from '@/lib/actions/clients'
 import ClientMultiSelect from '@/components/projects/ClientMultiSelect'
+import TypologySelect from '@/components/projects/TypologySelect'
 import { useAlert } from '@/components/ui/ConfirmDialog'
+import { formatProjectClientDisplay, formatAreaOnlyNumbers, formatNumberBRL } from '@/lib/formatters-and-validators'
 
 const ProjectLocationMap = dynamic(
   () => import('./ProjectLocationMap'),
@@ -147,7 +149,7 @@ export default function ProjectsManagerClient({
   const [editingProject, setEditingProject] = useState<ProjectItem | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editStatus, setEditStatus] = useState('ativo')
-  const [editTypology, setEditTypology] = useState('Residencial Unifamiliar')
+  const [editTypology, setEditTypology] = useState('Residencial')
   const [editAreaInput, setEditAreaInput] = useState('')
   const [editAreaRaw, setEditAreaRaw] = useState<number | null>(null)
   const [editBudgetInput, setEditBudgetInput] = useState('')
@@ -223,19 +225,9 @@ export default function ProjectsManagerClient({
   }
 
   const handleAreaChange = (val: string) => {
-    const rawVal = val.replace(/\s*m²\s*/gi, '').trim()
-    if (!rawVal) {
-      setEditAreaInput('')
-      setEditAreaRaw(null)
-      return
-    }
-    const parsed = parseFloat(rawVal.replace(',', '.'))
-    if (!isNaN(parsed)) {
-      setEditAreaRaw(parsed)
-      setEditAreaInput(`${rawVal} m²`)
-    } else {
-      setEditAreaInput(rawVal)
-    }
+    const { display, raw } = formatAreaOnlyNumbers(val, editAreaInput)
+    setEditAreaInput(display)
+    setEditAreaRaw(raw)
   }
 
   const handleCopyCode = () => {
@@ -319,8 +311,12 @@ export default function ProjectsManagerClient({
     setEditingProject(p)
     setEditTitle(p.title || '')
     setEditStatus(p.status || 'ativo')
-    setEditTypology(p.typology || 'Residencial Unifamiliar')
-    setEditAreaInput(p.area_sqm ? `${p.area_sqm} m²` : '')
+    setEditTypology(p.typology || 'Residencial')
+    setEditAreaInput(
+      p.area_sqm !== null && p.area_sqm !== undefined
+        ? formatAreaOnlyNumbers(p.area_sqm).display
+        : ''
+    )
     setEditAreaRaw(p.area_sqm || null)
     setEditBudgetInput(p.estimated_budget ? formatCurrencyBRL(p.estimated_budget).formatted : '')
     setEditBudgetRaw(p.estimated_budget || null)
@@ -434,7 +430,7 @@ export default function ProjectsManagerClient({
     if (res.success) {
       const linkedClients = (initialClients || []).filter((c) => editClientIds.includes(c.id))
       const updatedClientName = linkedClients.length > 0
-        ? linkedClients.map((c) => c.name).join(' & ')
+        ? linkedClients.map((c) => c.name).join(', ')
         : editingProject.client_name
       const updatedClientEmail = linkedClients[0]?.email || null
       const updatedClientPhone = linkedClients[0]?.phone || null
@@ -672,19 +668,24 @@ export default function ProjectsManagerClient({
                     >
                       {proj.title}
                     </Link>
-                    <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
-                      <User className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="truncate">
-                        Cliente: <strong className="text-slate-700">{proj.client_name}</strong>
-                      </span>
-                    </p>
+                    {(() => {
+                      const { label, names } = formatProjectClientDisplay(proj.client_name, proj.client_ids)
+                      return (
+                        <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-1">
+                          <User className="w-4 h-4 text-slate-400 shrink-0" />
+                          <span className="truncate">
+                            {label}: <strong className="text-slate-700">{names}</strong>
+                          </span>
+                        </p>
+                      )
+                    })()}
                   </div>
 
                   {/* Metadata Chips */}
                   <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-sm text-slate-600">
                     <div className="flex items-center gap-1.5 truncate">
                       <Compass className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>{proj.area_sqm ? `${proj.area_sqm} m²` : 'Área não def.'}</span>
+                      <span>{proj.area_sqm ? `${formatNumberBRL(proj.area_sqm)} m²` : 'Área não def.'}</span>
                     </div>
                     <div className="flex items-center gap-1.5 truncate">
                       <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
@@ -748,13 +749,14 @@ export default function ProjectsManagerClient({
                         )}
                       </td>
                       <td className="py-4 px-4 text-slate-700 font-medium">
-                        {proj.client_name}
+                        {formatProjectClientDisplay(proj.client_name, proj.client_ids).names}
                       </td>
                       <td className="py-4 px-4 text-slate-500">
                         {proj.typology || 'Residencial'}
                       </td>
                       <td className="py-4 px-4 text-slate-600 font-mono">
-                        {proj.area_sqm ? `${proj.area_sqm} m²` : '—'}
+                        {proj.area_sqm ? `${formatNumberBRL(proj.area_sqm)} m²` : '—'}
+
                       </td>
                       <td className="py-4 px-4 text-slate-600">
                         {proj.deadline || '—'}
@@ -887,23 +889,16 @@ export default function ProjectsManagerClient({
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                       Tipologia
                     </label>
-                    <select
+                    <TypologySelect
                       value={editTypology}
-                      onChange={(e) => setEditTypology(e.target.value)}
-                      className="block w-full px-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
-                    >
-                      <option value="Residencial Unifamiliar">Residencial Unifamiliar</option>
-                      <option value="Residencial Multifamiliar">Residencial Multifamiliar</option>
-                      <option value="Interiores">Interiores / Reforma</option>
-                      <option value="Comercial">Comercial / Varejo</option>
-                      <option value="Corporativo">Corporativo / Escritórios</option>
-                      <option value="Institucional">Institucional</option>
-                    </select>
+                      onChange={setEditTypology}
+                      organizationId={editingProject?.organization_id || organizationId}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                      Área do Projeto (m²)
+                      Área do Projeto
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -911,11 +906,22 @@ export default function ProjectsManagerClient({
                       </div>
                       <input
                         type="text"
+                        inputMode="decimal"
                         value={editAreaInput}
                         onChange={(e) => handleAreaChange(e.target.value)}
-                        placeholder="Ex: 350 m²"
-                        className="block w-full pl-9 pr-3.5 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                        onBlur={() => {
+                          if (editAreaInput.endsWith(',')) {
+                            setEditAreaInput(editAreaInput.slice(0, -1))
+                          }
+                        }}
+                        placeholder="0"
+                        className="block w-full pl-9 pr-12 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                       />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-xs font-bold text-slate-400 select-none bg-slate-100/80 px-2 py-0.5 rounded-md">
+                          m²
+                        </span>
+                      </div>
                     </div>
                   </div>
 

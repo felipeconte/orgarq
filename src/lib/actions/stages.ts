@@ -166,6 +166,40 @@ export async function reorderStagesAction(
   return { success: true }
 }
 
+export async function reorderKanbanStagesAction(
+  projectId: string,
+  stageUpdates: {
+    id: string
+    kanban_order: number
+    status?: string
+  }[]
+) {
+  const { supabase } = await requireProjectAccess(projectId)
+
+  const updates = stageUpdates.map((item) => {
+    const payload: Record<string, any> = { kanban_order: item.kanban_order }
+    if (item.status) {
+      payload.status = item.status
+      if (item.status === 'concluido') payload.progress_percent = 100
+      else if (item.status === 'a_iniciar') payload.progress_percent = 0
+    }
+    return (supabase
+      .from('project_stages') as any)
+      .update(payload)
+      .eq('id', item.id)
+      .eq('project_id', projectId)
+  })
+
+  const results = await Promise.all(updates)
+  const failed = results.find((r) => r.error)
+  if (failed?.error) {
+    return { error: failed.error.message }
+  }
+
+  revalidatePath(`/app/projetos/${projectId}`)
+  return { success: true }
+}
+
 export async function updateStageProgressAction(
   projectId: string,
   stageId: string,
@@ -390,6 +424,7 @@ export async function createStageAction(
       name: cleanName,
       description: data.description ? sanitizeText(data.description) : null,
       stage_order: nextOrder,
+      kanban_order: nextOrder,
       status: initialStatus,
       progress_percent: progressPercent,
       assigned_to: data.assigned_to || null,
